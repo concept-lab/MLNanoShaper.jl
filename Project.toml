@@ -4,10 +4,12 @@ authors = ["tristan <tristan.hacquard@polytechnique.org> and contributors"]
 version = "1.0.0-DEV"
 
 [deps]
-Bonito = "824d6782-a2ef-11e9-3a09-e5662e0c26f8"
+BioMakie = "7de43156-b762-4475-b39f-ba1e1e59ee2f"
+BioStructures = "de9282ab-8554-53be-b2d6-f6c222edabfc"
+FileIO = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
 GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
 GeometryBasics = "5c1252a2-5f33-56bf-86c9-59e7332b4326"
-Markdown = "d6f4376e-aef5-505a-96c1-9c027394607a"
+MeshIO = "7269a6da-0436-5bbc-96c2-40638cbb6118"
 StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
 
 [compat]
