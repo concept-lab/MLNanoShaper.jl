@@ -1,10 +1,9 @@
-using Lux
+using Lux 
 using ConcreteStructs
 using GeometryBasics
 using ADTypes
 
-@concrete
-struct DeepSet <: Lux.AbstractExplicitContainerLayer{(:prepross,)}
+@concrete struct DeepSet <: Lux.AbstractExplicitContainerLayer{(:prepross,)}
     prepross
 end
 
@@ -16,7 +15,7 @@ end
 
 struct TrainingData
     atoms::Set{Sphere{Float64}}
-    skin::Mesh
+    skin::GeometryBasics.Mesh
 end
 
 struct Input
@@ -32,21 +31,28 @@ struct PreprocessData{T <: Number}
     d_2::T
 end
 
-struct Encoding{T <: Float64} <: Lux.AbstractExplicitLayer{(:dotₛ, :Rₛ, :ζ, :η)}
+struct Encoding{T} <: Lux.AbstractExplicitLayer
     n_dotₛ::T
     n_Rₛ::T
-	cut_radius::T
+    cut_radius::T
 end
+#{(:dotₛ, :Rₛ, :ζ, :η)}
 
-
-cut(cut_radius::Number,r::Number) = if r >= cut_radius 0 else (1 + cos(π*r/cut_radius))/2
-
+function cut(cut_radius::Number, r::Number)
+    if r >= cut_radius
+        0
+    else
+        (1 + cos(π * r / cut_radius)) / 2
+    end
+end
 function (l::Encoding{T})(x::PreprocessData{T}, ps, _) where {T}
-	2 .*((1 .+ (x.dot .-ps.dotₛ))/2).^ps.ζ * exp.( -ps.η*((x.r_1 + x.r_2)/2 .- ps.Rₛ).^2)*cut(l.cut_radius,x.r_1)*cut(l.cut_radius,x.r_2) |> collect
+    2 .* ((1 .+ (x.dot .- ps.dotₛ)) / 2) .^ ps.ζ *
+    exp.(-ps.η * ((x.r_1 + x.r_2) / 2 .- ps.Rₛ) .^ 2) * cut(l.cut_radius, x.r_1) *
+    cut(l.cut_radius, x.r_2) |> collect
 end
 
 distance2(x::Point3, y::Point3) = sum((x .- y) .^ 2)
-distance2(x::Point3, y::Mesh) =
+distance2(x::Point3, y::GeometryBasics.Mesh) =
     minimum(y) do y
         distance2(x, y)
     end
@@ -60,7 +66,9 @@ function train(data::TrainingData,
         training_states::Lux.Experimental.TrainState)
     scale = 0.1
     r2 = 1.5^2
-    points = filter(Point3.(Iterators.product(0:scale:10, 0:scale:10, 0:scale:10))) do point
+    points = filter(Point3.(Iterators.product(0:scale:10,
+        0:scale:10,
+        0:scale:10))) do point
         distance2(point, data.skin) < r2
     end
 
@@ -82,12 +90,15 @@ function preprossesing(data::Input)
         PreprocessData(dot, r_1, r_2, d_1, d_2)
     end
 end
-function select_radius(r2::Number, set::AbstractSet{Tuple{Point3{<:Real}, Sphere{<:Real}}})
+function select_radius(r2::Number,
+        set::AbstractSet{Tuple{Point3{<:Real}, Sphere{<:Real}}})
     filter(set) do pos, sphere
         distance2(pos, sphere.center) <= r2
     end
 end
 
-model = Chain(preprossesing,
+model = Lux.Chain(preprossesing,
     Base.Fix1(select_radius, 1.5),
-	DeepSet(Chain(Encoding(5,10,1.5), Dense(50 => 30, relu), Dense(30 => 10, relu))), Dense(10 => 1))
+    DeepSet(Lux.Chain(Encoding(5., 10., 1.5),
+        Dense(50 => 30, relu),
+        Dense(30 => 10, relu))), Dense(10 => 1))
