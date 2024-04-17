@@ -34,9 +34,9 @@ end
 struct Encoding{T} <: Lux.AbstractExplicitLayer
     n_dotₛ::T
     n_Rₛ::T
-    cut_radius::T
+    cut_distance::T
 end
-#{(:dotₛ, :Rₛ, :ζ, :η)}
+#{(:dotₛ, :Dₛ, :ζ, :η)}
 
 function cut(cut_radius::Number, r::Number)
     if r >= cut_radius
@@ -46,9 +46,10 @@ function cut(cut_radius::Number, r::Number)
     end
 end
 function (l::Encoding{T})(x::PreprocessData{T}, ps, _) where {T}
-    2 .* ((1 .+ (x.dot .- ps.dotₛ)) / 2) .^ ps.ζ *
-    exp.(-ps.η * ((x.r_1 + x.r_2) / 2 .- ps.Rₛ) .^ 2) * cut(l.cut_radius, x.r_1) *
-    cut(l.cut_radius, x.r_2) |> collect
+    encoded = 2 .* ((1 .+ (x.dot .- ps.dotₛ)) / 2) .^ ps.ζ *
+    exp.(-ps.η * ((x.d_1 + x.d_2) / 2 .- ps.dₛ) .^ 2) * cut(l.cut_distance, x.d_1) *
+    cut(l.cut_distance, x.d_2)
+	hcat(reshape(encoded,:),[(x.r_1 + x.r_2)/2,abs(x.r_1-x.r_2)])
 end
 
 distance2(x::Point3, y::Point3) = sum((x .- y) .^ 2)
