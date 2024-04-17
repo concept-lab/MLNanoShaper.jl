@@ -9,6 +9,7 @@ BioStructures = "de9282ab-8554-53be-b2d6-f6c222edabfc"
 FileIO = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
 GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
 GeometryBasics = "5c1252a2-5f33-56bf-86c9-59e7332b4326"
+Lux = "b2108857-7c20-44ae-9111-449ecde12c47"
 MeshIO = "7269a6da-0436-5bbc-96c2-40638cbb6118"
 StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
 
