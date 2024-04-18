@@ -17,7 +17,7 @@ function Base.read(io::IO, ::Type{XYZR{T}}) where {T}
     while !eof(io)
         push!(out, read_line(io, XYZR{T}))
     end
-    out
+	Set(out)
 end
 
 function read_line(io::IO, ::Type{DICT{T}}) where {T}
@@ -32,7 +32,7 @@ function Base.read(io::IO, ::Type{DICT{T}}) where {T}
     end
     out
 end
-function viz(x::AbstractVector{Sphere{T}}) where {T}
+function viz(x::AbstractSet{Sphere{T}}) where {T}
     fig = Figure()
     ax = Axis3(fig[1, 1])
     mesh!.(Ref(ax), x)
@@ -49,14 +49,14 @@ function reduce(fun, arg, n::Integer)
     end
 end
 
-function Base.print(io::IO, prot::AbstractVector{Sphere{T}}, ::Type{XYZR{T}}) where {T}
+function Base.print(io::IO, prot::AbstractSet{Sphere{T}}, ::Type{XYZR{T}}) where {T}
 	for sph in prot
 		println(io,sph.center[1]," ",sph.center[2]," ",sph.center[3]," ",sph.r)
 	end
 end
 
 function extract_balls(prot::ProteinStructure,
-        radii::Dict{String, Float64})::Vector{Sphere{Float64}}
+        radii::Dict{String, Float64})::Set{Sphere{Float64}}
     reduce(prot, 4) do atom
         if typeof(atom) == Atom
             [Sphere(Point3(atom.coords), if atom.element in keys(radii)
@@ -67,5 +67,5 @@ function extract_balls(prot::ProteinStructure,
         else
             []
         end
-    end
+    end |> Set
 end
