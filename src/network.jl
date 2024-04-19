@@ -1,4 +1,5 @@
 using Lux
+using LinearAlgebra: NumberArray
 using ConcreteStructs
 using GeometryBasics
 using ADTypes
@@ -21,18 +22,18 @@ function (f::DeepSet)(set::AbstractSet, ps, st)
     end
 end
 
-struct TrainingData
-    atoms::Set{Sphere{Float32}}
+struct TrainingData{T <: Number}
+    atoms::Set{Sphere{T}}
     skin::GeometryBasics.Mesh
 end
 
-function load_data(name::String)
-	TrainingData(extract_balls(Float32,read("$name.pdb", PDB)), load("$name.off"))
+function load_data(T::Type{<:Number},name::String)
+	TrainingData{T}(extract_balls(T, read("$name.pdb", PDB)), load("$name.off"))
 end
 
-struct ModelInput
-	point::Point3{Float32}
-    atoms::Set{Sphere{Float32}}
+struct ModelInput{T <: Number}
+    point::Point3{T}
+    atoms::Set{Sphere{T}}
 end
 
 struct PreprocessData{T <: Number}
@@ -50,17 +51,17 @@ function cut(cut_radius::Number, r::Number)
         (1 + cos(π * r / cut_radius)) / 2
     end
 end
-@concrete struct Encoding <: Lux.AbstractExplicitLayer
+struct Encoding{T <: Number} <: Lux.AbstractExplicitLayer
     n_dotₛ::Int
     n_Dₛ::Int
-    cut_distance
+    cut_distance::T
 end
 
-function Lux.initialparameters(::AbstractRNG, l::Encoding)
-    (dotsₛ = reshape(collect(range(0, 1; length = l.n_dotₛ)), 1, :),
-        Dₛ = reshape(collect(range(0, l.cut_distance; length = l.n_Dₛ)), :, 1),
-        η = reshape([1 / l.n_Dₛ], 1, 1),
-        ζ = reshape([1 / l.n_dotₛ], 1, 1))
+function Lux.initialparameters(::AbstractRNG, l::Encoding{T}) where {T}
+    (dotsₛ = reshape(collect(range(T(0), T(1); length = l.n_dotₛ)), 1, :),
+        Dₛ = reshape(collect(range(T(0), l.cut_distance; length = l.n_Dₛ)), :, 1),
+        η = reshape([T(1) / l.n_Dₛ], 1, 1),
+        ζ = reshape([T(1) / l.n_dotₛ], 1, 1))
 end
 Lux.initialstates(::AbstractRNG, l::Encoding) = (;)
 
@@ -79,12 +80,12 @@ distance2(x::Point3{Float32}, y::GeometryBasics.Mesh) =
         distance2(x, y)
     end
 
-function loss(model, ps, st, (;point, atoms, skin))
+function loss(model, ps, st, (; point, atoms, skin))
     d_pred, st = Lux.apply(model, ModelInput(point, atoms), ps, st)
     d_pred - distance2(point, skin), st, (;)
 end
 
-function train(data::TrainingData,
+function train(data::TrainingData{Float32},
         training_states::Lux.Experimental.TrainState)::Lux.Experimental.TrainState
     scale = 0.5f0
     r2 = 1.5f0^2
@@ -97,14 +98,14 @@ function train(data::TrainingData,
         coordinates(data.skin))
     points::Vector{Point3{Float32}} = filter(Iterators.product(range.(min_coordinate,
         max_coordinate,
-        ; step = scale)...) .|> Point3) do point::Point3{Float32}
+        ; step = scale)...) .|> Point3) do point
         distance2(point, data.skin) < 4 * r2
     end
 
     for point in points
         grads, _, _, training_states = Lux.Experimental.compute_gradients(AutoZygote(),
             loss,
-            (;point, data.atoms, data.skin),
+            (; point, data.atoms, data.skin),
             training_states)
         training_states = Lux.Experimental.apply_gradients(training_states, grads)
     end
@@ -119,7 +120,7 @@ function preprossesing(data::ModelInput)
         PreprocessData(dot, atom1.r, atom2.r, d_1, d_2)
     end |> Set
 end
-function select_radius(r2::Number, data::ModelInput)
+function select_radius(r2::T, data::ModelInput{T}) where {T}
     (; point, atoms) = data
     ModelInput(point, filter(atoms) do sphere
         distance2(point, sphere.center) <= r2
@@ -128,6 +129,6 @@ end
 a = 5
 b = 5
 model = Lux.Chain(Base.Fix1(select_radius, 1.5), preprossesing,
-    DeepSet(Lux.Chain(Encoding(a, b, 1.5),
+    DeepSet(Lux.Chain(Encoding{Float32}(a, b, 1.5f0),
         Dense(a * b + 2 => 30, relu),
         Dense(30 => 10, relu))), Dense(10 => 1))
