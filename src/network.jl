@@ -5,6 +5,11 @@ using ADTypes
 using Random
 using LinearAlgebra
 using FileIO
+using Zygote
+
+include("Import.jl")
+
+using .Import
 
 @concrete struct DeepSet <: Lux.AbstractExplicitContainerLayer{(:prepross,)}
     prepross
@@ -17,13 +22,17 @@ function (f::DeepSet)(set::AbstractSet, ps, st)
 end
 
 struct TrainingData
-    atoms::Set{Sphere{Float64}}
+    atoms::Set{Sphere{Float32}}
     skin::GeometryBasics.Mesh
 end
 
+function load_data(name::String)
+	TrainingData(extract_balls(Float32,read("$name.pdb", PDB)), load("$name.off"))
+end
+
 struct ModelInput
-    point::Point3
-    atoms::Set{Sphere{Float64}}
+	point::Point3{Float32}
+    atoms::Set{Sphere{Float32}}
 end
 
 struct PreprocessData{T <: Number}
@@ -64,40 +73,42 @@ function (l::Encoding{T})(x::PreprocessData{T}, (; dotsₛ, η, ζ, Dₛ), st) w
     x, st
 end
 
-distance2(x::Point3, y::Point3) = sum((x .- y) .^ 2)
-distance2(x::Point3, y::GeometryBasics.Mesh) =
-    minimum(y) do y
+distance2(x::Point3{T}, y::Point3{T}) where {T <: Number} = sum((x .- y) .^ 2)
+distance2(x::Point3{Float32}, y::GeometryBasics.Mesh) =
+    minimum(coordinates(y)) do y
         distance2(x, y)
     end
 
-function loss(model, ps, st, (pos, atoms, skin))
-    d_pred, st = Lux.apply(model, ModelInput(pos, atoms), ps, st)
-    d_pred - distance2(pos, skin), st, (;)
-end
-
-function load_data(name::String)
-	ModelInput(read("$name.pdb",PDB),load("$name.off"))
+function loss(model, ps, st, (;point, atoms, skin))
+    d_pred, st = Lux.apply(model, ModelInput(point, atoms), ps, st)
+    d_pred - distance2(point, skin), st, (;)
 end
 
 function train(data::TrainingData,
-        training_states::Lux.Experimental.TrainState)
-    scale = 0.5
-    r2 = 1.5^2
-    min_coordinate = mapreduce(collect, (x, y) -> min.(x, y), coordinates(data.skin))
-    max_coordinate = mapreduce(collect, (x, y) -> max.(x, y), coordinates(data.skin))
-    points = filter(Point3.(Iterators.product(range.(min_coordinate,
+        training_states::Lux.Experimental.TrainState)::Lux.Experimental.TrainState
+    scale = 0.5f0
+    r2 = 1.5f0^2
+
+    min_coordinate::Vector{Float32} = mapreduce(collect,
+        (x, y) -> min.(x, y),
+        coordinates(data.skin))
+    max_coordinate::Vector{Float32} = mapreduce(collect,
+        (x, y) -> max.(x, y),
+        coordinates(data.skin))
+    points::Vector{Point3{Float32}} = filter(Iterators.product(range.(min_coordinate,
         max_coordinate,
-        ; step = scale)))) do point
-        distance2(point, data.skin) < 4* r2
+        ; step = scale)...) .|> Point3) do point::Point3{Float32}
+        distance2(point, data.skin) < 4 * r2
     end
 
     for point in points
         grads, _, _, training_states = Lux.Experimental.compute_gradients(AutoZygote(),
             loss,
-            (point, data.atoms, data.skin),
+            (;point, data.atoms, data.skin),
             training_states)
         training_states = Lux.Experimental.apply_gradients(training_states, grads)
     end
+    training_states
 end
 function preprossesing(data::ModelInput)
     (; point, atoms) = data
@@ -120,4 +131,3 @@ model = Lux.Chain(Base.Fix1(select_radius, 1.5), preprossesing,
     DeepSet(Lux.Chain(Encoding(a, b, 1.5),
         Dense(a * b + 2 => 30, relu),
         Dense(30 => 10, relu))), Dense(10 => 1))
-

@@ -1,4 +1,4 @@
-module Inport
+module Import
 using StructArrays
 using GLMakie
 using GeometryBasics
@@ -44,14 +44,16 @@ function export_file(io::IO, prot::AbstractSet{Sphere{T}}) where {T}
     end
 end
 
-function extract_balls(prot::ProteinStructure)
-	radii =  TOML.parsefile(@projectroot("param","param.toml"))["atoms"]["radius"] |>Dict{String,Float64}
+params = "$( dirname(dirname(@__FILE__)))/param/param.toml"
+
+function extract_balls(T::Type{<:Number},prot::ProteinStructure)
+	radii =  TOML.parsefile(params)["atoms"]["radius"] |>Dict{String,T}
     reduce(prot, 4) do atom
         if typeof(atom) == Atom
             [Sphere(Point3(atom.coords), if atom.element in keys(radii)
                 radii[atom.element]
             else
-                1.0
+                1.0 |> T
             end)]
         else
             []

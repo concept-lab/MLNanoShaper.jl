@@ -1,8 +1,8 @@
 using TOML
 using BioStructures
 using Logging
-include("Inport.jl")
-using .Inport
+include("Import.jl")
+using .Import
 function generate_data()
 	data_dir = "$(homedir())/datasets/proteins"
     params = TOML.parsefile("param/param.toml")
@@ -16,7 +16,7 @@ function generate_data()
             mesh_name = first(split(prot_name, ".")) * ".off"
             @info "generating surface" mesh_name
             prot = read(prot_path, PDB)
-            atoms = extract_balls(prot)
+            atoms = extract_balls(Float64,prot)
             open("atoms.xyzr","w") do io
                 print(io, atoms, Inport.XYZR{Float64})
             end
