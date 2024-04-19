@@ -1,11 +1,12 @@
-
+module Inport
 using StructArrays
 using GLMakie
 using GeometryBasics
+using TOML
 using BioStructures
+using ProjectRoot
 export extract_balls
 struct XYZR{T} end
-struct DICT{T} end
 
 function read_line(io::IO, ::Type{XYZR{T}}) where {T}
     line = readline(io)
@@ -17,21 +18,9 @@ function Base.read(io::IO, ::Type{XYZR{T}}) where {T}
     while !eof(io)
         push!(out, read_line(io, XYZR{T}))
     end
-	Set(out)
+    Set(out)
 end
 
-function read_line(io::IO, ::Type{DICT{T}}) where {T}
-    line = readline(io)
-    x, y = split(line)
-    String(x) => parse(T, y)
-end
-function Base.read(io::IO, ::Type{DICT{T}}) where {T}
-    out = Dict{String, T}()
-    while !eof(io)
-        push!(out, read_line(io, DICT{T}))
-    end
-    out
-end
 function viz(x::AbstractSet{Sphere{T}}) where {T}
     fig = Figure()
     ax = Axis3(fig[1, 1])
@@ -49,14 +38,14 @@ function reduce(fun, arg, n::Integer)
     end
 end
 
-function Base.print(io::IO, prot::AbstractSet{Sphere{T}}, ::Type{XYZR{T}}) where {T}
-	for sph in prot
-		println(io,sph.center[1]," ",sph.center[2]," ",sph.center[3]," ",sph.r)
-	end
+function export_file(io::IO, prot::AbstractSet{Sphere{T}}) where {T}
+    for sph in prot
+        println(io, sph.center[1], " ", sph.center[2], " ", sph.center[3], " ", sph.r)
+    end
 end
 
-function extract_balls(prot::ProteinStructure,
-        radii::Dict{String, Float64})::Set{Sphere{Float64}}
+function extract_balls(prot::ProteinStructure)
+	radii =  TOML.parsefile(@projectroot("param","param.toml"))["atoms"]["radius"] |>Dict{String,Float64}
     reduce(prot, 4) do atom
         if typeof(atom) == Atom
             [Sphere(Point3(atom.coords), if atom.element in keys(radii)
@@ -68,4 +57,5 @@ function extract_balls(prot::ProteinStructure,
             []
         end
     end |> Set
+end
 end

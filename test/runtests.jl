@@ -6,10 +6,11 @@ using Test
 	@test begin 
 		using Random, MLNanoShaper, Lux,BioStructures,GeometryBasics
 		prot = read("../examples/1MH1.pdb",PDB)
-		dict = read("../param/protein.r.dict",MLNanoShaper.DICT{Float64})
-		balls = extract_balls(prot,dict)
+		balls = extract_balls(prot)
 		ps = Lux.initialparameters(MersenneTwister(42), MLNanoShaper.model)
-		length(LuxCore.stateless_apply(MLNanoShaper.model,MLNanoShaper.Input(first(balls).center,balls),ps)) ==1
+		length(LuxCore.stateless_apply(MLNanoShaper.model,MLNanoShaper.ModelInput(first(balls).center,balls),ps)) ==1
+	end
+	@test begin
 	end
 end
 

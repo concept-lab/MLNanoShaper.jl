@@ -1,13 +1,12 @@
 using TOML
 using BioStructures
 using Logging
-using MLNanoShaper
-
+include("Inport.jl")
+using .Inport
 function generate_data()
 	data_dir = "$(homedir())/datasets/proteins"
     params = TOML.parsefile("param/param.toml")
     proteins = downloadpdb(params["protein"]["list"])
-	radii = read("param/protein.r.dict",MLNanoShaper.DICT{Float64})
 	project_dir=pwd()
 
     cd(mktempdir(prefix = "nanoshaper")) do
@@ -17,9 +16,9 @@ function generate_data()
             mesh_name = first(split(prot_name, ".")) * ".off"
             @info "generating surface" mesh_name
             prot = read(prot_path, PDB)
-            atoms = extract_balls(prot, radii)
+            atoms = extract_balls(prot)
             open("atoms.xyzr","w") do io
-                print(io, atoms, MLNanoShaper.XYZR{Float64})
+                print(io, atoms, Inport.XYZR{Float64})
             end
 			run(pipeline(`Nanoshaper conf.prm`,devnull))
             cp("triangulatedSurf.off", "$data_dir/$mesh_name",force = true)
