@@ -1,6 +1,7 @@
 using Lux
 using LinearAlgebra: NumberArray
 using ConcreteStructs
+using TOML
 using GeometryBasics
 using ADTypes
 using Random
@@ -8,6 +9,7 @@ using LinearAlgebra
 using FileIO
 using Zygote
 using Adapt
+using MLUtils
 using Logging
 using SimpleChains: static
 
@@ -19,9 +21,9 @@ using .Import
 end
 
 function (f::DeepSet)(set::AbstractSet{T}, ps, st) where {T}
-    sum(asyncmap(set;ntasks=8 ) do arg
+    sum(set; init = f.init) do arg
         first(f.prepross(arg, ps, st))
-	end;init = f.init), st
+    end, st
 end
 
 struct TrainingData{T <: Number}
@@ -103,9 +105,9 @@ function train((; atoms, skin)::TrainingData{Float32},
         ; step = scale)...) .|> Point3) do point
         distance2(point, skin) < r2
     end
-		
+
     for point in points
-		@info "training" point
+        @info "training" point
         grads, _, _, training_states = Lux.Experimental.compute_gradients(AutoZygote(),
             loss,
             (; point, atoms, skin),
@@ -114,6 +116,14 @@ function train((; atoms, skin)::TrainingData{Float32},
     end
     training_states
 end
+
+function train(data::MLUtils.AbstractDataContainer,training_states::Lux.Experimental.TrainState)
+	for d in data
+		training_states = train(d,training_states)
+	end
+	training_states
+end
+
 function preprocessing((; point, atoms)::ModelInput)
     map(Iterators.product(atoms, atoms)) do (atom1, atom2)::Tuple{Sphere, Sphere}
         d_1 = sqrt(distance2(point, atom1.center))
@@ -136,6 +146,4 @@ model = Lux.Chain(Base.Fix1(select_radius, 1.5f0), preprocessing,
     DeepSet(Chain(Encoding(a, b, 1.5f0), adapt(adaptator, chain)),
         zeros32(1)))
 
-# @enum DataType test train
-
-# Datatype(x::String; split = 0.2) = (MersenneTwister(hash(x)) |> rand < split) |> DataType
+data = mapobs(shuffle(MersenneTwister(42), TOML.parsefile("param/param.toml")["protein"]["list"])) do name load_data(Float32,"/home/tristan/datasets/proteins/$name") end
