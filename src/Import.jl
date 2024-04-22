@@ -46,17 +46,18 @@ end
 
 params = "$( dirname(dirname(@__FILE__)))/param/param.toml"
 
-function extract_balls(T::Type{<:Number},prot::ProteinStructure)
-	radii =  TOML.parsefile(params)["atoms"]["radius"] |>Dict{String,T}
+function extract_balls(T::Type{<:Number}, prot::ProteinStructure)
+    radii = TOML.parsefile(params)["atoms"]["radius"] |> Dict{String, T}
     reduce(prot, 4) do atom
         if typeof(atom) == Atom
-            [Sphere(Point3(atom.coords), if atom.element in keys(radii)
-                radii[atom.element]
-            else
-                1.0 |> T
-            end)]
+			Sphere{T}[Sphere(Point3(atom.coords) .|>T,
+                if atom.element in keys(radii)
+                    radii[atom.element]
+                else
+                    1.0
+                end )]
         else
-            []
+			Sphere{T}[]
         end
     end |> Set
 end

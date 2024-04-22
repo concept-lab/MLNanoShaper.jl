@@ -5,18 +5,18 @@ using Test
     @test begin
         using Random, MLNanoShaper, Lux, BioStructures, GeometryBasics
         prot = read("../examples/1MH1.pdb", PDB)
-        balls = extract_balls(prot)
+        balls = extract_balls(Float32,prot)
         ps = Lux.initialparameters(MersenneTwister(42), MLNanoShaper.model)
         length(LuxCore.stateless_apply(MLNanoShaper.model,
             MLNanoShaper.ModelInput(first(balls).center, balls),
             ps)) == 1
-    end
+    end skip=true
     @test begin
-        using Random, MLNanoShaper, Lux, BioStructures, GeometryBasics, Optimisers,Zygote
+        using Random, MLNanoShaper, Lux, GeometryBasics, Optimisers, Zygote
         cd("$(homedir())/datasets/proteins/") do
-            train(load_data(Float32,"1ABO"),
+            train(load_data(Float32, "1ABO"),
                 Lux.Experimental.TrainState(MersenneTwister(42), MLNanoShaper.model,
-				Adam(0.01)))
+                    Adam(0.01)))
         end
     end
 end

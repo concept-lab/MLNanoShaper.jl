@@ -7,19 +7,21 @@ using Random
 using LinearAlgebra
 using FileIO
 using Zygote
-
-include("Import.jl")
+using Adapt
+using Logging
+using SimpleChains: static
 
 using .Import
 
 @concrete struct DeepSet <: Lux.AbstractExplicitContainerLayer{(:prepross,)}
     prepross
+    init
 end
 
-function (f::DeepSet)(set::AbstractSet, ps, st)
-    sum(set) do arg
-        f.prepross(arg, ps, st)
-    end
+function (f::DeepSet)(set::AbstractSet{T}, ps, st) where {T}
+    sum(asyncmap(set;ntasks=8 ) do arg
+        first(f.prepross(arg, ps, st))
+	end;init = f.init), st
 end
 
 struct TrainingData{T <: Number}
@@ -27,8 +29,8 @@ struct TrainingData{T <: Number}
     skin::GeometryBasics.Mesh
 end
 
-function load_data(T::Type{<:Number},name::String)
-	TrainingData{T}(extract_balls(T, read("$name.pdb", PDB)), load("$name.off"))
+function load_data(T::Type{<:Number}, name::String)
+    TrainingData{T}(extract_balls(T, read("$name.pdb", PDB)), load("$name.off"))
 end
 
 struct ModelInput{T <: Number}
@@ -82,53 +84,58 @@ distance2(x::Point3{Float32}, y::GeometryBasics.Mesh) =
 
 function loss(model, ps, st, (; point, atoms, skin))
     d_pred, st = Lux.apply(model, ModelInput(point, atoms), ps, st)
-    d_pred - distance2(point, skin), st, (;)
+    only(d_pred) - distance2(point, skin), st, (;)
 end
 
-function train(data::TrainingData{Float32},
+function train((; atoms, skin)::TrainingData{Float32},
         training_states::Lux.Experimental.TrainState)::Lux.Experimental.TrainState
     scale = 0.5f0
     r2 = 1.5f0^2
 
     min_coordinate::Vector{Float32} = mapreduce(collect,
         (x, y) -> min.(x, y),
-        coordinates(data.skin))
+        coordinates(skin))
     max_coordinate::Vector{Float32} = mapreduce(collect,
         (x, y) -> max.(x, y),
-        coordinates(data.skin))
+        coordinates(skin))
     points::Vector{Point3{Float32}} = filter(Iterators.product(range.(min_coordinate,
         max_coordinate,
         ; step = scale)...) .|> Point3) do point
-        distance2(point, data.skin) < 4 * r2
+        distance2(point, skin) < r2
     end
-
+		
     for point in points
+		@info "training" point
         grads, _, _, training_states = Lux.Experimental.compute_gradients(AutoZygote(),
             loss,
-            (; point, data.atoms, data.skin),
+            (; point, atoms, skin),
             training_states)
         training_states = Lux.Experimental.apply_gradients(training_states, grads)
     end
     training_states
 end
-function preprossesing(data::ModelInput)
-    (; point, atoms) = data
+function preprocessing((; point, atoms)::ModelInput)
     map(Iterators.product(atoms, atoms)) do (atom1, atom2)::Tuple{Sphere, Sphere}
         d_1 = sqrt(distance2(point, atom1.center))
         d_2 = sqrt(distance2(point, atom2.center))
-        dot = (atom1.center - point) ⋅ (atom2.center - point) / (d_1 * d_2)
+        dot = (atom1.center - point) ⋅ (atom2.center - point) / (d_1 * d_2 + 1.0f-8)
         PreprocessData(dot, atom1.r, atom2.r, d_1, d_2)
     end |> Set
 end
-function select_radius(r2::T, data::ModelInput{T}) where {T}
-    (; point, atoms) = data
+function select_radius(r2::Number, (; point, atoms)::ModelInput)
     ModelInput(point, filter(atoms) do sphere
         distance2(point, sphere.center) <= r2
     end)
 end
 a = 5
 b = 5
-model = Lux.Chain(Base.Fix1(select_radius, 1.5), preprossesing,
-    DeepSet(Lux.Chain(Encoding{Float32}(a, b, 1.5f0),
-        Dense(a * b + 2 => 30, relu),
-        Dense(30 => 10, relu))), Dense(10 => 1))
+adaptator = ToSimpleChainsAdaptor((static(a * b + 2),))
+chain = Chain(Dense(a * b + 2 => 10, relu),
+    Dense(10 => 10, relu), Dense(10 => 1))
+model = Lux.Chain(Base.Fix1(select_radius, 1.5f0), preprocessing,
+    DeepSet(Chain(Encoding(a, b, 1.5f0), adapt(adaptator, chain)),
+        zeros32(1)))
+
+# @enum DataType test train
+
+# Datatype(x::String; split = 0.2) = (MersenneTwister(hash(x)) |> rand < split) |> DataType

@@ -1,7 +1,6 @@
 using TOML
 using BioStructures
 using Logging
-include("Import.jl")
 using .Import
 function generate_data()
 	data_dir = "$(homedir())/datasets/proteins"
@@ -18,7 +17,7 @@ function generate_data()
             prot = read(prot_path, PDB)
             atoms = extract_balls(Float64,prot)
             open("atoms.xyzr","w") do io
-                print(io, atoms, Inport.XYZR{Float64})
+                print(io, atoms, Import.XYZR{Float64})
             end
 			run(pipeline(`Nanoshaper conf.prm`,devnull))
             cp("triangulatedSurf.off", "$data_dir/$mesh_name",force = true)
