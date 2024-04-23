@@ -13,8 +13,6 @@ using MLUtils
 using Logging
 using SimpleChains: static
 
-using .Import
-
 @concrete struct DeepSet <: Lux.AbstractExplicitContainerLayer{(:prepross,)}
     prepross
     init
@@ -117,11 +115,12 @@ function train((; atoms, skin)::TrainingData{Float32},
     training_states
 end
 
-function train(data::MLUtils.AbstractDataContainer,training_states::Lux.Experimental.TrainState)
-	for d in data
-		training_states = train(d,training_states)
-	end
-	training_states
+function train(data::MLUtils.AbstractDataContainer,
+        training_states::Lux.Experimental.TrainState)
+    for d in data
+        training_states = train(d, training_states)
+    end
+    training_states
 end
 
 function preprocessing((; point, atoms)::ModelInput)
@@ -146,4 +145,7 @@ model = Lux.Chain(Base.Fix1(select_radius, 1.5f0), preprocessing,
     DeepSet(Chain(Encoding(a, b, 1.5f0), adapt(adaptator, chain)),
         zeros32(1)))
 
-data = mapobs(shuffle(MersenneTwister(42), TOML.parsefile("param/param.toml")["protein"]["list"])) do name load_data(Float32,"/home/tristan/datasets/proteins/$name") end
+data = mapobs(shuffle(MersenneTwister(42),
+    conf["protein"]["list"])) do name
+    load_data(Float32, "$datadir/$name")
+end
