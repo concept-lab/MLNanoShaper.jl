@@ -50,13 +50,13 @@ end
 
 struct DensityRefinery <: AbstractRefinery
     nb_points::Int
-	pos::Function
+    pos::Function
 end
 
 function RegionTrees.refine_data(r::DensityRefinery, cell, indices)
     boundary = child_boundary(cell, indices)
     filter(cell.data) do point
-		boundary.origin <= r.pos(point) <= boundary.origin + boundary.widths
+        boundary.origin <= r.pos(point) <= boundary.origin + boundary.widths
     end
 end
 function RegionTrees.needs_refinement(refinery::DensityRefinery, cell)
@@ -94,9 +94,10 @@ function (l::Encoding{T})(x::PreprocessData{T}, (; dotsₛ, η, ζ, Dₛ), st) w
 end
 
 distance2(x::Point3{T}, y::Point3{T}) where {T <: Number} = sum((x .- y) .^ 2)
-distance2(x::Point3{Float32}, y::GeometryBasics.Mesh) = distance2(x,coordinates(y))
+distance2(x::Point3{Float32}, y::GeometryBasics.Mesh) = distance2(x, coordinates(y))
 
-function distance2(x::Point3{T}, y::Cell{<:AbstractVector{Point3{T}},3,T,<:Any}) where {T}
+function distance2(x::Point3{T},
+        y::Cell{<:AbstractVector{Point3{T}}, 3, T, <:Any}) where {T}
     distance2(x, findleaf(y, x).data)
 end
 
@@ -122,10 +123,10 @@ function train((; atoms, skin)::TrainingData{Float32},
     min_coordinate = box_coordinate(min, coordinates(skin)) |> SVector{3}
     max_coordinate = box_coordinate(max, coordinates(skin)) |> SVector{3}
     skin = Cell(min_coordinate, max_coordinate, coordinates(skin))
-	adaptivesampling!(skin,DensityRefinery(10000,identity))
+    adaptivesampling!(skin, DensityRefinery(10000, identity))
 
     # atoms = Cell(min_coordinate, max_coordinate, collect(atoms))
-	# adaptivesampling!(atoms,DensityRefinery(100,sph -> sph.center))
+    # adaptivesampling!(atoms,DensityRefinery(100,sph -> sph.center))
 
     points::Vector{Point3{Float32}} = filter(Iterators.product(range.(min_coordinate,
         max_coordinate,
@@ -160,7 +161,23 @@ function preprocessing((; point, atoms)::ModelInput)
         PreprocessData(dot, atom1.r, atom2.r, d_1, d_2)
     end |> Set
 end
-function select_radius(r2::Number, (; point, atoms)::ModelInput)
+
+function select_cells(f, cell::Cell)
+    Channel() do c
+        queue = [cell]
+        while !isempty(queue)
+            current = pop!(queue)
+			if !f(current)
+				continue
+			end
+            put!(c, current)
+            if !isleaf(current)
+                append!(queue, children(current))
+            end
+        end
+    end
+end
+function select_radius(r2::Number, (; point, atoms))
     @info "selecting radius"
     ModelInput(point, filter(atoms) do sphere
         distance2(point, sphere.center) <= r2
@@ -179,4 +196,3 @@ model = Lux.Chain(Base.Fix1(select_radius, 1.5f0), preprocessing,
 #     conf["protein"]["list"])) do name
 #     load_data(Float32, "$datadir/$name")
 # end
-
