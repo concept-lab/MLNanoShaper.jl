@@ -12,6 +12,8 @@ using Adapt
 using MLUtils
 using Logging
 using SimpleChains: static
+using StaticArrays
+using RegionTrees
 
 @concrete struct DeepSet <: Lux.AbstractExplicitContainerLayer{(:prepross,)}
     prepross
@@ -46,6 +48,21 @@ struct PreprocessData{T <: Number}
     d_2::T
 end
 
+struct DensityRefinery <: AbstractRefinery
+    nb_points::Int
+	pos::Function
+end
+
+function RegionTrees.refine_data(r::DensityRefinery, cell, indices)
+    boundary = child_boundary(cell, indices)
+    filter(cell.data) do point
+		boundary.origin <= r.pos(point) <= boundary.origin + boundary.widths
+    end
+end
+function RegionTrees.needs_refinement(refinery::DensityRefinery, cell)
+    println("cell with boundry $(cell.boundary) and $(length(cell.data)) points")
+    length(cell.data) > refinery.nb_points
+end
 function cut(cut_radius::Number, r::Number)
     if r >= cut_radius
         0
@@ -77,27 +94,39 @@ function (l::Encoding{T})(x::PreprocessData{T}, (; dotsₛ, η, ζ, Dₛ), st) w
 end
 
 distance2(x::Point3{T}, y::Point3{T}) where {T <: Number} = sum((x .- y) .^ 2)
-distance2(x::Point3{Float32}, y::GeometryBasics.Mesh) =
-    minimum(coordinates(y)) do y
+distance2(x::Point3{Float32}, y::GeometryBasics.Mesh) = distance2(x,coordinates(y))
+
+function distance2(x::Point3{T}, y::Cell{<:AbstractVector{Point3{T}},3,T,<:Any}) where {T}
+    distance2(x, findleaf(y, x).data)
+end
+
+function distance2(x::Point3{T}, y::AbstractArray{Point3{T}}) where {T}
+    minimum(y) do y
         distance2(x, y)
     end
+end
 
 function loss(model, ps, st, (; point, atoms, skin))
     d_pred, st = Lux.apply(model, ModelInput(point, atoms), ps, st)
     only(d_pred) - distance2(point, skin), st, (;)
 end
-
+function box_coordinate(f, collection)
+    mapreduce(collect, (x, y) -> f.(x, y), collection)
+end
 function train((; atoms, skin)::TrainingData{Float32},
         training_states::Lux.Experimental.TrainState)::Lux.Experimental.TrainState
     scale = 0.5f0
     r2 = 1.5f0^2
+    @info "start training"
 
-    min_coordinate::Vector{Float32} = mapreduce(collect,
-        (x, y) -> min.(x, y),
-        coordinates(skin))
-    max_coordinate::Vector{Float32} = mapreduce(collect,
-        (x, y) -> max.(x, y),
-        coordinates(skin))
+    min_coordinate = box_coordinate(min, coordinates(skin)) |> SVector{3}
+    max_coordinate = box_coordinate(max, coordinates(skin)) |> SVector{3}
+    skin = Cell(min_coordinate, max_coordinate, coordinates(skin))
+	adaptivesampling!(skin,DensityRefinery(10000,identity))
+
+    # atoms = Cell(min_coordinate, max_coordinate, collect(atoms))
+	# adaptivesampling!(atoms,DensityRefinery(100,sph -> sph.center))
+
     points::Vector{Point3{Float32}} = filter(Iterators.product(range.(min_coordinate,
         max_coordinate,
         ; step = scale)...) .|> Point3) do point
@@ -132,6 +161,7 @@ function preprocessing((; point, atoms)::ModelInput)
     end |> Set
 end
 function select_radius(r2::Number, (; point, atoms)::ModelInput)
+    @info "selecting radius"
     ModelInput(point, filter(atoms) do sphere
         distance2(point, sphere.center) <= r2
     end)
@@ -145,7 +175,8 @@ model = Lux.Chain(Base.Fix1(select_radius, 1.5f0), preprocessing,
     DeepSet(Chain(Encoding(a, b, 1.5f0), adapt(adaptator, chain)),
         zeros32(1)))
 
-data = mapobs(shuffle(MersenneTwister(42),
-    conf["protein"]["list"])) do name
-    load_data(Float32, "$datadir/$name")
-end
+# data = mapobs(shuffle(MersenneTwister(42),
+#     conf["protein"]["list"])) do name
+#     load_data(Float32, "$datadir/$name")
+# end
+
