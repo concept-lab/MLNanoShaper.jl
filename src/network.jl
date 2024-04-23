@@ -1,4 +1,5 @@
 using Lux
+using Base: AbstractArrayOrBroadcasted
 using LinearAlgebra: NumberArray
 using ConcreteStructs
 using TOML
@@ -15,21 +16,6 @@ using SimpleChains: static
 using StaticArrays
 using RegionTrees
 
-@concrete struct DeepSet <: Lux.AbstractExplicitContainerLayer{(:prepross,)}
-    prepross
-    init
-end
-
-function (f::DeepSet)(set::AbstractSet{T}, ps, st) where {T}
-    sum(set; init = f.init) do arg
-        first(f.prepross(arg, ps, st))
-    end, st
-end
-
-struct TrainingData{T <: Number}
-    atoms::Set{Sphere{T}}
-    skin::GeometryBasics.Mesh
-end
 
 function load_data(T::Type{<:Number}, name::String)
     TrainingData{T}(extract_balls(T, read("$name.pdb", PDB)), load("$name.off"))
@@ -37,7 +23,7 @@ end
 
 struct ModelInput{T <: Number}
     point::Point3{T}
-    atoms::Set{Sphere{T}}
+    atoms::Vector{Sphere{T}} #Set
 end
 
 struct PreprocessData{T <: Number}
@@ -60,7 +46,6 @@ function RegionTrees.refine_data(r::DensityRefinery, cell, indices)
     end
 end
 function RegionTrees.needs_refinement(refinery::DensityRefinery, cell)
-    println("cell with boundry $(cell.boundary) and $(length(cell.data)) points")
     length(cell.data) > refinery.nb_points
 end
 function cut(cut_radius::Number, r::Number)
@@ -85,7 +70,7 @@ end
 Lux.initialstates(::AbstractRNG, l::Encoding) = (;)
 
 function (l::Encoding{T})(x::PreprocessData{T}, (; dotsₛ, η, ζ, Dₛ), st) where {T}
-    encoded = 2 .* ((1 .+ (x.dot .- dotsₛ)) ./ 2) .^ ζ .*
+	encoded = 2 .* (max.(0,(1 .+ (x.dot .- dotsₛ))) ./ 2) .^ ζ .*
               exp.(-η .* ((x.d_1 + x.d_2) / 2 .- Dₛ) .^ 2) .*
               cut(l.cut_distance, x.d_1) .*
               cut(l.cut_distance, x.d_2)
@@ -117,7 +102,7 @@ end
 function train((; atoms, skin)::TrainingData{Float32},
         training_states::Lux.Experimental.TrainState)::Lux.Experimental.TrainState
     scale = 0.5f0
-    r2 = 1.5f0^2
+    r = 1.5f0
     @info "start training"
 
     min_coordinate = box_coordinate(min, coordinates(skin)) |> SVector{3}
@@ -125,20 +110,24 @@ function train((; atoms, skin)::TrainingData{Float32},
     skin = Cell(min_coordinate, max_coordinate, coordinates(skin))
     adaptivesampling!(skin, DensityRefinery(10000, identity))
 
-    # atoms = Cell(min_coordinate, max_coordinate, collect(atoms))
-    # adaptivesampling!(atoms,DensityRefinery(100,sph -> sph.center))
+    atoms = Cell(min_coordinate, max_coordinate, collect(atoms))
+    adaptivesampling!(atoms, DensityRefinery(100, sph -> sph.center))
 
     points::Vector{Point3{Float32}} = filter(Iterators.product(range.(min_coordinate,
         max_coordinate,
         ; step = scale)...) .|> Point3) do point
-        distance2(point, skin) < r2
+        distance2(point, skin) < r^2
     end
 
     for point in points
-        @info "training" point
+		@info "training" point
+        atoms_neighboord = select_radius(r, point, atoms)
+        if length(atoms_neighboord) == 0
+            continue
+        end
         grads, _, _, training_states = Lux.Experimental.compute_gradients(AutoZygote(),
             loss,
-            (; point, atoms, skin),
+            (; point, atoms = atoms_neighboord, skin),
             training_states)
         training_states = Lux.Experimental.apply_gradients(training_states, grads)
     end
@@ -159,38 +148,55 @@ function preprocessing((; point, atoms)::ModelInput)
         d_2 = sqrt(distance2(point, atom2.center))
         dot = (atom1.center - point) ⋅ (atom2.center - point) / (d_1 * d_2 + 1.0f-8)
         PreprocessData(dot, atom1.r, atom2.r, d_1, d_2)
-    end |> Set
-end
-
-function select_cells(f, cell::Cell)
-    Channel() do c
-        queue = [cell]
-        while !isempty(queue)
-            current = pop!(queue)
-			if !f(current)
-				continue
-			end
-            put!(c, current)
-            if !isleaf(current)
-                append!(queue, children(current))
-            end
-        end
     end
 end
-function select_radius(r2::Number, (; point, atoms))
-    @info "selecting radius"
-    ModelInput(point, filter(atoms) do sphere
-        distance2(point, sphere.center) <= r2
-    end)
+
+function filter_cells(test::Function, cell::Cell)
+    res = Cell[]
+    queue = [cell]
+    while !isempty(queue)
+        current = pop!(queue)
+        if !test(current)
+            continue
+        end
+        push!(res, current)
+        if !isleaf(current)
+            append!(queue, children(current))
+        end
+    end
+    res
 end
+
+function select_radius(cut_radius::T,
+        point::Point3{T},
+        atoms::Cell{<:AbstractVector{Sphere{T}}, 3}) where {T}
+
+    atoms = filter_cells(atoms) do node::Cell
+        center = node.boundary.origin + node.boundary.widths / 2
+        center = Point3(center...)
+        widths = node.boundary.widths
+        distance2(point, center) <= (cut_radius + sum(widths) / 2)^2
+    end
+
+    atoms = mapreduce(vcat, atoms) do node::Cell
+        if isleaf(node)
+            filter(node.data) do (; center)::Sphere
+                distance2(point, center) <= (2 * cut_radius)^2
+            end
+        else
+            Sphere{T}[]
+        end
+    end
+    atoms
+end
+
 a = 5
 b = 5
 adaptator = ToSimpleChainsAdaptor((static(a * b + 2),))
 chain = Chain(Dense(a * b + 2 => 10, relu),
-    Dense(10 => 10, relu), Dense(10 => 1))
-model = Lux.Chain(Base.Fix1(select_radius, 1.5f0), preprocessing,
-    DeepSet(Chain(Encoding(a, b, 1.5f0), adapt(adaptator, chain)),
-        zeros32(1)))
+    Dense(10 => 1))
+model = Lux.Chain(preprocessing,
+    DeepSet(Chain(Encoding(a, b, 1.5f0), adapt(adaptator, chain))))
 
 # data = mapobs(shuffle(MersenneTwister(42),
 #     conf["protein"]["list"])) do name
