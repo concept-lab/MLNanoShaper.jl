@@ -1,6 +1,9 @@
 using Lux
 using ConcreteStructs
 using GeometryBasics
+using Random
+using SimpleChains: static
+using Adapt
 
 @concrete struct DeepSet <: Lux.AbstractExplicitContainerLayer{(:prepross,)}
     prepross

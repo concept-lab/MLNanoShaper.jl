@@ -9,10 +9,8 @@ using Random
 using LinearAlgebra
 using FileIO
 using Zygote
-using Adapt
 using MLUtils
 using Logging
-using SimpleChains: static
 using StaticArrays
 using RegionTrees
 
