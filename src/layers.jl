@@ -31,6 +31,26 @@ struct PreprocessData{T <: Number}
     d_1::T
     d_2::T
 end
+
+# Inputs
+# - `(;point,atoms)`: `ModelInput`, a point in 3 space and a vector of spheres.
+@doc raw"""
+Encoding(n_dotₛ,n_Dₛ,cut_distance)
+
+A lux layer which embed angular and radial `PreprocessData` into a feature vector invariant by translation and rotations.
+
+# Arguments
+- `n_dotₛ`: Integer specifying the number of anguar features 
+- `n_Dₛ`: Integer specifying the number of radial features 
+- `cut_distance`: The maximun distance of intaraction between atoms 
+# Input
+- `(;dot,r_1,r_2,d_1,d_2)`:`PreprocessData`, the dot product,the atoms radii and the distances between the reference point and the atoms. 
+# Output
+- `x`: a `Vector` representing the encoded features:
+```math
+x_{ij} = 2 ~ (1 + \frac{dot - dot_{si}}{2})^\eta * \exp(-\zeta ~ ( \frac{d_1 + d_2}{2} - D_{si} ) ) \times cut(d_1) \times cut(d_2) 
+```
+"""
 struct Encoding{T <: Number} <: Lux.AbstractExplicitLayer
     n_dotₛ::Int
     n_Dₛ::Int
