@@ -18,10 +18,10 @@ function Base.read(io::IO, ::Type{XYZR{T}}) where {T}
     while !eof(io)
         push!(out, read_line(io, XYZR{T}))
     end
-    Set(out)
+    out
 end
 
-function viz(x::AbstractSet{Sphere{T}}) where {T}
+function viz(x::AbstractArray{Sphere{T}}) where {T}
     fig = Figure()
     ax = Axis3(fig[1, 1])
     mesh!.(Ref(ax), x)
@@ -38,7 +38,7 @@ function reduce(fun, arg, n::Integer)
     end
 end
 
-function export_file(io::IO, prot::AbstractSet{Sphere{T}}) where {T}
+function export_file(io::IO, prot::AbstractArray{Sphere{T}}) where {T}
     for sph in prot
         println(io, sph.center[1], " ", sph.center[2], " ", sph.center[3], " ", sph.r)
     end
@@ -59,6 +59,6 @@ function extract_balls(T::Type{<:Number}, prot::ProteinStructure)
         else
 			Sphere{T}[]
         end
-    end |> Set
+    end 
 end
 end

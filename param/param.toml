@@ -131,3 +131,6 @@ SM=1.975000
 SS=2.200000
 CLK=2.27
 
+
+[paths]
+model_dir="datasets/models"
