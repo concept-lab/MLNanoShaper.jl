@@ -26,6 +26,7 @@ function train((train_data,
         training_states::Lux.Experimental.TrainState; nb_epoch, save_periode, params...)
     # serialize("$(homedir())/$(conf["paths"]["model_dir"])/model_0", training_states)
     for epoch in 1:nb_epoch
+		println("epoch $epoch/$nb_epoch")
         (; training_states, losses) = train(train_data, training_states; params...)
         @info "loss" losses
         @info "model" training_states
@@ -73,7 +74,6 @@ function train((; atoms, skin)::TrainingData{Float32},
             (; point, atoms = atoms_neighboord, skin),
             training_states)
         push!(losses_v, losses)
-		println(losses)
         training_states = Lux.Experimental.apply_gradients(training_states, grads)
     end
     (; training_states, losses = losses_v)
@@ -93,7 +93,7 @@ end
 
 function loss_fn(model, ps, st, (; point, atoms, skin))
     d_pred, st = Lux.apply(model, ModelInput(point, atoms), ps, st)
-	only(d_pred) - (1+tanh(distance2(point, skin)))/2, st, (;)
+	(only(d_pred) - (1+tanh(distance2(point, skin)))/2)^2, st, (;)
 end
 function box_coordinate(f, collection)
     mapreduce(collect, (x, y) -> f.(x, y), collection)
@@ -103,11 +103,11 @@ function train()
 	conf["protein"]["list"])[1:10]) do name
             load_data(Float32, "$datadir/$name")
         end; at = 0.5)
-    with_logger(TBLogger("$(homedir())/$(conf["paths"]["model_dir"])")) do
+    with_logger(TBLogger("$(homedir())/$(conf["paths"]["log_dir"])")) do
         train(data,
             Lux.Experimental.TrainState(MersenneTwister(42), model,
                 Adam(0.01));
-            nb_epoch = 1,
+            nb_epoch = 10,
             save_periode = 1,
             r = 1.5f0,
             scale = 1.0f0)

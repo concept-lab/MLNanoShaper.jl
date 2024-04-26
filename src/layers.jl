@@ -72,7 +72,7 @@ end
 Lux.initialstates(::AbstractRNG, l::Encoding) = (;)
 
 function (l::Encoding{T})(x::PreprocessData{T}, (; dotsₛ, η, ζ, Dₛ), st) where {T}
-    encoded = 2 .* (max.(0, (1 .+ (x.dot .- dotsₛ))) ./ 2) .^ ζ .*
+    encoded = 2 .* ((2 .+ x.dot .- tanh.(dotsₛ)) ./ 4) .^ ζ .*
               exp.(-η .* ((x.d_1 + x.d_2) / 2 .- Dₛ) .^ 2) .*
               cut(l.cut_distance, x.d_1) .*
               cut(l.cut_distance, x.d_2)
@@ -103,5 +103,4 @@ adaptator = ToSimpleChainsAdaptor((static(a * b + 2),))
 chain = Chain(Dense(a * b + 2 => 10, relu),
     Dense(10 => 1))
 model = Lux.Chain(preprocessing,
-    DeepSet(Chain(Encoding(a, b, 1.5f0), adapt(adaptator, chain))))
-
+    DeepSet(Chain(Encoding(a, b, 1.5f0), adapt(adaptator, chain))),σ)
