@@ -2,6 +2,12 @@ using TOML
 using BioStructures
 using Logging
 using .Import
+
+
+"""
+	generate_data()
+generate data from the parameters files in `param/` by downloading the pdb files and running Nanoshaper. 
+"""
 function generate_data()
 	data_dir = "$(homedir())/datasets/proteins"
     params = TOML.parsefile("param/param.toml")

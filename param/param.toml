@@ -134,3 +134,5 @@ CLK=2.27
 
 [paths]
 model_dir="datasets/models"
+log_dir="datasets/logs"
+data_dir="datasets/protein"

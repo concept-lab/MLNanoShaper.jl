@@ -63,18 +63,17 @@ function train((; atoms, skin)::TrainingData{Float32},
         distance2(point, skin) < r^2
     end
     losses_v = Float32[]
-
-    for point in points
-        @info "training" point
+	for point in first(shuffle(MersenneTwister(42),points),20)
         atoms_neighboord = select_radius(r, point, atoms)
         if length(atoms_neighboord) == 0
             continue
         end
         grads, losses, _, training_states = Lux.Experimental.compute_gradients(AutoZygote(),
-            loss,
+            loss_fn,
             (; point, atoms = atoms_neighboord, skin),
             training_states)
         push!(losses_v, losses)
+		println(losses)
         training_states = Lux.Experimental.apply_gradients(training_states, grads)
     end
     (; training_states, losses = losses_v)
@@ -92,18 +91,18 @@ function load_data(T::Type{<:Number}, name::String)
     TrainingData{T}(extract_balls(T, read("$name.pdb", PDB)), load("$name.off"))
 end
 
-function loss(model, ps, st, (; point, atoms, skin))
+function loss_fn(model, ps, st, (; point, atoms, skin))
     d_pred, st = Lux.apply(model, ModelInput(point, atoms), ps, st)
-    only(d_pred) - distance2(point, skin), st, (;)
+	only(d_pred) - (1+tanh(distance2(point, skin)))/2, st, (;)
 end
 function box_coordinate(f, collection)
     mapreduce(collect, (x, y) -> f.(x, y), collection)
 end
 function train()
     data = splitobs(mapobs(shuffle(MersenneTwister(42),
-            conf["protein"]["list"])) do name
+	conf["protein"]["list"])[1:10]) do name
             load_data(Float32, "$datadir/$name")
-        end; at = 0.8)
+        end; at = 0.5)
     with_logger(TBLogger("$(homedir())/$(conf["paths"]["model_dir"])")) do
         train(data,
             Lux.Experimental.TrainState(MersenneTwister(42), model,
