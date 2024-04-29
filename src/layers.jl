@@ -54,7 +54,7 @@ A lux layer which embed angular and radial `PreprocessData` into a feature vecto
 # Output
 - `x`: a `Vector` representing the encoded features:
 ```math
-x_{ij} = 2 ~ (1 + \\frac{dot - dot_{si}}{2})^\\eta * \\exp(-\\zeta ~ ( \\frac{d_1 + d_2}{2} - D_{si} ) ) \\times cut(d_1) \\times cut(d_2) 
+x_{ij} = (\\frac{1}{2} + \\frac{dot - dot_{si}}{4})^\\eta * \\exp(-\\zeta ~ ( \\frac{d_1 + d_2}{2} - D_{si} ) ) \\times cut(d_1) \\times cut(d_2) 
 ```
 """
 struct Encoding{T <: Number} <: Lux.AbstractExplicitLayer
@@ -72,7 +72,7 @@ end
 Lux.initialstates(::AbstractRNG, l::Encoding) = (;)
 
 function (l::Encoding{T})(x::PreprocessData{T}, (; dotsₛ, η, ζ, Dₛ), st) where {T}
-    encoded = 2 .* ((2 .+ x.dot .- tanh.(dotsₛ)) ./ 4) .^ ζ .*
+    encoded = ((2 .+ x.dot .- tanh.(dotsₛ)) ./ 4) .^ ζ .*
               exp.(-η .* ((x.d_1 + x.d_2) / 2 .- Dₛ) .^ 2) .*
               cut(l.cut_distance, x.d_1) .*
               cut(l.cut_distance, x.d_2)
