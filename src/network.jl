@@ -1,4 +1,5 @@
 using Lux
+using LoggingExtras: shouldlog
 using LinearAlgebra: NumberArray
 using ConcreteStructs
 using TOML
@@ -16,6 +17,7 @@ using Optimisers
 using Statistics
 using TensorBoardLogger
 using Serialization
+using Logging
 using LoggingExtras
 
 """
@@ -27,10 +29,10 @@ function train((train_data,
         training_states::Lux.Experimental.TrainState; nb_epoch, save_periode, params...)
     # serialize("$(homedir())/$(conf["paths"]["model_dir"])/model_0", training_states)
     for epoch in 1:nb_epoch
-        println("epoch $epoch/$nb_epoch")
+        @info "epoch" epoch
         training_states = train(train_data, training_states; params...)
-		test.(test_data, Ref(training_states); params...)
-        @info "weights" weights=training_states.parameters
+        test.(test_data, Ref(training_states); params...)
+        # @info "weights" weights=training_states.parameters
         # if epoch % save_periode == 0
         #     serialize("$(homedir())/$(conf["paths"]["model_dir"])/model_$epoch",
         #         training_states)
@@ -44,15 +46,15 @@ function train(data,
         training_states = train(d, training_states; params...)
         training_states
     end
-	training_states
+    training_states
 end
 
-function box_coordinate(reduce,fold, collection)
-    mapreduce(collect∘reduce, (x, y) -> fold.(x, y), collection)
+function box_coordinate(reduce, fold, collection)
+    mapreduce(collect ∘ reduce, (x, y) -> fold.(x, y), collection)
 end
 function oct_tree(f::Function, x::AbstractVector, rf::AbstractRefinery)::Cell
-    min_coordinate = box_coordinate(f,min,x) |> SVector{3}
-    max_coordinate = box_coordinate(f,max,x) |> SVector{3}
+    min_coordinate = box_coordinate(f, min, x) |> SVector{3}
+    max_coordinate = box_coordinate(f, max, x) |> SVector{3}
     tree = Cell(min_coordinate, max_coordinate, x)
     adaptivesampling!(tree, rf)
     tree
@@ -79,13 +81,13 @@ function loss_fn(model, ps, st, (; point, atoms, skin))
     d_real = distance2(point, skin)
     (d_pred - (1 + tanh(d_real)) / 2)^2,
     st,
-    (; distance = abs(d_real - atanh(2d_pred - 1)))
+    (; distance = abs(d_real - atanh((2d_pred - 1) * (1 - 1.0f-5))))
 end
 function train((; atoms, skin)::TrainingData{Float32},
         training_states::Lux.Experimental.TrainState; scale::Float32,
         r::Float32)
     skin = oct_tree(identity, coordinates(skin), DensityRefinery(10_000, identity))
-	atoms = oct_tree(sph -> sph.center,atoms, DensityRefinery(100, sph -> sph.center))
+    atoms = oct_tree(sph -> sph.center, atoms, DensityRefinery(100, sph -> sph.center))
     points = point_grid(atoms; scale, r)
 
     for point in first(shuffle(MersenneTwister(42), points), 20)
@@ -126,13 +128,67 @@ function load_data(T::Type{<:Number}, name::String)
     TrainingData{T}(extract_balls(T, read("$name.pdb", PDB)), load("$name.off"))
 end
 
+"""
+	accumulator(processing,logger)
+A processing logger that transform logger on multiple batches
+Ca be used to liss numerical data, for logging to TensorBoardLogger.
+"""
+mutable struct AccumulatorLogger <: AbstractLogger
+    processing::Function
+    logger::AbstractLogger
+    data::Dict
+end
+
+function Logging.handle_message(logger::AccumulatorLogger, message...; kargs...)
+    logger.processing(logger.logger, Ref(logger.data), message, kargs)
+end
+Logging.shouldlog(logger::AccumulatorLogger, args...) = shouldlog(logger.logger, args...)
+Logging.min_enabled_level(logger) = Logging.min_enabled_level(logger.logger)
+empty_accumulator(::Union{Type{<:AbstractDict},Type{<:NamedTuple}}) = Dict()
+empty_accumulator(::Type{T}) where {T <: Number} = T[]
+function accumulate(d::Dict, kargs::AbstractDict)
+    for k in keys(kargs)
+        if k ∉ keys(d)
+            d[k] = empty_accumulator(typeof(kargs[k]))
+        end
+        accumulate(d[k], kargs[k])
+    end
+end
+function accumulate(d::Vector, arg::Number)
+    push!(d, arg)
+end
+function accumulate(d::Dict, kargs::NamedTuple)
+    accumulate(d, Dict(kargs))
+end
+extract(d::Dict) = Dict(keys(d) .=> extract.(values(d)))
+function extract(d::Vector)
+    mean(d)
+end
 function train()
     train_data, test_data = splitobs(mapobs(shuffle(MersenneTwister(42),
             conf["protein"]["list"])[1:10]) do name
             load_data(Float32, "$datadir/$name")
         end; at = 0.5)
-	tb_logger = TBLogger("$(homedir())/$(conf["paths"]["log_dir"])") 
-	with_logger(tb_logger) do
+    logger = AccumulatorLogger(TBLogger("$(homedir())/$(conf["paths"]["log_dir"])"),
+        Dict()) do logger, d, args, kargs
+        level, message = args
+        if message == "epoch"
+            kargs = extract(d[])
+            for (k, v) in pairs(kargs)
+                Logging.handle_message(logger, level, k, args[3:end]...; v...)
+            end
+            d[] = Dict()
+        end
+        accumulate(d[], Dict([message => kargs]))
+    end
+    logger = TeeLogger(ActiveFilteredLogger(logger) do (; message)
+            message in ("test", "train", "epoch")
+        end,
+        ActiveFilteredLogger(global_logger()) do (; message)
+            message ∉ ("test", "train")
+        end)
+
+    with_logger(logger) do
         train((train_data, test_data),
             Lux.Experimental.TrainState(MersenneTwister(42), model,
                 Adam(0.01));
