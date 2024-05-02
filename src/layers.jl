@@ -4,6 +4,7 @@ using GeometryBasics
 using Random
 using SimpleChains: static
 using Adapt
+using StructArrays
 using ChainRulesCore
 
 @concrete struct DeepSet <: Lux.AbstractExplicitContainerLayer{(:prepross,)}
@@ -11,12 +12,11 @@ using ChainRulesCore
 end
 
 function (f::DeepSet)(set::AbstractArray{T}, ps, st) where {T}
+	
 	trace("input size",length(set))
-    sum(set) do arg
-        Lux.apply(f.prepross, arg, ps, st) |> first
-	end/sqrt(length(set)), st
+	sum(set) do arg
+	Lux.apply(f.prepross,arg , ps, st) |> first end/sqrt(size(set,1)), st
 end
-
 """
 Training information used in model training.
 # Fields
@@ -101,7 +101,7 @@ function preprocessing((; point, atoms)::ModelInput)
     end
 end
 function trace(message::String, x)
-    @info message x
+    @debug message x
     x
 end
 
@@ -114,4 +114,3 @@ function ChainRulesCore.rrule(::typeof(trace), message, x)
     return y, trace_pullback
 end
 
-postprocess(x) = ifelse.(x .<= 0, zero(eltype(x)), exp.(-1 ./ x))

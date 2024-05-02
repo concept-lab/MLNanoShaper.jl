@@ -82,8 +82,8 @@ function loss_fn(model, ps, st, (; point, atoms, skin))
 	d_pred = only(d_pred) |> trace("model output")
     d_real = distance2(point, skin)
     ((d_pred - (1 + tanh(d_real)) / 2)^2,
-        st, (;))
-    # (; distance = abs(d_real - atanh((2*d_pred - 1) * (1 - 1.0f-5))))
+    st,
+	(;distance = abs(d_real - atanh(max(0,(2d_pred-1)) * (1 - 1.0f-4)))))
 end
 function train((; atoms, skin)::TrainingData{Float32},
         training_states::Lux.Experimental.TrainState; scale::Float32,
@@ -92,7 +92,7 @@ function train((; atoms, skin)::TrainingData{Float32},
     atoms_tree = oct_tree(sph -> sph.center, atoms, DensityRefinery(100, sph -> sph.center))
     points = point_grid(atoms_tree; scale, r)
 
-    for point in first(shuffle(MersenneTwister(42), points), 1)
+    for point in first(shuffle(MersenneTwister(42), points), 20)
         atoms_neighboord = select_radius(r, point, atoms_tree)
 		trace("pre input size",length(atoms_neighboord))	
         grads, loss, stats, training_states = Lux.Experimental.compute_gradients(AutoZygote(),
@@ -106,7 +106,7 @@ function train((; atoms, skin)::TrainingData{Float32},
         #     (; point, atoms = atoms_neighboord, skin))
         # @info "train" loss stats back((1f0, nothing, nothing))
         training_states = Lux.Experimental.apply_gradients(training_states, grads)
-        @info "train" loss stats grads
+        @info "train" loss stats 
     end
     training_states
 end
@@ -118,7 +118,7 @@ function test((; atoms, skin)::TrainingData{Float32},
     atoms = oct_tree(sph -> sph.center, atoms, DensityRefinery(100, sph -> sph.center))
     points = point_grid(atoms; scale, r)
 
-    for point in first(shuffle(MersenneTwister(42), points), 1)
+    for point in first(shuffle(MersenneTwister(42), points), 20)
         atoms_neighboord = select_radius(r, point, atoms)
         loss, _, stats = loss_fn(training_states.model, training_states.parameters,
             training_states.states,
@@ -175,9 +175,9 @@ function extract(d::Vector)
 end
 function train()
     train_data, test_data = splitobs(mapobs(shuffle(MersenneTwister(42),
-            conf["protein"]["list"])[1:2]) do name
+            conf["protein"]["list"])[1:10]) do name
             load_data(Float32, "$datadir/$name")
-        end; at = 0.5)
+        end; at = 0.8)
     logger = TBLogger("$(homedir())/$(conf["paths"]["log_dir"])")
     logger = AccumulatorLogger(global_logger(),
         Dict()) do logger, d, args, kargs
@@ -204,17 +204,18 @@ function train()
     adaptator = ToSimpleChainsAdaptor((static(a * b + 2),))
     chain = Chain(Dense(a * b + 2 => 10,
             elu),
-        Dense(10 => 1;
+        Dense(10 => 1,elu;
             init_weight = (args...) -> glorot_uniform(args...; gain = 1 / 25_0000)))
     model = Lux.Chain(preprocessing,
         DeepSet(Chain(Encoding(a, b, 1.5f0), chain)),tanh_fast )
-    # with_logger(logger) do
+	optim=OptimiserChain(AccumGrad(16),SignDecay(),WeightDecay(),Adam(0.01)) 
+    with_logger(logger) do
     train((train_data, test_data),
-        Lux.Experimental.TrainState(MersenneTwister(42), model,
-            Adam(0.01));
+        Lux.Experimental.TrainState(MersenneTwister(42), model,optim
+		);
         nb_epoch = 10,
         save_periode = 1,
-        r = 1.5f0,
+        r = 3.f0,
         scale = 1.0f0)
-    # end
+    end
 end
