@@ -4,15 +4,17 @@ using GeometryBasics
 using Random
 using SimpleChains: static
 using Adapt
+using ChainRulesCore
 
 @concrete struct DeepSet <: Lux.AbstractExplicitContainerLayer{(:prepross,)}
     prepross
 end
 
 function (f::DeepSet)(set::AbstractArray{T}, ps, st) where {T}
+	trace("input size",length(set))
     sum(set) do arg
-        first(f.prepross(arg, ps, st))
-    end, st
+        Lux.apply(f.prepross, arg, ps, st) |> first
+	end/sqrt(length(set)), st
 end
 
 """
@@ -71,18 +73,20 @@ function Lux.initialparameters(::AbstractRNG, l::Encoding{T}) where {T}
 end
 Lux.initialstates(::AbstractRNG, l::Encoding) = (;)
 
-function (l::Encoding{T})(x::PreprocessData{T}, (; dotsₛ, η, ζ, Dₛ), st) where {T}
-    encoded = ((2 .+ x.dot .- tanh.(dotsₛ)) ./ 4) .^ ζ .*
-              exp.(-η .* ((x.d_1 + x.d_2) / 2 .- Dₛ) .^ 2) .*
-              cut(l.cut_distance, x.d_1) .*
-              cut(l.cut_distance, x.d_2)
-    x = vcat(vec(encoded), [(x.r_1 + x.r_2) / 2, abs(x.r_1 - x.r_2)])
-    x, st
+function (l::Encoding{T})((; dot, d_1, d_2, r_1, r_2)::PreprocessData{T},
+        (; dotsₛ, η, ζ, Dₛ),
+        st) where {T}
+    encoded = ((2 .+ dot .- tanh.(dotsₛ)) ./ 4) .^ ζ .*
+              exp.(-η .* ((d_1 + d_2) / 2 .- Dₛ) .^ 2) .*
+              cut(l.cut_distance, d_1) .*
+              cut(l.cut_distance, d_2)
+    res = vcat(vec(encoded), [(r_1 + r_2) / 2, abs(r_1 - r_2)])
+    res, st
 end
 
 function cut(cut_radius::Number, r::Number)
     if r >= cut_radius
-        0
+        zero(r)
     else
         (1 + cos(π * r / cut_radius)) / 2
     end
@@ -96,11 +100,18 @@ function preprocessing((; point, atoms)::ModelInput)
         PreprocessData(dot, atom1.r, atom2.r, d_1, d_2)
     end
 end
+function trace(message::String, x)
+    @info message x
+    x
+end
 
-a = 5
-b = 5
-adaptator = ToSimpleChainsAdaptor((static(a * b + 2),))
-chain = Chain(Dense(a * b + 2 => 10, relu),
-    Dense(10 => 1))
-model = Lux.Chain(preprocessing,
-    DeepSet(Chain(Encoding(a, b, 1.5f0), adapt(adaptator, chain))),σ)
+trace(message::String) = x ->trace(message,x)
+function ChainRulesCore.rrule(::typeof(trace), message, x)
+    y = trace(message, x)
+    function trace_pullback(y_hat)
+        NoTangent(), NoTangent(), y_hat
+    end
+    return y, trace_pullback
+end
+
+postprocess(x) = ifelse.(x .<= 0, zero(eltype(x)), exp.(-1 ./ x))

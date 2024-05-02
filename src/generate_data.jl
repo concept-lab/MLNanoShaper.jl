@@ -1,5 +1,5 @@
 using TOML
-using BioStructures
+import BioStructures: PDB,downloadpdb
 using Logging
 using .Import
 
