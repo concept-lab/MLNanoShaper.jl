@@ -27,16 +27,18 @@ train the model on the data with nb_epoch
 function train((train_data,
             test_data)::Tuple{MLUtils.AbstractDataContainer, MLUtils.AbstractDataContainer},
         training_states::Lux.Experimental.TrainState; nb_epoch, save_periode, params...)
-    # serialize("$(homedir())/$(conf["paths"]["model_dir"])/model_0", training_states)
+    serialize("$(homedir())/$(conf["paths"]["model_dir"])/model_0", training_states)
     for epoch in 1:nb_epoch
         @info "epoch" epoch
+		@info "training"
         training_states = train(train_data, training_states; params...)
+		@info "testing"
         test.(test_data, Ref(training_states); params...)
         # @info "weights" weights=training_states.parameters
-        # if epoch % save_periode == 0
-        #     serialize("$(homedir())/$(conf["paths"]["model_dir"])/model_$epoch",
-        #         training_states)
-        # end
+        if epoch % save_periode == 0
+            serialize("$(homedir())/$(conf["paths"]["model_dir"])/model_$epoch",
+                training_states)
+        end
     end
 end
 function train(data,
@@ -96,7 +98,7 @@ function train((; atoms, skin)::TrainingData{Float32},
         #     (; point, atoms = atoms_neighboord, skin))
         # @info "train" loss stats back((1f0, nothing, nothing))
         training_states = Lux.Experimental.apply_gradients(training_states, grads)
-        @info "train" loss stats training_states.model
+        @info "train" loss stats training_states.parameters
     end
     training_states
 end
@@ -145,6 +147,8 @@ Logging.shouldlog(logger::AccumulatorLogger, args...) = shouldlog(logger.logger,
 Logging.min_enabled_level(logger) = Logging.min_enabled_level(logger.logger)
 empty_accumulator(::Union{Type{<:AbstractDict}, Type{<:NamedTuple}}) = Dict()
 empty_accumulator(::Type{T}) where {T <: Number} = T[]
+empty_accumulator(::Type{T})  where T = Ref{T}()
+
 function accumulate(d::Dict, kargs::AbstractDict)
     for k in keys(kargs)
         if k ∉ keys(d)
@@ -159,17 +163,23 @@ end
 function accumulate(d::Dict, kargs::NamedTuple)
     accumulate(d, pairs(kargs))
 end
+function accumulate(d::Ref, arg)
+	d[] = arg
+end
+
 extract(d::Dict) = Dict(keys(d) .=> extract.(values(d)))
 function extract(d::Vector)
     mean(d)
 end
+extract(d::Ref) = d[]
+
 function train()
     train_data, test_data = splitobs(mapobs(shuffle(MersenneTwister(42),
             conf["protein"]["list"])[1:10]) do name
             load_data(Float32, "$datadir/$name")
         end; at = 0.8)
     logger = TBLogger("$(homedir())/$(conf["paths"]["log_dir"])")
-    logger = AccumulatorLogger(global_logger(),
+    logger = AccumulatorLogger(logger,
         Dict()) do logger, d, args, kargs
         level, message = args
         if message == "epoch"
@@ -196,7 +206,7 @@ function train()
             elu),
         Dense(10 => 1, elu;
             init_weight = (args...) -> glorot_uniform(args...; gain = 1 / 25_0000)))
-    model = Lux.Chain(preprocessing,
+    model = Lux.Chain(preprocessing,struct_stack,
         DeepSet(Chain(Encoding(a, b, 1.5f0), chain)), tanh_fast)
     optim = OptimiserChain(AccumGrad(16), SignDecay(), WeightDecay(), Adam(0.01))
     with_logger(logger) do

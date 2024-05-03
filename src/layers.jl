@@ -13,10 +13,14 @@ using ChainRulesCore
 end
 
 function (f::DeepSet)(set::AbstractArray{T}, ps, st) where {T}
-	
-	trace("input size",length(set))
-	sum(set) do arg
-	Lux.apply(f.prepross,arg , ps, st) |> first end/sqrt(size(set,1)), st
+    trace("input size", length(set))
+    sum(set) do arg
+        Lux.apply(f.prepross, arg, ps, st) |> first
+    end / sqrt(size(set, 1)), st
+end
+function (f::DeepSet)(arg::StructArray{T}, ps, st) where {T}
+    trace("input size", length(arg))
+    sum(Lux.apply(f.prepross, arg, ps, st) |> first) / sqrt(size(arg, 1)), st
 end
 """
 Training information used in model training.
@@ -69,20 +73,39 @@ end
 function Lux.initialparameters(::AbstractRNG, l::Encoding{T}) where {T}
     (dotsₛ = reshape(collect(range(T(0), T(1); length = l.n_dotₛ)), 1, :),
         Dₛ = reshape(collect(range(T(0), l.cut_distance; length = l.n_Dₛ)), :, 1),
-        η = reshape([T(1) / l.n_Dₛ], 1, 1),
-        ζ = reshape([T(1) / l.n_dotₛ], 1, 1))
+        η = ones(T, 1, 1) ./ l.n_dotₛ,
+        ζ = ones(T, 1, 1) ./ l.n_Dₛ)
 end
 Lux.initialstates(::AbstractRNG, l::Encoding) = (;)
 
-function (l::Encoding{T})((; dot, d_1, d_2, r_1, r_2)::PreprocessData{T},
+function mergedims(x::AbstractArray, dims::AbstractRange)
+    pre = size(x)[begin:(first(dims) - 1)]
+    merged = size(x)[dims]
+    post = size(x)[(last(dims) + 1):end]
+    reshape(x, (pre..., prod(merged), post...))
+end
+
+function (l::Encoding{T})(input::StructArray{PreprocessData{T}},
         (; dotsₛ, η, ζ, Dₛ),
         st) where {T}
+    (; dot, d_1, d_2, r_1, r_2) = input |> trace("input")
     encoded = ((2 .+ dot .- tanh.(dotsₛ)) ./ 4) .^ ζ .*
-              exp.(-η .* ((d_1 + d_2) / 2 .- Dₛ) .^ 2) .*
-              cut(l.cut_distance, d_1) .*
-              cut(l.cut_distance, d_2)
-    res = vcat(vec(encoded), [(r_1 + r_2) / 2, abs(r_1 - r_2)])
-    res, st
+              exp.(-η .* ((d_1 .+ d_2) ./ 2 .- Dₛ) .^ 2) .*
+              cut.(l.cut_distance, d_1) .*
+              cut.(l.cut_distance, d_2)
+    res = vcat(map((encoded, (r_1 .+ r_2) ./ 2, abs.(r_1 .- r_2))) do x
+        mergedims(x, 1:2)
+    end...)
+    res |> trace("features"), st
+end
+function (l::Encoding{T})(x::PreprocessData, ps, st) where {T}
+    l(StructVector{PreprocessData{T}}(dot = [x.dot],
+            r_1 = [x.r_1],
+            r_2 = [x.r_2],
+            d_1 = [x.d_1],
+            d_2 = [x.d_2]),
+        ps,
+        st)
 end
 
 function cut(cut_radius::Number, r::Number)
@@ -99,19 +122,43 @@ function preprocessing((; point, atoms)::ModelInput)
         d_2 = euclidean(point, atom2.center)
         dot = (atom1.center - point) ⋅ (atom2.center - point) / (d_1 * d_2 + 1.0f-8)
         PreprocessData(dot, atom1.r, atom2.r, d_1, d_2)
-    end
+    end |> vec
 end
+function struct_stack(x::AbstractArray{PreprocessData{T}}) where {T}
+    x = StructVector{PreprocessData{T}}(dot = getfield.(x, :dot),
+        r_1 = getfield.(x, :r_1),
+        r_2 = getfield.(x, :r_2),
+        d_1 = getfield.(x, :d_1),
+        d_2 = getfield.(x, :d_2))
+    reshape(x, 1, 1, size(x)...) |> trace("struct array")
+end
+
 function trace(message::String, x)
     @debug message x
     x
 end
 
-trace(message::String) = x ->trace(message,x)
+trace(message::String) = x -> trace(message, x)
 function ChainRulesCore.rrule(::typeof(trace), message, x)
     y = trace(message, x)
     function trace_pullback(y_hat)
+        @debug "derivation $message" y_hat
         NoTangent(), NoTangent(), y_hat
     end
     return y, trace_pullback
 end
 
+function ChainRulesCore.rrule(::typeof(Base.getproperty), array::StructArray, field::Symbol)
+    member = getproperty(array, field)
+    function getproperty_pullback(y_hat)
+        NoTangent(),
+        StructArray(; (f => if f == field
+            y_hat
+        else
+            fill(ZeroTangent())
+        end
+                       for f in propertynames(array))...)
+        NoTangent()
+    end
+    member, getproperty_pullback
+end
