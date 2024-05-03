@@ -1,4 +1,3 @@
-using RegionTrees
 using NearestNeighbors
 using GeometryBasics
 using LinearAlgebra

@@ -13,7 +13,6 @@ using Zygote
 using MLUtils
 using Logging
 using StaticArrays
-using RegionTrees
 using Optimisers
 using Statistics
 using TensorBoardLogger
@@ -97,7 +96,7 @@ function train((; atoms, skin)::TrainingData{Float32},
         #     (; point, atoms = atoms_neighboord, skin))
         # @info "train" loss stats back((1f0, nothing, nothing))
         training_states = Lux.Experimental.apply_gradients(training_states, grads)
-        @info "train" loss stats
+        @info "train" loss stats training_states.model
     end
     training_states
 end
