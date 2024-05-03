@@ -59,6 +59,6 @@ function extract_balls(T::Type{<:Number}, prot::ProteinStructure)
         else
 			Sphere{T}[]
         end
-    end 
+    end |> StructVector
 end
 end

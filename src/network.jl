@@ -1,4 +1,5 @@
 using Lux
+using StaticArrays: reorder
 using LoggingExtras: shouldlog
 using LinearAlgebra: NumberArray
 using ConcreteStructs
@@ -49,22 +50,13 @@ function train(data,
     training_states
 end
 
-function box_coordinate(reduce, fold, collection)
-    mapreduce(collect ∘ reduce, (x, y) -> fold.(x, y), collection)
-end
-function oct_tree(f::Function, x::AbstractVector, rf::AbstractRefinery)::Cell
-    min_coordinate = box_coordinate(f, min, x) |> SVector{3}
-    max_coordinate = box_coordinate(f, max, x) |> SVector{3}
-    tree = Cell(min_coordinate, max_coordinate, x)
-    adaptivesampling!(tree, rf)
-    tree
-end
-function point_grid(atoms::Cell; scale::Float32, r::Float32)::Vector{Point3{Float32}}
-    (; origin, widths) = atoms.boundary
-    filter(Iterators.product(range.(origin,
-        origin .+ widths,
+function point_grid(atoms::KDTree; scale::Float32, r::Float32)::Vector{Point3{Float32}}
+    (; mins, maxes) = atoms.hyper_rec
+    filter(Iterators.product(range.(mins,
+        maxes
         ; step = scale)...) .|> Point3) do point
-        distance2to_center(point, atoms) < r^2
+			distance(point,atoms) < r
+
     end
 end
 
@@ -75,29 +67,28 @@ The loss function used by in training.
 compare the predicted (square) distance with \$\\frac{1 + \tanh(d)}{2}\$
 Return the error with the espected distance as a metric.
 """
-function loss_fn(model, ps, st, (; point, atoms, skin))
+function loss_fn(model, ps, st, (; point, atoms, d_real))
     ret = Lux.apply(model, ModelInput(point, atoms), ps, st)
     d_pred, st = ret
 
-	d_pred = only(d_pred) |> trace("model output")
-    d_real = distance2(point, skin)
+    d_pred = only(d_pred) |> trace("model output")
     ((d_pred - (1 + tanh(d_real)) / 2)^2,
-    st,
-	(;distance = abs(d_real - atanh(max(0,(2d_pred-1)) * (1 - 1.0f-4)))))
+        st,
+        (; distance = abs(d_real - atanh(max(0, (2d_pred - 1)) * (1 - 1.0f-4)))))
 end
 function train((; atoms, skin)::TrainingData{Float32},
         training_states::Lux.Experimental.TrainState; scale::Float32,
         r::Float32)
-    skin = oct_tree(identity, coordinates(skin), DensityRefinery(10_000, identity))
-    atoms_tree = oct_tree(sph -> sph.center, atoms, DensityRefinery(100, sph -> sph.center))
+    skin = KDTree(coordinates(skin))
+    atoms_tree = KDTree(atoms.center; reorder = false)
     points = point_grid(atoms_tree; scale, r)
 
     for point in first(shuffle(MersenneTwister(42), points), 20)
-        atoms_neighboord = select_radius(r, point, atoms_tree)
-		trace("pre input size",length(atoms_neighboord))	
+        atoms_neighboord = atoms[inrange(atoms_tree, point, r)] |> StructVector
+        trace("pre input size", length(atoms_neighboord))
         grads, loss, stats, training_states = Lux.Experimental.compute_gradients(AutoZygote(),
             loss_fn,
-            (; point, atoms = atoms_neighboord, skin),
+			(; point, atoms = atoms_neighboord, d_real=distance(point,skin)),
             training_states)
         # _, back = Zygote.pullback(loss_fn,
         #     training_states.model,
@@ -106,7 +97,7 @@ function train((; atoms, skin)::TrainingData{Float32},
         #     (; point, atoms = atoms_neighboord, skin))
         # @info "train" loss stats back((1f0, nothing, nothing))
         training_states = Lux.Experimental.apply_gradients(training_states, grads)
-        @info "train" loss stats 
+        @info "train" loss stats
     end
     training_states
 end
@@ -114,15 +105,15 @@ end
 function test((; atoms, skin)::TrainingData{Float32},
         training_states::Lux.Experimental.TrainState; scale::Float32,
         r::Float32)
-    skin = oct_tree(identity, coordinates(skin), DensityRefinery(10_000, identity))
-    atoms = oct_tree(sph -> sph.center, atoms, DensityRefinery(100, sph -> sph.center))
-    points = point_grid(atoms; scale, r)
+		skin = KDTree(coordinates(skin))
+    atoms_tree = KDTree(atoms.center,reorder = false)
+    points = point_grid(atoms_tree; scale, r)
 
     for point in first(shuffle(MersenneTwister(42), points), 20)
-        atoms_neighboord = select_radius(r, point, atoms)
+        atoms_neighboord = atoms[inrange(atoms_tree, point, r)] |> StructVector
         loss, _, stats = loss_fn(training_states.model, training_states.parameters,
             training_states.states,
-            (; point, atoms = atoms_neighboord, skin))
+			(; point, atoms = atoms_neighboord, d_real=distance(point,skin)))
         @info "test" loss stats
     end
 end
@@ -204,18 +195,17 @@ function train()
     adaptator = ToSimpleChainsAdaptor((static(a * b + 2),))
     chain = Chain(Dense(a * b + 2 => 10,
             elu),
-        Dense(10 => 1,elu;
+        Dense(10 => 1, elu;
             init_weight = (args...) -> glorot_uniform(args...; gain = 1 / 25_0000)))
     model = Lux.Chain(preprocessing,
-        DeepSet(Chain(Encoding(a, b, 1.5f0), chain)),tanh_fast )
-	optim=OptimiserChain(AccumGrad(16),SignDecay(),WeightDecay(),Adam(0.01)) 
+        DeepSet(Chain(Encoding(a, b, 1.5f0), chain)), tanh_fast)
+    optim = OptimiserChain(AccumGrad(16), SignDecay(), WeightDecay(), Adam(0.01))
     with_logger(logger) do
-    train((train_data, test_data),
-        Lux.Experimental.TrainState(MersenneTwister(42), model,optim
-		);
-        nb_epoch = 10,
-        save_periode = 1,
-        r = 3.f0,
-        scale = 1.0f0)
+        train((train_data, test_data),
+            Lux.Experimental.TrainState(MersenneTwister(42), model, optim);
+            nb_epoch = 10,
+            save_periode = 1,
+            r = 3.0f0,
+            scale = 1.0f0)
     end
 end
