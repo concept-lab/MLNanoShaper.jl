@@ -30,9 +30,9 @@ function train((train_data,
     serialize("$(homedir())/$(conf["paths"]["model_dir"])/model_0", training_states)
     for epoch in 1:nb_epoch
         @info "epoch" epoch
-		@info "training"
+        @info "training"
         training_states = train(train_data, training_states; params...)
-		@info "testing"
+        @info "testing"
         test.(test_data, Ref(training_states); params...)
         # @info "weights" weights=training_states.parameters
         if epoch % save_periode == 0
@@ -56,8 +56,7 @@ function point_grid(atoms::KDTree; scale::Float32, r::Float32)::Vector{Point3{Fl
     filter(Iterators.product(range.(mins,
         maxes
         ; step = scale)...) .|> Point3) do point
-			distance(point,atoms) < r
-
+        distance(point, atoms) < r
     end
 end
 
@@ -80,7 +79,7 @@ end
 function train((; atoms, skin)::TrainingData{Float32},
         training_states::Lux.Experimental.TrainState; scale::Float32,
         r::Float32)
-    skin = KDTree(coordinates(skin))
+    skin = RegionMesh(skin)
     atoms_tree = KDTree(atoms.center; reorder = false)
     points = point_grid(atoms_tree; scale, r)
 
@@ -89,7 +88,7 @@ function train((; atoms, skin)::TrainingData{Float32},
         trace("pre input size", length(atoms_neighboord))
         grads, loss, stats, training_states = Lux.Experimental.compute_gradients(AutoZygote(),
             loss_fn,
-			(; point, atoms = atoms_neighboord, d_real=distance(point,skin)),
+            (; point, atoms = atoms_neighboord, d_real = signed_distance(point, skin)),
             training_states)
         # _, back = Zygote.pullback(loss_fn,
         #     training_states.model,
@@ -106,15 +105,15 @@ end
 function test((; atoms, skin)::TrainingData{Float32},
         training_states::Lux.Experimental.TrainState; scale::Float32,
         r::Float32)
-		skin = KDTree(coordinates(skin))
-    atoms_tree = KDTree(atoms.center,reorder = false)
+    skin = RegionMesh(skin)
+    atoms_tree = KDTree(atoms.center, reorder = false)
     points = point_grid(atoms_tree; scale, r)
 
     for point in first(shuffle(MersenneTwister(42), points), 20)
         atoms_neighboord = atoms[inrange(atoms_tree, point, r)] |> StructVector
         loss, _, stats = loss_fn(training_states.model, training_states.parameters,
             training_states.states,
-			(; point, atoms = atoms_neighboord, d_real=distance(point,skin)))
+            (; point, atoms = atoms_neighboord, d_real = signed_distance(point, skin)))
         @info "test" loss stats
     end
 end
@@ -135,7 +134,8 @@ Load a `TrainingData{T}` from current directory.
 You should have a pdb and an off file with name `name` in current directory.
 """
 function load_data_pqr(T::Type{<:Number}, dir::String)
-	TrainingData{T}(getproperty.(read("$dir/structure.pqr", PQR{T}),:pos) |> StructVector, load("$dir/triangulatedSurf.off"))
+    TrainingData{T}(getproperty.(read("$dir/structure.pqr", PQR{T}), :pos) |> StructVector,
+        load("$dir/triangulatedSurf.off"))
 end
 
 """
@@ -156,7 +156,7 @@ Logging.shouldlog(logger::AccumulatorLogger, args...) = shouldlog(logger.logger,
 Logging.min_enabled_level(logger) = Logging.min_enabled_level(logger.logger)
 empty_accumulator(::Union{Type{<:AbstractDict}, Type{<:NamedTuple}}) = Dict()
 empty_accumulator(::Type{T}) where {T <: Number} = T[]
-empty_accumulator(::Type{T})  where T = Ref{T}()
+empty_accumulator(::Type{T}) where {T} = Ref{T}()
 
 function accumulate(d::Dict, kargs::AbstractDict)
     for k in keys(kargs)
@@ -173,7 +173,7 @@ function accumulate(d::Dict, kargs::NamedTuple)
     accumulate(d, pairs(kargs))
 end
 function accumulate(d::Ref, arg)
-	d[] = arg
+    d[] = arg
 end
 
 extract(d::Dict) = Dict(keys(d) .=> extract.(values(d)))
@@ -184,7 +184,7 @@ extract(d::Ref) = d[]
 
 function train()
     train_data, test_data = splitobs(mapobs(shuffle(MersenneTwister(42),
-	conf["protein"]["list"] )[1:10]) do id
+            conf["protein"]["list"])[1:10]) do id
             load_data_pqr(Float32, "$datadir/$id")
         end; at = 0.8)
     logger = TBLogger("$(homedir())/$(conf["paths"]["log_dir"])")
@@ -215,7 +215,7 @@ function train()
             elu),
         Dense(10 => 1, elu;
             init_weight = (args...) -> glorot_uniform(args...; gain = 1 / 25_0000)))
-    model = Lux.Chain(preprocessing,struct_stack,
+    model = Lux.Chain(preprocessing, struct_stack,
         DeepSet(Chain(Encoding(a, b, 1.5f0), chain)), tanh_fast)
     optim = OptimiserChain(AccumGrad(16), SignDecay(), WeightDecay(), Adam(0.01))
     with_logger(logger) do

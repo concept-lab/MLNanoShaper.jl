@@ -8,15 +8,16 @@ struct RegionMesh
     tree::KDTree
 end
 function RegionMesh(mesh::GeometryBasics.Mesh)
-	triangles = map(eachindex(coordinates(mesh))) do i
-		j,_ = Iterators.filter(enumerate(faces(mesh))) do (_,tri)
-			OffsetInteger{-1, UInt32}(i) in tri
-		end |> first
-		map(faces(mesh)[j]) do j
+	triangles = Vector{TriangleFace{Point3f}}(undef, length(coordinates(mesh)))
+	for (j,tri) in enumerate(faces(mesh)) 
+		ctri = map(tri) do j
 			coordinates(mesh)[j]
-		end |> TriangleFace{Point3f}
+		end  
+		for i in tri
+			triangles[i] = ctri
+		end
+
 	end
-	
     RegionMesh(triangles,
         KDTree(coordinates(mesh); reorder = false))
 end
@@ -29,7 +30,7 @@ function signed_distance(p::Point3, mesh::RegionMesh)
     # @info "triangle" x y z
 
     direction = hcat(y - x, z - x, p - x) |> det |> sign
-    direction #* dist
+    direction * dist
 end
 
 nograd(f, args...; kargs...) = f(args...; kargs...)
