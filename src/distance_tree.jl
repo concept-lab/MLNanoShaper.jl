@@ -3,32 +3,41 @@ using GeometryBasics
 using LinearAlgebra
 using Base.Iterators
 
-
 struct RegionMesh
-	mesh::GeometryBasics.Mesh
-	tree::KDTree
+	triangles::Vector{TriangleFace{Point3f}}
+    tree::KDTree
 end
-distance(x::Point3,y::KDTree) = nn(y,x) |> last
-
-function signed_distance(p::Point3,y::RegionMesh)
-	id_point, dist = distance(p,y.tree)
-	@info id_point
-	id_triangle = Iterators.filter(GeometryBasics.faces(y.mesh)) do id_triangle
-		OffsetInteger{-1,UInt32}(id_point) in GeometryBasics.faces(y.mesh)[id_triangle]
-	end |> first
-	x,y,z = map(i -> coordinates(y.mesh)[i],GeometryBasics.faces(y.mesh)[id_triangle])
-	# @info "triangle" x y z
-
-	direction = hcat(y -x, z- x,p -x) |>det |> sign
-	direction #* d
-end
-
-nograd(f,args...;kargs...) = f(args...;kargs...)
-
-function ChainRulesCore.rrule(::typeof(nograd),f,args...;kargs...)
-	res = f(args...;kargs...)
-	function knn_pullback(_)
-		tuple(fill(NoTangent(),length(args)))
+function RegionMesh(mesh::GeometryBasics.Mesh)
+	triangles = map(eachindex(coordinates(mesh))) do i
+		j,_ = Iterators.filter(enumerate(faces(mesh))) do (_,tri)
+			OffsetInteger{-1, UInt32}(i) in tri
+		end |> first
+		map(faces(mesh)[j]) do j
+			coordinates(mesh)[j]
+		end |> TriangleFace{Point3f}
 	end
-	res,knn_pullback
+	
+    RegionMesh(triangles,
+        KDTree(coordinates(mesh); reorder = false))
+end
+
+distance(x::Point3, y::KDTree) = nn(y, x) |> last
+
+function signed_distance(p::Point3, mesh::RegionMesh)
+    id_point, dist = nn(mesh.tree,p)
+    x, y, z = mesh.triangles[OffsetInteger{-1, UInt32}(id_point)]
+    # @info "triangle" x y z
+
+    direction = hcat(y - x, z - x, p - x) |> det |> sign
+    direction #* dist
+end
+
+nograd(f, args...; kargs...) = f(args...; kargs...)
+
+function ChainRulesCore.rrule(::typeof(nograd), f, args...; kargs...)
+    res = f(args...; kargs...)
+    function knn_pullback(_)
+        tuple(fill(NoTangent(), length(args)))
+    end
+    res, knn_pullback
 end
