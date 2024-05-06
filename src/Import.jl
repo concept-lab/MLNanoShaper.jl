@@ -5,7 +5,7 @@ using GeometryBasics
 using TOML
 using BioStructures
 using ProjectRoot
-export extract_balls
+export extract_balls, PQR
 
 struct XYZR{T} end
 struct PQR{T} end
@@ -24,26 +24,28 @@ function read_line(io::IO, ::Type{Atom{T}}) where {T}
     line = readline(io)
     type, atom_number, atom_name, residue_name, chain_id, x, y, z, r, charge = split(line)
     atom_number, chain_id = parse.(Int64, (atom_number, chain_id))
-    x, y, z, r, charge = parse.(T, (x, y, z, r))
-    if type == :ATOM
+    x, y, z, r, charge = parse.(T, (x, y, z, r,charge))
+	if Symbol(type) == :ATOM
         Atom(atom_number,
             Symbol(atom_name),
             Symbol(residue_name),
             chain_id,
             Sphere(Point3(x, y, z), r),
             charge)
-    end
+	else
+		error("type not supported $type")
+	end
 end
 
-function read_line(io::IO, ::Type{XYZR{T}}) where {T}
+function read_line(io::IO, ::Type{Sphere{T}}) where {T}
     line = readline(io)
     x, y, z, r = parse.(T, split(line))
     Sphere(Point3(x, y, z), r)
 end
-function Base.read(io::IO, T::Type{Union{XYZR, PQR}})
+function Base.read(io::IO, T::Type{<:Union{XYZR, PQR}})
     out = base_type(T)[]
     while !eof(io)
-        push!(out, read_line(io, T))
+        push!(out, read_line(io, base_type(T)))
     end
     out
 end

@@ -120,13 +120,22 @@ function test((; atoms, skin)::TrainingData{Float32},
 end
 
 """
-	load_data(T, name::String)
+	load_data_pdb(T, name::String)
 
 Load a `TrainingData{T}` from current directory.
-You should have a pqr and an off file with name `name` in current directory.
+You should have a pdb and an off file with name `name` in current directory.
 """
-function load_data(T::Type{<:Number}, name::String)
+function load_data_pdb(T::Type{<:Number}, name::String)
     TrainingData{T}(extract_balls(T, read("$name.pdb", PDB)), load("$name.off"))
+end
+"""
+	load_data_pqr(T, name::String)
+
+Load a `TrainingData{T}` from current directory.
+You should have a pdb and an off file with name `name` in current directory.
+"""
+function load_data_pqr(T::Type{<:Number}, dir::String)
+	TrainingData{T}(getproperty.(read("$dir/structure.pqr", PQR{T}),:pos) |> StructVector, load("$dir/triangulatedSurf.off"))
 end
 
 """
@@ -175,8 +184,8 @@ extract(d::Ref) = d[]
 
 function train()
     train_data, test_data = splitobs(mapobs(shuffle(MersenneTwister(42),
-            conf["protein"]["list"])[1:10]) do name
-            load_data(Float32, "$datadir/$name")
+	conf["protein"]["list"] )[1:10]) do id
+            load_data_pqr(Float32, "$datadir/$id")
         end; at = 0.8)
     logger = TBLogger("$(homedir())/$(conf["paths"]["log_dir"])")
     logger = AccumulatorLogger(logger,

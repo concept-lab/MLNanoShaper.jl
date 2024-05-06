@@ -22,7 +22,7 @@ function (f::DeepSet)(set::AbstractVector{<:AbstractArray}, ps, st)
         Lux.apply(f.prepross, arg, ps, st) |> first
 	end / sqrt(length(set)), st
 end
-function (f::DeepSet)(arg::StructVector, ps, st)
+function (f::DeepSet)(arg::StructArray, ps, st)
     trace("input size", length(arg))
 	sum(Lux.apply(f.prepross, arg, ps, st) |> first) / sqrt(length(arg)), st
 end
