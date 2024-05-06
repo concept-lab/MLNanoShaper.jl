@@ -6,17 +6,44 @@ using TOML
 using BioStructures
 using ProjectRoot
 export extract_balls
+
 struct XYZR{T} end
+struct PQR{T} end
+struct Atom{T}
+    atom_number::Int64
+    atom_name::Symbol
+    residue_name::Symbol
+    chain_id::Int64
+    pos::Sphere{T}
+    charge::T
+end
+base_type(::Type{XYZR{T}}) where {T} = Sphere{T}
+base_type(::Type{PQR{T}}) where {T} = Atom{T}
+
+function read_line(io::IO, ::Type{Atom{T}}) where {T}
+    line = readline(io)
+    type, atom_number, atom_name, residue_name, chain_id, x, y, z, r, charge = split(line)
+    atom_number, chain_id = parse.(Int64, (atom_number, chain_id))
+    x, y, z, r, charge = parse.(T, (x, y, z, r))
+    if type == :ATOM
+        Atom(atom_number,
+            Symbol(atom_name),
+            Symbol(residue_name),
+            chain_id,
+            Sphere(Point3(x, y, z), r),
+            charge)
+    end
+end
 
 function read_line(io::IO, ::Type{XYZR{T}}) where {T}
     line = readline(io)
     x, y, z, r = parse.(T, split(line))
     Sphere(Point3(x, y, z), r)
 end
-function Base.read(io::IO, ::Type{XYZR{T}}) where {T}
-    out = Sphere{T}[]
+function Base.read(io::IO, T::Type{Union{XYZR, PQR}})
+    out = base_type(T)[]
     while !eof(io)
-        push!(out, read_line(io, XYZR{T}))
+        push!(out, read_line(io, T))
     end
     out
 end
@@ -50,14 +77,14 @@ function extract_balls(T::Type{<:Number}, prot::ProteinStructure)
     radii = TOML.parsefile(params)["atoms"]["radius"] |> Dict{String, T}
     reduce(prot, 4) do atom
         if typeof(atom) == Atom
-			Sphere{T}[Sphere(Point3(atom.coords) .|>T,
+            Sphere{T}[Sphere(Point3(atom.coords) .|> T,
                 if atom.element in keys(radii)
                     radii[atom.element]
                 else
                     1.0
-                end )]
+                end)]
         else
-			Sphere{T}[]
+            Sphere{T}[]
         end
     end |> StructVector
 end

@@ -8,20 +8,25 @@ using StructArrays
 using Distances
 using ChainRulesCore
 
+struct Batch{T<:AbstractArray}
+	field::Vector{T}
+end
+
 @concrete struct DeepSet <: Lux.AbstractExplicitContainerLayer{(:prepross,)}
     prepross
 end
 
-function (f::DeepSet)(set::AbstractArray{<:AbstractArray}, ps, st)
+function (f::DeepSet)(set::AbstractVector{<:AbstractArray}, ps, st)
     trace("input size", length(set))
     sum(set) do arg
         Lux.apply(f.prepross, arg, ps, st) |> first
-    end / sqrt(size(set, 1)), st
+	end / sqrt(length(set)), st
 end
-function (f::DeepSet)(arg::StructArray, ps, st)
+function (f::DeepSet)(arg::StructVector, ps, st)
     trace("input size", length(arg))
-    sum(Lux.apply(f.prepross, arg, ps, st) |> first) / sqrt(size(arg, 1)), st
+	sum(Lux.apply(f.prepross, arg, ps, st) |> first) / sqrt(length(arg)), st
 end
+
 """
 Training information used in model training.
 # Fields
@@ -32,6 +37,8 @@ struct TrainingData{T <: Number}
     atoms::StructVector{Sphere{T}}
     skin::GeometryBasics.Mesh
 end
+
+
 struct ModelInput{T <: Number}
     point::Point3{T}
     atoms::StructVector{Sphere{T}} #Set

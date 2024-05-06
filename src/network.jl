@@ -123,7 +123,7 @@ end
 	load_data(T, name::String)
 
 Load a `TrainingData{T}` from current directory.
-You should have a pdb and an off file with name `name` in current directory.
+You should have a pqr and an off file with name `name` in current directory.
 """
 function load_data(T::Type{<:Number}, name::String)
     TrainingData{T}(extract_balls(T, read("$name.pdb", PDB)), load("$name.off"))
