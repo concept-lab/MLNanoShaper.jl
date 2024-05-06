@@ -221,7 +221,7 @@ function train()
     with_logger(logger) do
         train((train_data, test_data),
             Lux.Experimental.TrainState(MersenneTwister(42), model, optim);
-            nb_epoch = 10,
+            nb_epoch = 15,
             save_periode = 1,
             r = 3.0f0,
             scale = 1.0f0)
