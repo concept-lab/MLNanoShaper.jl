@@ -12,13 +12,13 @@ using ChainRulesCore
     prepross
 end
 
-function (f::DeepSet)(set::AbstractArray{T}, ps, st) where {T}
+function (f::DeepSet)(set::AbstractArray{<:AbstractArray}, ps, st)
     trace("input size", length(set))
     sum(set) do arg
         Lux.apply(f.prepross, arg, ps, st) |> first
     end / sqrt(size(set, 1)), st
 end
-function (f::DeepSet)(arg::StructArray{T}, ps, st) where {T}
+function (f::DeepSet)(arg::StructArray, ps, st)
     trace("input size", length(arg))
     sum(Lux.apply(f.prepross, arg, ps, st) |> first) / sqrt(size(arg, 1)), st
 end
@@ -155,7 +155,7 @@ function ChainRulesCore.rrule(::typeof(Base.getproperty), array::StructArray, fi
         StructArray(; (f => if f == field
             y_hat
         else
-            fill(ZeroTangent())
+			fill(ZeroTangent(),size(y_hat))
         end
                        for f in propertynames(array))...)
         NoTangent()
