@@ -52,8 +52,6 @@ struct PreprocessData{T <: Number}
     d_2::T
 end
 
-# Inputs
-# - `(;point,atoms)`: `ModelInput`, a point in 3 space and a vector of spheres.
 """
 Encoding(n_dotₛ,n_Dₛ,cut_distance)
 
