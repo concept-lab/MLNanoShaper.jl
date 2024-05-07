@@ -51,12 +51,15 @@ function train(data,
     training_states
 end
 
-function point_grid(atoms::KDTree; scale::Float32, r::Float32)::Vector{Point3{Float32}}
+function point_grid(atoms::KDTree,
+        skin::KDTree;
+        scale::Float32,
+        r::Float32)::Vector{Point3{Float32}}
     (; mins, maxes) = atoms.hyper_rec
     filter(Iterators.product(range.(mins,
         maxes
         ; step = scale)...) .|> Point3) do point
-        distance(point, atoms) < r
+        distance(point, atoms) < r && distance(point, skin) < r
     end
 end
 
@@ -79,11 +82,12 @@ end
 function train((; atoms, skin)::TrainingData{Float32},
         training_states::Lux.Experimental.TrainState; scale::Float32,
         r::Float32)
+    exact_points = shuffle(MersenneTwister(42), coordinates(skin))
     skin = RegionMesh(skin)
     atoms_tree = KDTree(atoms.center; reorder = false)
-    points = point_grid(atoms_tree; scale, r)
+    points = point_grid(atoms_tree, skin.tree; scale, r)
 
-    for point in first(shuffle(MersenneTwister(42), points), 20)
+	for point in vcat(first(shuffle(MersenneTwister(42), points), 20),first(exact_points,20))
         atoms_neighboord = atoms[inrange(atoms_tree, point, r)] |> StructVector
         trace("pre input size", length(atoms_neighboord))
         grads, loss, stats, training_states = Lux.Experimental.compute_gradients(AutoZygote(),
@@ -105,11 +109,12 @@ end
 function test((; atoms, skin)::TrainingData{Float32},
         training_states::Lux.Experimental.TrainState; scale::Float32,
         r::Float32)
+    exact_points = shuffle(MersenneTwister(42), coordinates(skin))
     skin = RegionMesh(skin)
     atoms_tree = KDTree(atoms.center, reorder = false)
-    points = point_grid(atoms_tree; scale, r)
+    points = point_grid(atoms_tree, skin.tree; scale, r)
 
-    for point in first(shuffle(MersenneTwister(42), points), 20)
+	for point in vcat(first(shuffle(MersenneTwister(42), points), 20),first(exact_points,20))
         atoms_neighboord = atoms[inrange(atoms_tree, point, r)] |> StructVector
         loss, _, stats = loss_fn(training_states.model, training_states.parameters,
             training_states.states,
@@ -184,7 +189,7 @@ extract(d::Ref) = d[]
 
 function train()
     train_data, test_data = splitobs(mapobs(shuffle(MersenneTwister(42),
-            conf["protein"]["list"])[1:10]) do id
+            conf["protein"]["list"])[1:20]) do id
             load_data_pqr(Float32, "$datadir/$id")
         end; at = 0.8)
     logger = TBLogger("$(homedir())/$(conf["paths"]["log_dir"])")
