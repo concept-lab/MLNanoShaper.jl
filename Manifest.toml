@@ -2,7 +2,7 @@
 
 julia_version = "1.10.3"
 manifest_format = "2.0"
-project_hash = "3af8e945eead80760a48a3e57d316f9fcdfee153"
+project_hash = "918bfbf5b4e55807bd214037862fde9eb9c0e58d"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "fcdb00b4d412b80ab08e39978e3bdef579e5e224"
@@ -1666,12 +1666,6 @@ git-tree-sha1 = "763a8ceb07833dd51bb9e3bbca372de32c0605ad"
 uuid = "92933f4c-e287-5a05-a399-4b506db050ca"
 version = "1.10.0"
 
-[[deps.ProjectRoot]]
-deps = ["FilePathsBase"]
-git-tree-sha1 = "d6b07fcd2266d7204aa41f986cc9e7181e1be6e5"
-uuid = "e3f974f6-674d-4b8e-a3d1-5850677db852"
-version = "0.4.0"
-
 [[deps.ProtoBuf]]
 deps = ["BufferedStreams", "Dates", "EnumX", "TOML", "TranscodingStreams"]
 git-tree-sha1 = "f2bfddd629ba7a53ed789d6427d64e0e4c378ef8"
@@ -2071,6 +2065,11 @@ deps = ["ColorTypes", "DataStructures", "DocStringExtensions", "FileIO", "FixedP
 git-tree-sha1 = "34cc045dd0aaa59b8bbe86c644679bc57f1d5bd0"
 uuid = "731e570b-9d59-4bfa-96dc-6df516fadf69"
 version = "0.6.8"
+
+[[deps.Training]]
+path = "src/Training"
+uuid = "0115338a-9ce4-44b0-a131-5bd33dc10a0b"
+version = "0.1.0"
 
 [[deps.TranscodingStreams]]
 git-tree-sha1 = "71509f04d045ec714c4748c785a59045c3736349"

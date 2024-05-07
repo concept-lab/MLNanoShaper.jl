@@ -1,0 +1,3 @@
+[submodule "MLNanoShaperRunner.jl"]
+	path = MLNanoShaperRunner.jl
+	url = git@github.com:concept-lab/MLNanoShaperRunner.jl.git
