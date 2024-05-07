@@ -41,3 +41,14 @@ function ChainRulesCore.rrule(::typeof(nograd), f, args...; kargs...)
     end
     res, knn_pullback
 end
+
+"""
+    distance(x::GeometryBasics.Mesh, y::KDTree)
+
+Return the Hausdorff distance betwen the mesh coordinates
+"""
+function distance(x::GeometryBasics.Mesh, y::KDTree)
+    maximum(coordinates(x)) do x
+        distance(x, y)
+    end
+end

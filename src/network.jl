@@ -19,6 +19,7 @@ using TensorBoardLogger
 using Serialization
 using Logging
 using LoggingExtras
+using Meshing
 
 """
 	train((train_data,test_data),training_states; nb_epoch)
@@ -121,6 +122,16 @@ function test((; atoms, skin)::TrainingData{Float32},
             (; point, atoms = atoms_neighboord, d_real = signed_distance(point, skin)))
         @info "test" loss stats
     end
+
+	surface = isosurface()do x
+        atoms_neighboord = atoms[inrange(atoms_tree, x, r)] |> StructVector
+		if length(atoms_neighboord) >= 0
+			training_states.model(atoms_neighboord,training_states.parameters,training_states.states) |> first
+		else
+			0.f0
+		end
+	end
+	@info "test" hausdorff_distance=distance(first(surface),skin.tree)
 end
 
 """
