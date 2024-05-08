@@ -6,7 +6,7 @@ using Reexport
 include("conf.jl")
 include("Import.jl")
 @reexport using .Import
-include("layers.jl")
+using MLNanoShaperRunner
 include("distance_tree.jl")
 include("network.jl")
 include("generate_data.jl")
