@@ -85,6 +85,7 @@ compare the predicted (square) distance with \$\\frac{1 + \tanh(d)}{2}\$
 Return the error with the espected distance as a metric.
 """
 function loss_fn(model, ps, st, (; point, atoms, d_real))
+	trace("loss",point)
     ret = Lux.apply(model, ModelInput(point, atoms), ps, st)
     d_pred, st = ret
 
