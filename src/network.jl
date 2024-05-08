@@ -225,15 +225,7 @@ function train()
             message ∉ ("test", "train")
         end)
 
-    a = 5
-    b = 5
-    adaptator = ToSimpleChainsAdaptor((static(a * b + 2),))
-    chain = Chain(Dense(a * b + 2 => 10,
-            elu),
-        Dense(10 => 1, elu;
-            init_weight = (args...) -> glorot_uniform(args...; gain = 1 / 25_0000)))
-    model = Lux.Chain(preprocessing, struct_stack,
-        DeepSet(Chain(Encoding(a, b, 1.5f0), chain)), tanh_fast)
+	model = anakin_model()
     optim = OptimiserChain(AccumGrad(16), SignDecay(), WeightDecay(), Adam(0.01))
     with_logger(logger) do
         train((train_data, test_data),
