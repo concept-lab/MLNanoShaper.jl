@@ -4,7 +4,6 @@ using GLMakie
 using GeometryBasics
 using TOML
 using BioStructures
-using ProjectRoot
 export extract_balls, PQR,Atom
 
 struct XYZR{T} end
