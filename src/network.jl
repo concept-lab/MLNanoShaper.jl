@@ -22,6 +22,7 @@ using LoggingExtras
 using Meshing
 using NearestNeighbors
 using StructArrays
+using MLNanoShaperRunner
 
 """
 Training information used in model training.
@@ -137,14 +138,14 @@ function test((; atoms, skin)::TrainingData{Float32},
         @info "test" loss stats
     end
 
-    (; mins, maxes) = atoms.hyper_rec
-	surface = isosurface(;origin=mins,width=maxes-mins)do x
+    (; mins, maxes) = atoms_tree.hyper_rec
+	surface = isosurface(;origin=mins,widths=maxes-mins)do x
         atoms_neighboord = atoms[inrange(atoms_tree, x, r)] |> StructVector
 		if length(atoms_neighboord) >= 0
-			training_states.model(atoms_neighboord,training_states.parameters,training_states.states) |> first
+			training_states.model(ModelInput(Point3f(x),atoms_neighboord),training_states.parameters,training_states.states) |> first
 		else
 			0.f0
-		end
+		end -.5f0
 	end
 	@info "test" hausdorff_distance=distance(first(surface),skin.tree)
 end
