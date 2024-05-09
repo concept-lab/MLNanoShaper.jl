@@ -1,6 +1,6 @@
 module Import
 using StructArrays
-using GLMakie
+# using GLMakie
 using GeometryBasics
 using TOML
 using BioStructures
@@ -49,12 +49,12 @@ function Base.read(io::IO, T::Type{<:Union{XYZR, PQR}})
     out
 end
 
-function viz(x::AbstractArray{Sphere{T}}) where {T}
-    fig = Figure()
-    ax = Axis3(fig[1, 1])
-    mesh!.(Ref(ax), x)
-    fig
-end
+# function viz(x::AbstractArray{Sphere{T}}) where {T}
+#     fig = Figure()
+#     ax = Axis3(fig[1, 1])
+#     mesh!.(Ref(ax), x)
+#     fig
+# end
 
 reduce(fun, arg) = mapreduce(fun, vcat, arg)
 reduce(fun) = arg -> reduce(fun, arg)
