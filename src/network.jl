@@ -39,7 +39,8 @@ end
 	train((train_data,test_data),training_states; nb_epoch)
 train the model on the data with nb_epoch
 """
-function train((train_data,
+function train(
+        (train_data,
             test_data)::Tuple{MLUtils.AbstractDataContainer, MLUtils.AbstractDataContainer},
         training_states::Lux.Experimental.TrainState; nb_epoch, save_periode, params...)
     serialize("$(homedir())/$(conf["paths"]["model_dir"])/model_0", training_states)
@@ -86,7 +87,7 @@ compare the predicted (square) distance with \$\\frac{1 + \tanh(d)}{2}\$
 Return the error with the espected distance as a metric.
 """
 function loss_fn(model, ps, st, (; point, atoms, d_real))
-	trace("loss",point)
+    trace("loss", point)
     ret = Lux.apply(model, ModelInput(point, atoms), ps, st)
     d_pred, st = ret
 
@@ -103,10 +104,12 @@ function train((; atoms, skin)::TrainingData{Float32},
     atoms_tree = KDTree(atoms.center; reorder = false)
     points = point_grid(atoms_tree, skin.tree; scale, r)
 
-	for point in vcat(first(shuffle(MersenneTwister(42), points), 20),first(exact_points,20))
+    for point in vcat(
+        first(shuffle(MersenneTwister(42), points), 20), first(exact_points, 20))
         atoms_neighboord = atoms[inrange(atoms_tree, point, r)] |> StructVector
         trace("pre input size", length(atoms_neighboord))
-        grads, loss, stats, training_states = Lux.Experimental.compute_gradients(AutoZygote(),
+        grads, loss, stats, training_states = Lux.Experimental.compute_gradients(
+            AutoZygote(),
             loss_fn,
             (; point, atoms = atoms_neighboord, d_real = signed_distance(point, skin)),
             training_states)
@@ -130,7 +133,8 @@ function test((; atoms, skin)::TrainingData{Float32},
     atoms_tree = KDTree(atoms.center, reorder = false)
     points = point_grid(atoms_tree, skin.tree; scale, r)
 
-	for point in vcat(first(shuffle(MersenneTwister(42), points), 20),first(exact_points,20))
+    for point in vcat(
+        first(shuffle(MersenneTwister(42), points), 20), first(exact_points, 20))
         atoms_neighboord = atoms[inrange(atoms_tree, point, r)] |> StructVector
         loss, _, stats = loss_fn(training_states.model, training_states.parameters,
             training_states.states,
@@ -139,17 +143,21 @@ function test((; atoms, skin)::TrainingData{Float32},
     end
 
     (; mins, maxes) = atoms_tree.hyper_rec
-	surface = isosurface(;origin=mins,widths=maxes-mins)do x
+	surface = isosurface(MarchingCubes(),SVector{3, Float32};
+        origin = mins, widths = maxes - mins) do x
         atoms_neighboord = atoms[inrange(atoms_tree, x, r)] |> StructVector
-		if length(atoms_neighboord) >= 0
-			training_states.model(ModelInput(Point3f(x),atoms_neighboord),training_states.parameters,training_states.states) |> first
-		else
-			0.f0
-		end -.5f0
-	end
-	@info first(surface)
-	read(Char)
-	@info "test" hausdorff_distance=distance(first(surface),skin.tree)
+        if length(atoms_neighboord) > 0
+            res = training_states.model(ModelInput(Point3f(x), atoms_neighboord),
+                training_states.parameters, training_states.states) |> first 
+			if isnan(res)
+				@error "isnan" res x atoms_neighboord
+			end
+			res
+        else
+            0.0f0
+        end - 0.5f0
+    end
+    @info "test" hausdorff_distance=distance(first(surface), skin.tree)
 end
 
 """
@@ -217,7 +225,8 @@ end
 extract(d::Ref) = d[]
 
 function train()
-    train_data, test_data = splitobs(mapobs(shuffle(MersenneTwister(42),
+    train_data, test_data = splitobs(
+        mapobs(shuffle(MersenneTwister(42),
             conf["protein"]["list"])[1:20]) do id
             load_data_pqr(Float32, "$datadir/$id")
         end; at = 0.8)
@@ -242,7 +251,7 @@ function train()
             message ∉ ("test", "train")
         end)
 
-	model = anakin_model()
+    model = anakin_model()
     optim = OptimiserChain(AccumGrad(16), SignDecay(), WeightDecay(), Adam(0.01))
     with_logger(logger) do
         train((train_data, test_data),
