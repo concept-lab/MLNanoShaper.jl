@@ -227,7 +227,7 @@ extract(d::Ref) = d[]
 function train()
     train_data, test_data = splitobs(
         mapobs(shuffle(MersenneTwister(42),
-            conf["protein"]["list"])[1:20]) do id
+            conf["protein"]["list"])) do id
             load_data_pqr(Float32, "$datadir/$id")
         end; at = 0.8)
     logger = TBLogger("$(homedir())/$(conf["paths"]["log_dir"])")
