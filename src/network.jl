@@ -148,6 +148,7 @@ function test((; atoms, skin)::TrainingData{Float32},
 		end -.5f0
 	end
 	@info first(surface)
+	read(Char)
 	@info "test" hausdorff_distance=distance(first(surface),skin.tree)
 end
 
