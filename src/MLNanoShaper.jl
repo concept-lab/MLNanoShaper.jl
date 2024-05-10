@@ -7,6 +7,7 @@ include("conf.jl")
 include("Import.jl")
 @reexport using .Import
 using MLNanoShaperRunner
+include("logging.jl")
 include("network.jl")
 include("generate_data.jl")
 

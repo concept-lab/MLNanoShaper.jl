@@ -55,13 +55,20 @@ SS=2.200000
 CLK=2.27
 
 
-[paths]
+[Auxiliary_parameters]
+data_dir="datasets/pqr"
 model_dir="datasets/models"
 log_dir="datasets/logs"
-data_dir="datasets/pqr"
+nb_epoch=50
+save_periode=10
 
-[protein]
-list = [
+[Training_parameters]
+name="ani"
+scale=1.0
+cutoff_radius=3.0
+train_test_split=0.8
+model = "anim_model"
+data_ids = [
 1,
 10,
 100,
