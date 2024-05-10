@@ -171,8 +171,13 @@ function load_data_pqr(T::Type{<:Number}, dir::String)
         load("$dir/triangulatedSurf.off"))
 end
 
-function train(parameters::Training_parameters, directories::Auxiliary_parameters)
-    (; data_ids, train_test_split) = parameters
+"""
+    train(training_parameters::Training_parameters, directories::Auxiliary_parameters)
+
+train the model given `Training_parameters` and `Auxiliary_parameters`.
+"""
+function train(training_parameters::Training_parameters, directories::Auxiliary_parameters)
+    (; data_ids, train_test_split) = training_parameters
     (; datadir, logdir) = directories
     train_data, test_data = splitobs(
         mapobs(shuffle(MersenneTwister(42),
@@ -183,6 +188,6 @@ function train(parameters::Training_parameters, directories::Auxiliary_parameter
     with_logger(get_logger(logdir)) do
         train((train_data, test_data),
             Lux.Experimental.TrainState(MersenneTwister(42), model, optim),
-            parameters)
+            training_parameters)
     end
 end

@@ -67,7 +67,7 @@ name="ani"
 scale=1.0
 cutoff_radius=3.0
 train_test_split=0.8
-model = "anim_model"
+model = "analin_model"
 data_ids = [
 1,
 10,
