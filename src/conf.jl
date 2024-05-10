@@ -1,5 +1,6 @@
 using TOML
 using Lux
+using MLNanoShaperRunner.Models
 
 """
 	Auxiliary_parameters
@@ -41,7 +42,7 @@ read_from_TOML(T::Type) = read_from_TOML(T,TOML.parsefile(params_file))
 function read_from_TOML(::Type{Training_parameters},conf::AbstractDict)
 	conf = conf["Training_parameters"]
 	conf = Dict( Symbol.(keys(conf)) .=> values(conf)) 
-	conf[:model] = getfield(Main,Symbol(conf[:model]))()
+	conf[:model] = getfield(MLNanoShaperRunner.Models,Symbol(conf[:model]))()
 	Training_parameters(;conf...)
 end
 

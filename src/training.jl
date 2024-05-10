@@ -57,9 +57,9 @@ function train(
 end
 function train(data,
         training_states::Lux.Experimental.TrainState;
-		Training_parameters::Training_parameters)
+        Training_parameters::Training_parameters)
     for d in data
-        training_states = train(d, training_states,Training_parameters)
+        training_states = train(d, training_states, Training_parameters)
         training_states
     end
     training_states
@@ -95,8 +95,8 @@ function loss_fn(model, ps, st, (; point, atoms, d_real))
         (; distance = abs(d_real - atanh(max(0, (2d_pred - 1)) * (1 - 1.0f-4)))))
 end
 function train((; atoms, skin)::TrainingData{Float32},
-        training_states::Lux.Experimental.TrainState, (; scale::Float32,
-            cutoff_radius::Float32))
+        training_states::Lux.Experimental.TrainState, (; scale,
+            cutoff_radius)::Training_parameters)
     exact_points = shuffle(MersenneTwister(42), coordinates(skin))
     skin = RegionMesh(skin)
     atoms_tree = KDTree(atoms.center; reorder = false)
@@ -118,7 +118,8 @@ function train((; atoms, skin)::TrainingData{Float32},
 end
 
 function test((; atoms, skin)::TrainingData{Float32},
-        training_states::Lux.Experimental.TrainState,(; scale,cutoff_radius)::Training_parameters)
+        training_states::Lux.Experimental.TrainState, (;
+            scale, cutoff_radius)::Training_parameters)
     exact_points = shuffle(MersenneTwister(42), coordinates(skin))
     skin = RegionMesh(skin)
     atoms_tree = KDTree(atoms.center, reorder = false)

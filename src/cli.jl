@@ -9,7 +9,7 @@ The folowing parameters can be overided.
 
 # Options
 - `-e, --nb-epoch=Uint`; the number of epoch to compute.
-- `-m, --model=String`; the model name. Can be anakin_model.
+- `-m, --model=String`; the model name. Can be anakin.
 
 """
 @main function train(;nb_epoch::Option{UInt}=nothing,model::Option{String}=nothing)
