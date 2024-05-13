@@ -88,28 +88,36 @@ function loss_fn(model, ps, st, (; point, atoms, d_real))
     ret = Lux.apply(model, ModelInput(point, atoms), ps, st)
     d_pred, st = ret
 
-    d_pred = only(d_pred) |> trace("model output")
-    ((d_pred - (1 + tanh(d_real)) / 2)^2,
+    d_pred |> trace("model output")
+    ((d_pred .- (1 .+ tanh.(d_real)) ./ 2) .^ 2 |> mean,
         st,
-        (; distance = abs(d_real - atanh(max(0, (2d_pred - 1)) * (1 - 1.0f-4)))))
+        (;
+            distance = abs.(d_real .- atanh(max(0, (2d_pred .- 1)) * (1 .- 1.0f-4))) |>
+                       mean))
 end
-function train((; atoms, skin)::TrainingData{Float32},
-        training_states::Lux.Experimental.TrainState, (; scale,
-            cutoff_radius)::Training_parameters)
+
+function generate_data_points((; atoms, skin)::TrainingData{Float32},
+        (; scale, cutoff_radius)::Training_parameters)
     exact_points = shuffle(MersenneTwister(42), coordinates(skin))
     skin = RegionMesh(skin)
     atoms_tree = KDTree(atoms.center; reorder = false)
     points = point_grid(atoms_tree, skin.tree; scale, cutoff_radius)
 
-    for point in vcat(
-        first(shuffle(MersenneTwister(42), points), 20), first(exact_points, 20))
-        atoms_neighboord = atoms[inrange(atoms_tree, point, cutoff_radius)] |>
-                           StructVector 
+    mapobs(vcat(
+        first(shuffle(MersenneTwister(42), points), 20), first(exact_points, 20))) do point
+        atoms_neighboord = atoms[inrange(atoms_tree, point, cutoff_radius)] |> StructVector
         trace("pre input size", length(atoms_neighboord))
+        (; point, atoms_neighboord, d_real = signed_distance(point, skin))
+    end
+end
+
+function train(data::TrainingData{Float32},
+        training_states::Lux.Experimental.TrainState, training_parameters::Training_parameters)
+    for input in BatchView(generate_data_points(data, training_parameters); batchsize = 10)
         grads, loss, stats, training_states = Lux.Experimental.compute_gradients(
             AutoZygote(),
             loss_fn,
-            (; point, atoms = atoms_neighboord, d_real = signed_distance(point, skin)),
+            input,
             training_states)
         training_states = Lux.Experimental.apply_gradients(training_states, grads)
         loss, stats, parameters = (loss, stats, training_states.parameters) .|> cpu_device()
@@ -118,40 +126,37 @@ function train((; atoms, skin)::TrainingData{Float32},
     training_states
 end
 
-function test((; atoms, skin)::TrainingData{Float32},
-        training_states::Lux.Experimental.TrainState, (;
-            scale, cutoff_radius)::Training_parameters)
-    exact_points = shuffle(MersenneTwister(42), coordinates(skin))
-    skin = RegionMesh(skin)
-    atoms_tree = KDTree(atoms.center, reorder = false)
-    points = point_grid(atoms_tree, skin.tree; scale, cutoff_radius)
-
-    for point in vcat(
-        first(shuffle(MersenneTwister(42), points), 20), first(exact_points, 20))
-		atoms_neighboord = atoms[inrange(atoms_tree, point, cutoff_radius)] |> StructVector 
-        loss, _, stats = loss_fn(training_states.model, training_states.parameters,
-            training_states.states,
-            (; point, atoms = atoms_neighboord, d_real = signed_distance(point, skin)))
-        loss, stats = (loss, stats) .|> cpu_device()
-        @info "test" loss stats
-    end
-
+function implicict_surface(atoms_tree::KDTree, atoms::StructVector{Atom},
+	training_states::Training_states, (;cutoff_radius)::Training_parameters)
     (; mins, maxes) = atoms_tree.hyper_rec
-    surface = isosurface(MarchingCubes(), SVector{3, Float32};
-        origin = mins, widths = maxes - mins) do x
+    isosurface(
+        MarchingCubes(), SVector{3, Float32}; origin = mins, widths = maxes - mins) do x
         atoms_neighboord = atoms[inrange(atoms_tree, x, cutoff_radius)] |> StructVector
         if length(atoms_neighboord) > 0
-            res = training_states.model(ModelInput(Point3f(x), atoms_neighboord),
+            training_states.model(ModelInput(Point3f(x), atoms_neighboord),
                 training_states.parameters, training_states.states) |> first
-            if isnan(res)
-                @error "isnan" res x atoms_neighboord
-            end
-            res
         else
             0.0f0
         end - 0.5f0
     end
-    hausdorff_distance = distance(first(surface), skin.tree)
+end
+
+function test(data::TrainingData{Float32},
+        training_states::Lux.Experimental.TrainState, training_parameters::Training_parameters)
+    for (; point, atoms_neighboord, d_real) in generate_data_points(
+        data, training_parameters)
+        loss, _, stats = loss_fn(training_states.model, training_states.parameters,
+            training_states.states,
+            (; point, atoms = atoms_neighboord, d_real))
+        loss, stats = (loss, stats) .|> cpu_device()
+        @info "test" loss stats
+    end
+
+    # (; atoms, skin) = data
+    # atoms_tree = KDTree(atoms.center; reorder = false)
+    # surface = implicict_surface(atoms_tree, atoms, training_states, training_parameters)
+    # hausdorff_distance = distance(first(surface), KDTree(skin))
+    hausdorff_distance = 1
     @info "test" hausdorff_distance
 end
 
