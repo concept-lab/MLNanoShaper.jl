@@ -42,24 +42,24 @@ function train(
             test_data)::Tuple{MLUtils.AbstractDataContainer, MLUtils.AbstractDataContainer},
         training_states::Lux.Experimental.TrainState, training_parameters::Training_parameters,
         auxiliary_parameters::Auxiliary_parameters)
-    (; nb_epoch, save_periode, models_dirs) = auxiliary_parameters
+    (; nb_epoch, save_periode, model_dir) = auxiliary_parameters
     for epoch in 1:nb_epoch
         @info "epoch" epoch
         training_states = train(
             train_data, training_states, training_parameters)
-        test.(test_data, Ref(training_states), training_parameters)
+        test.(test_data, Ref(training_states), Ref(training_parameters))
         if epoch % save_periode == 0
             serialize(
-                "$(homedir())/$(models_dirs)/$(generate_training_name(training_parameters,epoch))",
+                "$(homedir())/$(model_dir)/$(generate_training_name(training_parameters,epoch))",
                 training_states)
         end
     end
 end
-function train(data,
-        training_states::Lux.Experimental.TrainState;
-        Training_parameters::Training_parameters)
+function train(data::MLUtils.AbstractDataContainer,
+        training_states::Lux.Experimental.TrainState,
+        training_parameters::Training_parameters)
     for d in data
-        training_states = train(d, training_states, Training_parameters)
+        training_states = train(d, training_states, training_parameters)
         training_states
     end
     training_states
@@ -68,12 +68,12 @@ end
 function point_grid(atoms::KDTree,
         skin::KDTree;
         scale::Float32,
-        r::Float32)::Vector{Point3{Float32}}
+        cutoff_radius::Float32)::Vector{Point3{Float32}}
     (; mins, maxes) = atoms.hyper_rec
     filter(Iterators.product(range.(mins,
         maxes
         ; step = scale)...) .|> Point3) do point
-        distance(point, atoms) < r && distance(point, skin) < r
+        distance(point, atoms) < cutoff_radius && distance(point, skin) < cutoff_radius
     end
 end
 
@@ -178,17 +178,17 @@ end
 train the model given `Training_parameters` and `Auxiliary_parameters`.
 """
 function train(training_parameters::Training_parameters, directories::Auxiliary_parameters)
-    (; data_ids, train_test_split) = training_parameters
-    (; datadir, logdir) = directories
+    (; data_ids, train_test_split, model) = training_parameters
+    (; data_dir, log_dir) = directories
     train_data, test_data = splitobs(
         mapobs(shuffle(MersenneTwister(42),
             data_ids)) do id
-            load_data_pqr(Float32, "$datadir/$id")
+            load_data_pqr(Float32, "$(homedir())/$data_dir/$id")
         end; at = train_test_split)
     optim = OptimiserChain(AccumGrad(16), SignDecay(), WeightDecay(), Adam())
-    with_logger(get_logger(logdir)) do
+    with_logger(get_logger(log_dir)) do
         train((train_data, test_data),
             Lux.Experimental.TrainState(MersenneTwister(42), model, optim),
-            training_parameters)
+            training_parameters, directories)
     end
 end

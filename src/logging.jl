@@ -50,6 +50,7 @@ function get_logger(loggdir::String)::AbstractLogger
     logger = TBLogger("$(homedir())/$loggdir")
     logger = AccumulatorLogger(logger,
         Dict()) do logger, d, args, kargs
+		println(d)
         level, message = args
         if message == "epoch"
             kargs = extract(d)
