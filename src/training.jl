@@ -21,7 +21,6 @@ using Meshing
 using NearestNeighbors
 using StructArrays
 using MLNanoShaperRunner
-
 """
 Training information used in model training.
 # Fields
@@ -104,7 +103,8 @@ function train((; atoms, skin)::TrainingData{Float32},
 
     for point in vcat(
         first(shuffle(MersenneTwister(42), points), 20), first(exact_points, 20))
-        atoms_neighboord = atoms[inrange(atoms_tree, point, cutoff_radius)] |> StructVector
+        atoms_neighboord = atoms[inrange(atoms_tree, point, cutoff_radius)] |>
+                           StructVector |> gpu_device()
         trace("pre input size", length(atoms_neighboord))
         grads, loss, stats, training_states = Lux.Experimental.compute_gradients(
             AutoZygote(),
@@ -112,7 +112,8 @@ function train((; atoms, skin)::TrainingData{Float32},
             (; point, atoms = atoms_neighboord, d_real = signed_distance(point, skin)),
             training_states)
         training_states = Lux.Experimental.apply_gradients(training_states, grads)
-        @info "train" loss stats training_states.parameters
+        loss, stats, parameters = (loss, stats, training_states.parameters) .|> cpu_device()
+        @info "train" loss stats parameters
     end
     training_states
 end
@@ -149,7 +150,8 @@ function test((; atoms, skin)::TrainingData{Float32},
             0.0f0
         end - 0.5f0
     end
-    @info "test" hausdorff_distance=distance(first(surface), skin.tree)
+    hausdorff_distance = distance(first(surface), skin.tree)
+    @info "test" hausdorff_distance
 end
 
 """
@@ -188,7 +190,7 @@ function train(training_parameters::Training_parameters, directories::Auxiliary_
     optim = OptimiserChain(AccumGrad(16), SignDecay(), WeightDecay(), Adam())
     with_logger(get_logger(log_dir)) do
         train((train_data, test_data),
-            Lux.Experimental.TrainState(MersenneTwister(42), model, optim),
+            Lux.Experimental.TrainState(MersenneTwister(42), model, optim) |> gpu_device(),
             training_parameters, directories)
     end
 end

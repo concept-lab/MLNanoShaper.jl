@@ -50,7 +50,6 @@ function get_logger(loggdir::String)::AbstractLogger
     logger = TBLogger("$(homedir())/$loggdir")
     logger = AccumulatorLogger(logger,
         Dict()) do logger, d, args, kargs
-		println(d)
         level, message = args
         if message == "epoch"
             kargs = extract(d)
@@ -62,7 +61,7 @@ function get_logger(loggdir::String)::AbstractLogger
             accumulate(d[], Dict([message => kargs]))
         end
     end
-    logger = TeeLogger(ActiveFilteredLogger(logger) do (; message)
+    TeeLogger(ActiveFilteredLogger(logger) do (; message)
             message in ("test", "train", "epoch")
         end,
         ActiveFilteredLogger(global_logger()) do (; message)
