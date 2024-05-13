@@ -128,10 +128,11 @@ function test((; atoms, skin)::TrainingData{Float32},
 
     for point in vcat(
         first(shuffle(MersenneTwister(42), points), 20), first(exact_points, 20))
-        atoms_neighboord = atoms[inrange(atoms_tree, point, cutoff_radius)] |> StructVector
+		atoms_neighboord = atoms[inrange(atoms_tree, point, cutoff_radius)] |> StructVector |> gpu_device()
         loss, _, stats = loss_fn(training_states.model, training_states.parameters,
             training_states.states,
             (; point, atoms = atoms_neighboord, d_real = signed_distance(point, skin)))
+        loss, stats = (loss, stats) .|> cpu_device()
         @info "test" loss stats
     end
 
