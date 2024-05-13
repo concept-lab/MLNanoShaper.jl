@@ -47,7 +47,7 @@ end
 extract(d::Ref) = d[]
 
 function get_logger(loggdir::String)::AbstractLogger
-    logger = TBLogger("$(homedir())/$loggdir")
+	logger = TBLogger(loggdir)
     logger = AccumulatorLogger(logger,
         Dict()) do logger, d, args, kargs
         level, message = args

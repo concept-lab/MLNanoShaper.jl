@@ -143,8 +143,8 @@ end
 
 function test(data::TrainingData{Float32},
         training_states::Lux.Experimental.TrainState, training_parameters::Training_parameters)
-    for (; point, atoms_neighboord, d_real) in generate_data_points(
-        data, training_parameters)
+    for (; point, atoms_neighboord, d_real) in BatchView(generate_data_points(
+		data, training_parameters);batchsize=10)
         loss, _, stats = loss_fn(training_states.model, training_states.parameters,
             training_states.states,
             (; point, atoms = atoms_neighboord, d_real))
@@ -194,7 +194,7 @@ function train(training_parameters::Training_parameters, directories::Auxiliary_
             load_data_pqr(Float32, "$(homedir())/$data_dir/$id")
         end; at = train_test_split)
     optim = OptimiserChain(AccumGrad(16), SignDecay(), WeightDecay(), Adam())
-    with_logger(get_logger(log_dir)) do
+	with_logger(get_logger("$(homedir())/$log_dir/$(generate_training_name(training_parameters))")) do
         train((train_data, test_data),
             Lux.Experimental.TrainState(MersenneTwister(42), model, optim) |> gpu_device(),
             training_parameters, directories)
