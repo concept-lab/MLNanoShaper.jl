@@ -21,6 +21,7 @@ using Meshing
 using NearestNeighbors
 using StructArrays
 using MLNanoShaperRunner
+using Distributed
 """
 Training information used in model training.
 # Fields
@@ -119,7 +120,7 @@ function generate_data_points((; atoms, skin)::TrainingData{Float32},
 end
 function pre_compute_data_set(data,
         tr::Training_parameters)
-		asyncmap(data) do d collect(BatchView(generate_data_points(d,tr); batchsize = 10))end
+		pmap(data) do d collect(BatchView(generate_data_points(d,tr); batchsize = 10))end
 end
 
 function train(data::Vector, training_states::Lux.Experimental.TrainState)
