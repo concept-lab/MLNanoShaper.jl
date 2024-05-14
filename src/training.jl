@@ -117,7 +117,7 @@ function generate_data_points((; atoms, skin)::TrainingData{Float32},
         (; point, atoms = atoms_neighboord, d_real = signed_distance.(point, Ref(skin)))
     end
 end
-function pre_compute_data_set(data::MLUtils.DataLoader,
+function pre_compute_data_set(data,
         (; scale, cutoff_radius)::Training_parameters)
     collect(collect.(BatchView(generate_data_points.(data); batchsize = 10)))
 end
