@@ -4,6 +4,7 @@ using StructArrays
 using GeometryBasics
 using TOML
 using BioStructures
+using Distributed
 export extract_balls, PQR,Atom
 
 struct XYZR{T} end
@@ -19,8 +20,7 @@ end
 base_type(::Type{XYZR{T}}) where {T} = Sphere{T}
 base_type(::Type{PQR{T}}) where {T} = Atom{T}
 
-function read_line(io::IO, ::Type{Atom{T}}) where {T}
-    line = readline(io)
+function parse_line(line::String, ::Type{Atom{T}}) where {T}
     type, atom_number, atom_name, residue_name, chain_id, x, y, z,charge,r = split(line)
     atom_number, chain_id = parse.(Int64, (atom_number, chain_id))
     x, y, z, r, charge = parse.(T, (x, y, z, r,charge))
@@ -36,17 +36,14 @@ function read_line(io::IO, ::Type{Atom{T}}) where {T}
 	end
 end
 
-function read_line(io::IO, ::Type{Sphere{T}}) where {T}
-    line = readline(io)
+function parse_line(line::String, ::Type{Sphere{T}}) where {T}
     x, y, z, r = parse.(T, split(line))
     Sphere(Point3(x, y, z), r)
 end
 function Base.read(io::IO, T::Type{<:Union{XYZR, PQR}})
-    out = base_type(T)[]
-    while !eof(io)
-        push!(out, read_line(io, base_type(T)))
-    end
-    out
+	pmap(readlines(io)) do line 
+		parse_line(line,T)
+	end
 end
 
 # function viz(x::AbstractArray{Sphere{T}}) where {T}
