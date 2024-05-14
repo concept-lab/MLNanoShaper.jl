@@ -60,7 +60,7 @@ function train(
     end
 end
 
-function train(data,
+function train(data::Vector{Vector},
         training_states::Lux.Experimental.TrainState,
         training_parameters::Training_parameters)
     for d in data
@@ -123,7 +123,7 @@ function pre_compute_data_set(data,
 		pmap(data) do d collect(BatchView(generate_data_points(d,tr); batchsize = 10))end
 end
 
-function train(data::Vector, training_states::Lux.Experimental.TrainState)
+function train(data::AbstractVector{NamedTuple{<:Any}}, training_states::Lux.Experimental.TrainState)
     for d in data
         grads, loss, stats, training_states = Lux.Experimental.compute_gradients(
             AutoZygote(),
