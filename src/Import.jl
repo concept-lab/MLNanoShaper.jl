@@ -42,7 +42,7 @@ function parse_line(line::String, ::Type{Sphere{T}}) where {T}
 end
 function Base.read(io::IO, T::Type{<:Union{XYZR, PQR}})
 	pmap(readlines(io)) do line 
-		parse_line(line,T)
+		parse_line(line,base_type(T))
 	end
 end
 
