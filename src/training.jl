@@ -42,8 +42,10 @@ function train(
         training_states::Lux.Experimental.TrainState, training_parameters::Training_parameters,
         auxiliary_parameters::Auxiliary_parameters)
     (; nb_epoch, save_periode, model_dir) = auxiliary_parameters
+    @info "start pre computing"
     train_data = pre_compute_data_set(train_data, training_parameters)
     test_data = pre_compute_data_set(test_data, training_parameters)
+    @info "end pre computing"
     for epoch in 1:nb_epoch
         @info "epoch" epoch
         training_states = train(
@@ -56,6 +58,7 @@ function train(
         end
     end
 end
+
 function train(data,
         training_states::Lux.Experimental.TrainState,
         training_parameters::Training_parameters)
