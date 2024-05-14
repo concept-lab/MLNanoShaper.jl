@@ -118,8 +118,8 @@ function generate_data_points((; atoms, skin)::TrainingData{Float32},
     end
 end
 function pre_compute_data_set(data,
-        (; scale, cutoff_radius)::Training_parameters)
-    collect(collect.(BatchView(generate_data_points.(data); batchsize = 10)))
+        tr::Training_parameters)
+		asyncmap(data) do d collect(BatchView(generate_data_points(d,tr); batchsize = 10))end
 end
 
 function train(data::Vector, training_states::Lux.Experimental.TrainState)
