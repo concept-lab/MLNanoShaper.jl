@@ -60,7 +60,7 @@ function train(
     end
 end
 
-function train(data::Vector{Vector{<:Any}},
+function train(data::AbstractVector{<:AbstractVector},
         training_states::Lux.Experimental.TrainState,
         training_parameters::Training_parameters)
     for d in data
