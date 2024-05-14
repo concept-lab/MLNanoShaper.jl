@@ -21,7 +21,7 @@ base_type(::Type{PQR{T}}) where {T} = Atom{T}
 
 function read_line(io::IO, ::Type{Atom{T}}) where {T}
     line = readline(io)
-    type, atom_number, atom_name, residue_name, chain_id, x, y, z, r, charge = split(line)
+    type, atom_number, atom_name, residue_name, chain_id, x, y, z,charge,r = split(line)
     atom_number, chain_id = parse.(Int64, (atom_number, chain_id))
     x, y, z, r, charge = parse.(T, (x, y, z, r,charge))
 	if Symbol(type) == :ATOM

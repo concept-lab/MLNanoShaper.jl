@@ -92,7 +92,7 @@ function loss_fn(model, ps, st, (; point, atoms, d_real))
     ((d_pred .- (1 .+ tanh.(d_real)) ./ 2) .^ 2 |> mean,
         st,
         (;
-            distance = abs.(d_real .- atanh(max(0, (2d_pred .- 1)) * (1 .- 1.0f-4))) |>
+            distance = abs.(d_real .- atanh.(max.(0, (2d_pred .- 1)) * (1 .- 1.0f-4))) |>
                        mean))
 end
 
