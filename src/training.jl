@@ -42,6 +42,8 @@ function train(
         training_states::Lux.Experimental.TrainState, training_parameters::Training_parameters,
         auxiliary_parameters::Auxiliary_parameters)
     (; nb_epoch, save_periode, model_dir) = auxiliary_parameters
+    train_data = pre_compute_data_set(train_data, training_parameters)
+    test_data = pre_compute_data_set(test_data, training_parameters)
     for epoch in 1:nb_epoch
         @info "epoch" epoch
         training_states = train(
@@ -54,7 +56,7 @@ function train(
         end
     end
 end
-function train(data::MLUtils.AbstractDataContainer,
+function train(data,
         training_states::Lux.Experimental.TrainState,
         training_parameters::Training_parameters)
     for d in data
@@ -85,7 +87,7 @@ Return the error with the espected distance as a metric.
 """
 function loss_fn(model, ps, st, (; point, atoms, d_real))
     trace("loss", point)
-	ret = Lux.apply(model, Batch(ModelInput.(point, atoms)), ps, st)
+    ret = Lux.apply(model, Batch(ModelInput.(point, atoms)), ps, st)
     d_pred, st = ret
 
     d_pred |> trace("model output")
@@ -105,20 +107,24 @@ function generate_data_points((; atoms, skin)::TrainingData{Float32},
 
     mapobs(vcat(
         first(shuffle(MersenneTwister(42), points), 20), first(exact_points, 20))) do point
-		trace("point",point)
-		atoms_neighboord = getindex.(Ref(atoms),inrange(atoms_tree, point, cutoff_radius)) .|> StructVector
+        trace("point", point)
+        atoms_neighboord = getindex.(
+            Ref(atoms), inrange(atoms_tree, point, cutoff_radius)) .|> StructVector
         trace("pre input size", length.(atoms_neighboord))
-		(; point, atoms=atoms_neighboord, d_real = signed_distance.(point, Ref(skin))) 
+        (; point, atoms = atoms_neighboord, d_real = signed_distance.(point, Ref(skin)))
     end
 end
+function pre_compute_data_set(data::MLUtils.DataLoader,
+        (; scale, cutoff_radius)::Training_parameters)
+    collect(collect.(BatchView(generate_data_points.(data); batchsize = 10)))
+end
 
-function train(data::TrainingData{Float32},
-        training_states::Lux.Experimental.TrainState, training_parameters::Training_parameters)
-    for train_data in BatchView(generate_data_points(data, training_parameters); batchsize = 10)
+function train(data::Vector, training_states::Lux.Experimental.TrainState)
+    for d in data
         grads, loss, stats, training_states = Lux.Experimental.compute_gradients(
             AutoZygote(),
             loss_fn,
-			train_data|> trace("train data"),
+            d |> trace("train data"),
             training_states)
         training_states = Lux.Experimental.apply_gradients(training_states, grads)
         loss, stats, parameters = (loss, stats, training_states.parameters) .|> cpu_device()
@@ -128,7 +134,8 @@ function train(data::TrainingData{Float32},
 end
 
 function implicict_surface(atoms_tree::KDTree, atoms::StructVector{Atom},
-	training_states::Lux.Experimental.TrainState, (;cutoff_radius)::Training_parameters)
+        training_states::Lux.Experimental.TrainState, (;
+            cutoff_radius)::Training_parameters)
     (; mins, maxes) = atoms_tree.hyper_rec
     isosurface(
         MarchingCubes(), SVector{3, Float32}; origin = mins, widths = maxes - mins) do x
@@ -142,13 +149,11 @@ function implicict_surface(atoms_tree::KDTree, atoms::StructVector{Atom},
     end
 end
 
-function test(data::TrainingData{Float32},
-        training_states::Lux.Experimental.TrainState, training_parameters::Training_parameters)
-    for (; point, atoms, d_real) in BatchView(generate_data_points(
-		data, training_parameters);batchsize=10)
+function test(data::TrainingData{Float32}, training_states::Lux.Experimental.TrainState)
+    for (; point, atoms, d_real) in data
         loss, _, stats = loss_fn(training_states.model, training_states.parameters,
             training_states.states,
-            (; point, atoms , d_real))
+            (; point, atoms, d_real))
         loss, stats = (loss, stats) .|> cpu_device()
         @info "test" loss stats
     end
@@ -195,7 +200,7 @@ function train(training_parameters::Training_parameters, directories::Auxiliary_
             load_data_pqr(Float32, "$(homedir())/$data_dir/$id")
         end; at = train_test_split)
     optim = OptimiserChain(AccumGrad(16), SignDecay(), WeightDecay(), Adam())
-	with_logger(get_logger("$(homedir())/$log_dir/$(generate_training_name(training_parameters))")) do
+    with_logger(get_logger("$(homedir())/$log_dir/$(generate_training_name(training_parameters))")) do
         train((train_data, test_data),
             Lux.Experimental.TrainState(MersenneTwister(42), model, optim) |> gpu_device(),
             training_parameters, directories)
