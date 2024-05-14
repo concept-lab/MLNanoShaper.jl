@@ -64,7 +64,7 @@ function train(data::AbstractVector{<:AbstractVector},
         training_states::Lux.Experimental.TrainState,
         training_parameters::Training_parameters)
     for d in data
-        training_states = train(d, training_states, training_parameters)
+        training_states = train(d, training_states)
         training_states
     end
     training_states
