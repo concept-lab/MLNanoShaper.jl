@@ -110,7 +110,7 @@ function generate_data_points((; atoms, skin)::TrainingData{Float32},
     points = point_grid(atoms_tree, skin.tree; scale, cutoff_radius)
 
     mapobs(vcat(
-        first(shuffle(MersenneTwister(42), points), 20), first(exact_points, 20))) do point
+        first(shuffle(MersenneTwister(42), points), 40), first(exact_points, 40))) do point
         trace("point", point)
         atoms_neighboord = getindex.(
             Ref(atoms), inrange(atoms_tree, point, cutoff_radius)) .|> StructVector
@@ -121,7 +121,7 @@ end
 function pre_compute_data_set(data,
         tr::Training_parameters)
     pmap(data) do d
-        collect(BatchView(generate_data_points(d, tr); batchsize = 10))
+        collect(BatchView(generate_data_points(d, tr); batchsize = 40))
     end
 end
 
