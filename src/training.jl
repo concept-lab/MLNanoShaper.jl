@@ -93,9 +93,10 @@ end
 generate_data_points(x::TrainingData) = generate_data_points(TreeTrainingData(x))
 
 function pre_compute_data_set(data, tr::Training_parameters)
-    preduce(vcat, data) do d
+    res = pmap(data) do d
         collect(generate_data_points(d, tr))
     end
+	reduce(vcat,res)
 end
 
 
