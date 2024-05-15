@@ -49,10 +49,9 @@ function train(
     @info "end pre computing"
     for epoch in 1:nb_epoch
         @info "epoch" epoch
-        test.(test_data, Ref(training_states), Ref(training_parameters))
+		test.(test_data, Ref(training_states))
         training_states = train(
             train_data, training_states, training_parameters)
-        test.(test_data, Ref(training_states), Ref(training_parameters))
         if epoch % save_periode == 0
             serialize(
                 "$(homedir())/$(model_dir)/$(generate_training_name(training_parameters,epoch))",
