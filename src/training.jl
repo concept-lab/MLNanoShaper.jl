@@ -121,7 +121,7 @@ end
 function pre_compute_data_set(data,
         tr::Training_parameters)
     pmap(data) do d
-        collect(BatchView(generate_data_points(d, tr); batchsize = 40))
+		BatchView(reduce(vcat,generate_data_points(d, tr)); batchsize = 200)
     end
 end
 
@@ -207,7 +207,7 @@ function train(training_parameters::Training_parameters, directories::Auxiliary_
             data_ids)) do id
             load_data_pqr(Float32, "$(homedir())/$data_dir/$id")
         end; at = train_test_split)
-    optim = OptimiserChain(AccumGrad(16), SignDecay(), WeightDecay(), Adam())
+    optim = OptimiserChain(SignDecay(), WeightDecay(), Adam())
     with_logger(get_logger("$(homedir())/$log_dir/$(generate_training_name(training_parameters))")) do
         train((train_data, test_data),
             Lux.Experimental.TrainState(MersenneTwister(42), model, optim) |> gpu_device(),
