@@ -49,6 +49,7 @@ function train(
     @info "end pre computing"
     for epoch in 1:nb_epoch
         @info "epoch" epoch
+        test.(test_data, Ref(training_states), Ref(training_parameters))
         training_states = train(
             train_data, training_states, training_parameters)
         test.(test_data, Ref(training_states), Ref(training_parameters))
