@@ -90,7 +90,7 @@ function generate_data_points((; atoms, atoms_tree, skin)::TreeTrainingData{Floa
     end
 end
 
-generate_data_points(x::TreeTrainingData) = generate_data_points(TreeTrainingData(x))
+generate_data_points(x::TrainingData) = generate_data_points(TreeTrainingData(x))
 
 function pre_compute_data_set(data, tr::Training_parameters)
     preduce(vcat, data) do d
