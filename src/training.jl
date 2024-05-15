@@ -36,7 +36,7 @@ end
 
 struct TreeTrainingData{T <: Number}
     atoms::StructVector{Sphere{T}}
-    atom_tree::KDTree
+    atoms_tree::KDTree
     skin::RegionMesh
 end
 function TreeTrainingData((; atoms, skin)::TrainingData)
