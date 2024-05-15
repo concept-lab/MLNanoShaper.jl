@@ -121,10 +121,13 @@ function generate_data_points((; atoms, skin)::TrainingData{Float32},
 end
 function pre_compute_data_set(data,
         tr::Training_parameters)
-		pmap(data) do d collect(BatchView(generate_data_points(d,tr); batchsize = 10))end
+    pmap(data) do d
+        collect(BatchView(generate_data_points(d, tr); batchsize = 10))
+    end
 end
 
-function train(data::AbstractVector{<:NamedTuple{(:point,:atoms,:d_real)}}, training_states::Lux.Experimental.TrainState)
+function train(data::AbstractVector{<:NamedTuple{(:point, :atoms, :d_real)}},
+        training_states::Lux.Experimental.TrainState)
     for d in data
         grads, loss, stats, training_states = Lux.Experimental.compute_gradients(
             AutoZygote(),
@@ -154,7 +157,8 @@ function implicict_surface(atoms_tree::KDTree, atoms::StructVector{Atom},
     end
 end
 
-function test(data::TrainingData{Float32}, training_states::Lux.Experimental.TrainState)
+function test(data::AbstractVector{<:NamedTuple{(:point, :atoms, :d_real)}},
+        training_states::Lux.Experimental.TrainState)
     for (; point, atoms, d_real) in data
         loss, _, stats = loss_fn(training_states.model, training_states.parameters,
             training_states.states,
