@@ -1,4 +1,5 @@
 using Lux
+using Distributed: preduce
 using StaticArrays: reorder
 using LoggingExtras: shouldlog
 using LinearAlgebra: NumberArray
@@ -33,41 +34,13 @@ struct TrainingData{T <: Number}
     skin::GeometryBasics.Mesh
 end
 
-"""
-	train((train_data,test_data),training_states; nb_epoch)
-train the model on the data with nb_epoch
-"""
-function train(
-        (train_data,
-            test_data)::Tuple{MLUtils.AbstractDataContainer, MLUtils.AbstractDataContainer},
-        training_states::Lux.Experimental.TrainState, training_parameters::Training_parameters,
-        auxiliary_parameters::Auxiliary_parameters)
-    (; nb_epoch, save_periode, model_dir) = auxiliary_parameters
-    @info "start pre computing"
-    train_data = pre_compute_data_set(train_data, training_parameters)
-    test_data = pre_compute_data_set(test_data, training_parameters)
-    @info "end pre computing"
-    for epoch in 1:nb_epoch
-        @info "epoch" epoch
-		test.(test_data, Ref(training_states))
-        training_states = train(
-            train_data, training_states, training_parameters)
-        if epoch % save_periode == 0
-            serialize(
-                "$(homedir())/$(model_dir)/$(generate_training_name(training_parameters,epoch))",
-                training_states)
-        end
-    end
+struct TreeTrainingData{T <: Number}
+    atoms::StructVector{Sphere{T}}
+    atom_tree::KDTree
+    skin::RegionMesh
 end
-
-function train(data::AbstractVector{<:AbstractVector},
-        training_states::Lux.Experimental.TrainState,
-        training_parameters::Training_parameters)
-    for d in data
-        training_states = train(d, training_states)
-        training_states
-    end
-    training_states
+function TreeTrainingData((; atoms, skin)::TrainingData)
+    TreeTrainingData(atoms, KDTree(atoms.center; reorder = false), RegionMesh(skin))
 end
 
 function point_grid(atoms::KDTree,
@@ -102,11 +75,9 @@ function loss_fn(model, ps, st, (; point, atoms, d_real))
                        mean))
 end
 
-function generate_data_points((; atoms, skin)::TrainingData{Float32},
+function generate_data_points((; atoms, atoms_tree, skin)::TreeTrainingData{Float32},
         (; scale, cutoff_radius)::Training_parameters)
-    exact_points = shuffle(MersenneTwister(42), coordinates(skin))
-    skin = RegionMesh(skin)
-    atoms_tree = KDTree(atoms.center; reorder = false)
+    exact_points = shuffle(MersenneTwister(42), skin.tree.data)
     points = point_grid(atoms_tree, skin.tree; scale, cutoff_radius)
 
     mapobs(vcat(
@@ -118,27 +89,15 @@ function generate_data_points((; atoms, skin)::TrainingData{Float32},
         (; point, atoms = atoms_neighboord, d_real = signed_distance.(point, Ref(skin)))
     end
 end
-function pre_compute_data_set(data,
-        tr::Training_parameters)
-    pmap(data) do d
-		BatchView(reduce(vcat,generate_data_points(d, tr)); batchsize = 200)
+
+generate_data_points(x::TreeTrainingData) = generate_data_points(TreeTrainingData(x))
+
+function pre_compute_data_set(data, tr::Training_parameters)
+    preduce(vcat, data) do d
+        collect(generate_data_points(d, tr))
     end
 end
 
-function train(data::AbstractVector{<:NamedTuple{(:point, :atoms, :d_real)}},
-        training_states::Lux.Experimental.TrainState)
-    for d in data
-        grads, loss, stats, training_states = Lux.Experimental.compute_gradients(
-            AutoZygote(),
-            loss_fn,
-            d |> trace("train data"),
-            training_states)
-        training_states = Lux.Experimental.apply_gradients(training_states, grads)
-        loss, stats, parameters = (loss, stats, training_states.parameters) .|> cpu_device()
-        @info "train" loss stats parameters
-    end
-    training_states
-end
 
 function implicict_surface(atoms_tree::KDTree, atoms::StructVector{Atom},
         training_states::Lux.Experimental.TrainState, (;
@@ -156,23 +115,12 @@ function implicict_surface(atoms_tree::KDTree, atoms::StructVector{Atom},
     end
 end
 
-function test(data::AbstractVector{<:NamedTuple{(:point, :atoms, :d_real)}},
-        training_states::Lux.Experimental.TrainState)
-    for (; point, atoms, d_real) in data
-        loss, _, stats = loss_fn(training_states.model, training_states.parameters,
-            training_states.states,
-            (; point, atoms, d_real))
-        loss, stats = (loss, stats) .|> cpu_device()
-        @info "test" loss stats
-    end
-
-    # (; atoms, skin) = data
-    # atoms_tree = KDTree(atoms.center; reorder = false)
-    # surface = implicict_surface(atoms_tree, atoms, training_states, training_parameters)
-    # hausdorff_distance = distance(first(surface), KDTree(skin))
-    hausdorff_distance = 1
-    @info "test" hausdorff_distance
+function hausdorff_metric((; atoms, atoms_tree, skin)::TreeTrainingData,
+        training_states::Lux.Experimental.TrainState, training_parameters::Training_parameters)
+    surface = implicict_surface(atoms_tree, atoms, training_states, training_parameters)
+    distance(first(surface), KDTree(skin))
 end
+
 
 """
 	load_data_pdb(T, name::String)
@@ -193,6 +141,78 @@ function load_data_pqr(T::Type{<:Number}, dir::String)
     TrainingData{T}(getproperty.(read("$dir/structure.pqr", PQR{T}), :pos) |> StructVector,
         load("$dir/triangulatedSurf.off"))
 end
+
+function test(data::AbstractVector{<:NamedTuple{(:point, :atoms, :d_real)}},
+        training_states::Lux.Experimental.TrainState)
+    for (; point, atoms, d_real) in BatchView(data; batchsize = 400)
+        loss, _, stats = loss_fn(training_states.model, training_states.parameters,
+            training_states.states,
+            (; point, atoms, d_real))
+        loss, stats = (loss, stats) .|> cpu_device()
+        @info "test" mean(loss) mean(stats)
+    end
+
+end
+function train(data::AbstractVector{<:NamedTuple{(:point, :atoms, :d_real)}},
+        training_states::Lux.Experimental.TrainState)
+    for d in BatchView(data; batchsize = 400)
+        grads, loss, stats, training_states = Lux.Experimental.compute_gradients(
+            AutoZygote(),
+            loss_fn,
+            d |> trace("train data"),
+            training_states)
+        training_states = Lux.Experimental.apply_gradients(training_states, grads)
+        loss, stats, parameters = (loss, stats, training_states.parameters) .|> cpu_device()
+        @info "train" mean(loss) mean(stats) parameters
+    end
+    training_states
+end
+
+function train(data::AbstractVector{<:AbstractVector},
+        training_states::Lux.Experimental.TrainState,
+        training_parameters::Training_parameters)
+    for d in data
+        training_states = train(d, training_states)
+        training_states
+    end
+    training_states
+end
+
+"""
+	train((train_data,test_data),training_states; nb_epoch)
+train the model on the data with nb_epoch
+"""
+function train(
+        (train_data,
+            test_data)::Tuple{MLUtils.AbstractDataContainer, MLUtils.AbstractDataContainer},
+        training_states::Lux.Experimental.TrainState, training_parameters::Training_parameters,
+        auxiliary_parameters::Auxiliary_parameters)
+    (; nb_epoch, save_periode, model_dir) = auxiliary_parameters
+
+    @info "start pre computing"
+    train_data = pre_compute_data_set(train_data, training_parameters)
+    test_tree = pmap(TreeTrainingData, test_data)
+    test_data = pre_compute_data_set(test_tree, training_parameters)
+    @info "end pre computing"
+
+    for epoch in 1:nb_epoch
+        @info "epoch" epoch
+        training_states = train(
+            train_data, training_states, training_parameters)
+        test.(test_data, Ref(training_states))
+		hausdorff_distance = pmap(test_tree) do d
+			hausdorff_metric(d,training_states,training_parameters)
+		end |> mean
+		@info "test" hausdorff_distance
+
+        if epoch % save_periode == 0
+            serialize(
+                "$(homedir())/$(model_dir)/$(generate_training_name(training_parameters,epoch))",
+                training_states)
+        end
+    end
+end
+
 
 """
     train(training_parameters::Training_parameters, directories::Auxiliary_parameters)
