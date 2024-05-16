@@ -34,7 +34,7 @@ struct Training_parameters
 end
 
 function generate_training_name(x::Training_parameters, epoch::Integer)
-    "$(x.name)_epoch_$(epoch)_$(hash(x))"
+	"$(x.model)_(x.name)_epoch_$(epoch)_$(hash(x))"
 end
 
 function generate_training_name(x::Training_parameters)
@@ -47,7 +47,7 @@ function read_from_TOML(::Type{Training_parameters}, conf::AbstractDict)
     conf = conf["Training_parameters"]
     conf = Dict(Symbol.(keys(conf)) .=> values(conf))
 
-    conf[:model] = getproperty(MLNanoShaperRunner, Symbol(conf[:model]))()
+	conf[:model] = getproperty(MLNanoShaperRunner, Symbol(conf[:model]))(;cutoff_radius=conf[:cutoff_radius])
     unpact_dict(Training_parameters, conf)
 end
 

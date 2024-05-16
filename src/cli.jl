@@ -13,10 +13,13 @@ The folowing parameters can be overided.
 
 """
 @main function train(; nb_epoch::Option{UInt} = nothing, model::Option{String} = nothing,
-	nb_data_points::Option{UInt} = nothing,name::Option{String} = nothing)
+	nb_data_points::Option{UInt} = nothing,name::Option{String} = nothing,cutoff_radius::Option{Float32}=nothing)
     conf = TOML.parsefile(params_file)
     if !isnothing(nb_epoch)
         conf["Training_parameters"]["nb_epoch"] = nb_epoch
+    end
+    if !isnothing(cutoff_radius)
+        conf["Training_parameters"]["cutoff_radius"] = cutoff_radius
     end
     if !isnothing(name)
 		conf["Training_parameters"]["name"] = name
