@@ -155,7 +155,7 @@ function test(
         data::StructVector{@NamedTuple{
             point::Point3f, atoms::StructVector{Sphere{Float32}}, d_real::Float32}},
         training_states::Lux.Experimental.TrainState)
-    for d in BatchView(data; batchsize = 400)
+    for d in BatchView(data; batchsize = 200)
         loss, _, stats = loss_fn(training_states.model, training_states.parameters,
             training_states.states, d)
         loss, stats = (loss, stats) .|> cpu_device()
@@ -167,7 +167,7 @@ function train(
         data::StructVector{@NamedTuple{
             point::Point3f, atoms::StructVector{Sphere{Float32}}, d_real::Float32}},
         training_states::Lux.Experimental.TrainState)
-    for d in BatchView(data; batchsize = 400)
+    for d in BatchView(data; batchsize = 200)
         grads, loss, stats, training_states = Lux.Experimental.compute_gradients(
             AutoZygote(),
             loss_fn,
