@@ -176,7 +176,7 @@ function train(
             training_states)
         training_states = Lux.Experimental.apply_gradients(training_states, grads)
         loss, stats, parameters = (loss, stats, training_states.parameters) .|> cpu_device()
-		loss = loss|> Float64
+		loss::Float64 = loss|> Float64
         @info "train" loss stats parameters
     end
     training_states
@@ -203,9 +203,9 @@ function train(
 		@info "epoch" epoch=Int(epoch)
         test(test_data, training_states)
         training_states = train(train_data, training_states)
-        hausdorff_distance = pmap(test_tree) do d
+        hausdorff_distance::Float64 = pmap(test_tree) do d
             hausdorff_metric(d, training_states, training_parameters)
-        end |> mean |> Float64
+        end |> mean |> Float64 
         @info "test" hausdorff_distance
 
         if epoch % save_periode == 0
