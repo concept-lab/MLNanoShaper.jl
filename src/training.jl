@@ -62,12 +62,16 @@ The loss function used by in training.
 compare the predicted (square) distance with \$\\frac{1 + \tanh(d)}{2}\$
 Return the error with the espected distance as a metric.
 """
-function loss_fn(model, ps, st, (; point, atoms, d_real))
-    trace("loss", point)
+function loss_fn(model,
+        ps,
+        st,
+        (; point,
+            atoms,
+            d_real)::@NamedTuple{
+            point::Point3f, atoms::AbstractVector{Sphere{Float32}}, d_real::Float32})
     ret = Lux.apply(model, Batch(ModelInput.(point, atoms)), ps, st)
     d_pred, st = ret
 
-    d_pred |> trace("model output")
     ((d_pred .- (1 .+ tanh.(d_real)) ./ 2) .^ 2 |> mean,
         st,
         (;
