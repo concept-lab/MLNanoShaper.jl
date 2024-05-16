@@ -67,8 +67,8 @@ function loss_fn(model,
         st,
         (; point,
             atoms,
-            d_real)::@NamedTuple{
-            point::Point3f, atoms::StructVector{Sphere{Float32}}, d_real::Float32})
+            d_real)::StructVector{@NamedTuple{
+            point::Point3f, atoms::StructVector{Sphere{Float32}}, d_real::Float32}})
     ret = Lux.apply(model, Batch(ModelInput.(point, atoms)), ps, st)
     d_pred, st = ret
 
@@ -155,14 +155,14 @@ function test(
         data::StructVector{@NamedTuple{
             point::Point3f, atoms::StructVector{Sphere{Float32}}, d_real::Float32}},
         training_states::Lux.Experimental.TrainState)
-    for (; point, atoms, d_real) in BatchView(data; batchsize = 400)
+    for d in BatchView(data; batchsize = 400)
         loss, _, stats = loss_fn(training_states.model, training_states.parameters,
-            training_states.states,
-            (; point, atoms, d_real))
+            training_states.states, d)
         loss, stats = (loss, stats) .|> cpu_device()
         @info "test" mean(loss) mean(stats)
     end
 end
+
 function train(
         data::StructVector{@NamedTuple{
             point::Point3f, atoms::StructVector{Sphere{Float32}}, d_real::Float32}},
