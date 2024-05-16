@@ -93,9 +93,9 @@ function generate_data_points(x::TrainingData, args...)
     generate_data_points(TreeTrainingData(x), args...)
 end
 
-function pre_compute_data_set(data, tr::Training_parameters)
+function pre_compute_data_set(data, tr::Training_parameters)::Vector{Vector{<:NamedTuple{(:point, :atoms, :d_real)}}}
     res = pmap(data) do d
-        collect(generate_data_points(d, tr))
+		collect(generate_data_points(d, tr))::Vector{<:NamedTuple{(:point, :atoms, :d_real)}}
     end
     reduce(vcat, res)
 end
