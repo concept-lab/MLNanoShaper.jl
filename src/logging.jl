@@ -47,7 +47,7 @@ end
 extract(d::Ref) = d[]
 
 function get_logger(loggdir::String)::AbstractLogger
-	logger = TBLogger(loggdir)
+	logger = TeeLogger(TBLogger(loggdir),global_logger())
     logger = AccumulatorLogger(logger,
         Dict()) do logger, d, args, kargs
         level, message = args
@@ -64,7 +64,9 @@ function get_logger(loggdir::String)::AbstractLogger
     TeeLogger(ActiveFilteredLogger(logger) do (; message)
             message in ("test", "train", "epoch")
         end,
-		global_logger())
+        ActiveFilteredLogger(global_logger()) do (; message)
+            message ∉ ("test", "train")
+        end)
 
 end
 
