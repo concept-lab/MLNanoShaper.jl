@@ -109,7 +109,7 @@ function pre_compute_data_set(data,
     reduce(vcat, res)
 end
 
-function implicict_surface(atoms_tree::KDTree, atoms::StructVector{Atom},
+function implicit_surface(atoms_tree::KDTree, atoms::StructVector{Sphere{Float32}},
         training_states::Lux.Experimental.TrainState, (;
             cutoff_radius)::Training_parameters)
     (; mins, maxes) = atoms_tree.hyper_rec
@@ -127,7 +127,7 @@ end
 
 function hausdorff_metric((; atoms, atoms_tree, skin)::TreeTrainingData,
         training_states::Lux.Experimental.TrainState, training_parameters::Training_parameters)
-    surface = implicict_surface(atoms_tree, atoms, training_states, training_parameters)
+    surface = implicit_surface(atoms_tree, atoms, training_states, training_parameters)
     distance(first(surface), KDTree(skin))
 end
 
