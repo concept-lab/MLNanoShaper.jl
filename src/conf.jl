@@ -38,7 +38,7 @@ function generate_training_name(x::Training_parameters, epoch::Integer)
 end
 
 function generate_training_name(x::Training_parameters)
-    "$(x.name)_$(hash(x))"
+	"$(x.model)_$(x.name)_$(hash(x))"
 end
 
 read_from_TOML(T::Type) = read_from_TOML(T, TOML.parsefile(params_file))
