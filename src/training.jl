@@ -147,7 +147,9 @@ function load_data_pqr(T::Type{<:Number}, dir::String)
         load("$dir/triangulatedSurf.off"))
 end
 
-function test(data::AbstractVector{<:NamedTuple{(:point, :atoms, :d_real)}},
+function test(
+        data::StructVector{@NamedTuple{
+            point::Point3f, atoms::StructVector{Sphere{Float32}}, d_real::Float32}},
         training_states::Lux.Experimental.TrainState)
     for (; point, atoms, d_real) in BatchView(data; batchsize = 400)
         loss, _, stats = loss_fn(training_states.model, training_states.parameters,
@@ -158,7 +160,7 @@ function test(data::AbstractVector{<:NamedTuple{(:point, :atoms, :d_real)}},
     end
 end
 function train(
-        data::Vector{@NamedTuple{
+        data::StructVector{@NamedTuple{
             point::Point3f, atoms::StructVector{Sphere{Float32}}, d_real::Float32}},
         training_states::Lux.Experimental.TrainState)
     for d in BatchView(data; batchsize = 400)
@@ -186,9 +188,9 @@ function train(
     (; nb_epoch, save_periode, model_dir) = auxiliary_parameters
 
     @info "start pre computing"
-    train_data = pre_compute_data_set(train_data, training_parameters)
+    train_data = pre_compute_data_set(train_data, training_parameters) |> StructVector
     test_tree = pmap(TreeTrainingData, test_data)
-    test_data = pre_compute_data_set(test_tree, training_parameters)
+    test_data = pre_compute_data_set(test_tree, training_parameters) |> StructVector
     @info "end pre computing"
 
     for epoch in 1:nb_epoch
