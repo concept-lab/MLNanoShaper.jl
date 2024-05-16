@@ -83,9 +83,8 @@ function generate_data_points((; atoms, atoms_tree, skin)::TreeTrainingData{Floa
     mapobs(vcat(
         first(shuffle(MersenneTwister(42), points), 40), first(exact_points, 40))) do point
         trace("point", point)
-        atoms_neighboord = getindex.(
-            Ref(atoms), inrange(atoms_tree, point, cutoff_radius)) .|> StructVector
-        trace("pre input size", length.(atoms_neighboord))
+		atoms_neighboord = atoms[inrange(atoms_tree, point, cutoff_radius)] 
+        trace("pre input size", length(atoms_neighboord))
         (; point, atoms = atoms_neighboord, d_real = signed_distance.(point, Ref(skin)))
     end
 end
