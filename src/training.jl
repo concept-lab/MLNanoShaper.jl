@@ -94,7 +94,8 @@ function generate_data_points(x::TrainingData, args...)
 end
 
 function pre_compute_data_set(data,
-        tr::Training_parameters)::Vector{Vector{<:NamedTuple{(:point, :atoms, :d_real)}}}
+        tr::Training_parameters)::Vector{@NamedTuple{
+        point::Point3f, atoms::StructVector{Sphere{Float32}}, d_real::Float32}}
     res = pmap(data) do d
         collect(
             @NamedTuple{
