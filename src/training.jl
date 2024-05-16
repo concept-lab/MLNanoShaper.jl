@@ -194,7 +194,7 @@ function train(
     for epoch in 1:nb_epoch
         @info "epoch" epoch
         training_states = train(
-            train_data, training_states, training_parameters)
+            train_data, training_states)
         test.(test_data, Ref(training_states))
         hausdorff_distance = pmap(test_tree) do d
             hausdorff_metric(d, training_states, training_parameters)
