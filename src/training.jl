@@ -44,9 +44,9 @@ function TreeTrainingData((; atoms, skin)::TrainingData)
 end
 
 function point_grid(atoms::KDTree,
-        skin::KDTree;
+        skin::KDTree{Vector{Point3f}};
         scale::Float32,
-        cutoff_radius::Float32)::Vector{Point3{Float32}}
+        cutoff_radius::Float32)::Vector{Point3f}
     (; mins, maxes) = atoms.hyper_rec
     filter(Iterators.product(range.(mins,
         maxes
@@ -81,23 +81,24 @@ function generate_data_points((; atoms, atoms_tree, skin)::TreeTrainingData{Floa
     points = point_grid(atoms_tree, skin.tree; scale, cutoff_radius)
 
     mapobs(vcat(
-        first(shuffle(MersenneTwister(42), points), 40), first(exact_points, 40))) do point
+        first(shuffle(MersenneTwister(42), points), 40), first(exact_points, 40))) do point::Point3f
         trace("point", point)
-		atoms_neighboord = atoms[inrange(atoms_tree, point, cutoff_radius)] 
+        atoms_neighboord = atoms[inrange(atoms_tree, point, cutoff_radius)]
         trace("pre input size", length(atoms_neighboord))
-		(; point, atoms = atoms_neighboord, d_real = signed_distance(point, skin))
+        (; point, atoms = atoms_neighboord, d_real = signed_distance(point, skin))
     end
 end
 
-generate_data_points(x::TrainingData,args...) = generate_data_points(TreeTrainingData(x),args...)
+function generate_data_points(x::TrainingData, args...)
+    generate_data_points(TreeTrainingData(x), args...)
+end
 
 function pre_compute_data_set(data, tr::Training_parameters)
     res = pmap(data) do d
         collect(generate_data_points(d, tr))
     end
-	reduce(vcat,res)
+    reduce(vcat, res)
 end
-
 
 function implicict_surface(atoms_tree::KDTree, atoms::StructVector{Atom},
         training_states::Lux.Experimental.TrainState, (;
@@ -120,7 +121,6 @@ function hausdorff_metric((; atoms, atoms_tree, skin)::TreeTrainingData,
     surface = implicict_surface(atoms_tree, atoms, training_states, training_parameters)
     distance(first(surface), KDTree(skin))
 end
-
 
 """
 	load_data_pdb(T, name::String)
@@ -151,7 +151,6 @@ function test(data::AbstractVector{<:NamedTuple{(:point, :atoms, :d_real)}},
         loss, stats = (loss, stats) .|> cpu_device()
         @info "test" mean(loss) mean(stats)
     end
-
 end
 function train(data::AbstractVector{<:NamedTuple{(:point, :atoms, :d_real)}},
         training_states::Lux.Experimental.TrainState)
@@ -200,10 +199,10 @@ function train(
         training_states = train(
             train_data, training_states, training_parameters)
         test.(test_data, Ref(training_states))
-		hausdorff_distance = pmap(test_tree) do d
-			hausdorff_metric(d,training_states,training_parameters)
-		end |> mean
-		@info "test" hausdorff_distance
+        hausdorff_distance = pmap(test_tree) do d
+            hausdorff_metric(d, training_states, training_parameters)
+        end |> mean
+        @info "test" hausdorff_distance
 
         if epoch % save_periode == 0
             serialize(
@@ -212,7 +211,6 @@ function train(
         end
     end
 end
-
 
 """
     train(training_parameters::Training_parameters, directories::Auxiliary_parameters)
