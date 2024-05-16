@@ -64,9 +64,7 @@ function get_logger(loggdir::String)::AbstractLogger
     TeeLogger(ActiveFilteredLogger(logger) do (; message)
             message in ("test", "train", "epoch")
         end,
-        ActiveFilteredLogger(global_logger()) do (; message)
-            message ∉ ("test", "train")
-        end)
+		global_logger())
 
 end
 
