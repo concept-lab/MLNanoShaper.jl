@@ -85,7 +85,7 @@ function generate_data_points((; atoms, atoms_tree, skin)::TreeTrainingData{Floa
         trace("point", point)
 		atoms_neighboord = atoms[inrange(atoms_tree, point, cutoff_radius)] 
         trace("pre input size", length(atoms_neighboord))
-        (; point, atoms = atoms_neighboord, d_real = signed_distance.(point, Ref(skin)))
+		(; point, atoms = atoms_neighboord, d_real = signed_distance(point, skin))
     end
 end
 
