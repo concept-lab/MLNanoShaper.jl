@@ -34,11 +34,11 @@ struct Training_parameters
 end
 
 function generate_training_name(x::Training_parameters, epoch::Integer)
-	"$(x.model)_$(x.name)_epoch_$(epoch)_$(hash(x))"
+	"$(x.model.name)_$(x.name)_epoch_$(epoch)_$(hash(x))"
 end
 
 function generate_training_name(x::Training_parameters)
-	"$(x.model)_$(x.name)_$(hash(x))"
+	"$(x.model.name)_$(x.name)_$(hash(x))"
 end
 
 read_from_TOML(T::Type) = read_from_TOML(T, TOML.parsefile(params_file))
