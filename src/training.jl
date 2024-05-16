@@ -128,7 +128,7 @@ end
 function hausdorff_metric((; atoms, atoms_tree, skin)::TreeTrainingData,
         training_states::Lux.Experimental.TrainState, training_parameters::Training_parameters)
     surface = implicit_surface(atoms_tree, atoms, training_states, training_parameters)
-    distance(first(surface), KDTree(skin))
+    distance(first(surface), skin.tree)
 end
 
 """
