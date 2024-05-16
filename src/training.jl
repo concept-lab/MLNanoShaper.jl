@@ -44,7 +44,7 @@ function TreeTrainingData((; atoms, skin)::TrainingData)
 end
 
 function point_grid(atoms::KDTree,
-        skin::KDTree{Vector{Point3f}};
+        skin::KDTree{Point3f};
         scale::Float32,
         cutoff_radius::Float32)::Vector{Point3f}
     (; mins, maxes) = atoms.hyper_rec
