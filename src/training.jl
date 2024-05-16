@@ -158,8 +158,8 @@ function test(
     for d in BatchView(data; batchsize = 200)
         loss, _, stats = loss_fn(training_states.model, training_states.parameters,
             training_states.states, d)
-        loss, stats = (loss, stats) .|> cpu_device()
-        @info "test" mean(loss) mean(stats)
+        loss, stats = (loss, stats) .|> cpu_device() .|> mean .|> Float64
+        @info "test" loss stats
     end
 end
 
@@ -174,8 +174,8 @@ function train(
             d |> trace("train data"),
             training_states)
         training_states = Lux.Experimental.apply_gradients(training_states, grads)
-        loss, stats, parameters = (loss, stats, training_states.parameters) .|> cpu_device()
-        @info "train" mean(loss) mean(stats) parameters
+        loss, stats, parameters = (loss, stats, training_states.parameters) .|> cpu_device().|> mean .|> Float64
+        @info "train" loss stats parameters
     end
     training_states
 end
@@ -203,7 +203,7 @@ function train(
         training_states = train(train_data, training_states)
         hausdorff_distance = pmap(test_tree) do d
             hausdorff_metric(d, training_states, training_parameters)
-        end |> mean
+        end |> mean |> Float64
         @info "test" hausdorff_distance
 
         if epoch % save_periode == 0
@@ -228,9 +228,9 @@ function train(training_parameters::Training_parameters, directories::Auxiliary_
             load_data_pqr(Float32, "$(homedir())/$data_dir/$id")
         end; at = train_test_split)
     optim = OptimiserChain(SignDecay(), WeightDecay(), Adam())
-    with_logger(get_logger("$(homedir())/$log_dir/$(generate_training_name(training_parameters))")) do
+    # with_logger(get_logger("$(homedir())/$log_dir/$(generate_training_name(training_parameters))")) do
         train((train_data, test_data),
             Lux.Experimental.TrainState(MersenneTwister(42), model, optim) |> gpu_device(),
             training_parameters, directories)
-    end
+    # end
 end
