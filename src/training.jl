@@ -98,7 +98,7 @@ function pre_compute_data_set(data,
     res = pmap(data) do d
         collect(
             @NamedTuple{
-                point::Point3f, atoms::StructVector{Sphere{Float32}}, d_real = Float32},
+                point::Point3f, atoms::StructVector{Sphere{Float32}}, d_real::Float32},
             generate_data_points(d, tr))
     end
     reduce(vcat, res)
