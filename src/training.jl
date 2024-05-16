@@ -68,7 +68,7 @@ function loss_fn(model,
         (; point,
             atoms,
             d_real)::@NamedTuple{
-            point::Point3f, atoms::AbstractVector{Sphere{Float32}}, d_real::Float32})
+            point::Point3f, atoms::StructVector{Sphere{Float32}}, d_real::Float32})
     ret = Lux.apply(model, Batch(ModelInput.(point, atoms)), ps, st)
     d_pred, st = ret
 
