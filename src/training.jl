@@ -157,7 +157,9 @@ function test(data::AbstractVector{<:NamedTuple{(:point, :atoms, :d_real)}},
         @info "test" mean(loss) mean(stats)
     end
 end
-function train(data::AbstractVector{<:NamedTuple{(:point, :atoms, :d_real)}},
+function train(
+        data::Vector{@NamedTuple{
+            point::Point3f, atoms::StructVector{Sphere{Float32}}, d_real::Float32}},
         training_states::Lux.Experimental.TrainState)
     for d in BatchView(data; batchsize = 400)
         grads, loss, stats, training_states = Lux.Experimental.compute_gradients(
@@ -168,16 +170,6 @@ function train(data::AbstractVector{<:NamedTuple{(:point, :atoms, :d_real)}},
         training_states = Lux.Experimental.apply_gradients(training_states, grads)
         loss, stats, parameters = (loss, stats, training_states.parameters) .|> cpu_device()
         @info "train" mean(loss) mean(stats) parameters
-    end
-    training_states
-end
-
-function train(data::AbstractVector{<:AbstractVector},
-        training_states::Lux.Experimental.TrainState,
-        training_parameters::Training_parameters)
-    for d in data
-        training_states = train(d, training_states)
-        training_states
     end
     training_states
 end
