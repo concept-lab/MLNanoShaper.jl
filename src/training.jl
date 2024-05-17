@@ -70,12 +70,12 @@ function loss_fn(model,
             d_real)::StructVector{@NamedTuple{
             point::Point3f, atoms::StructVector{Sphere{Float32}}, d_real::Float32}})
     ret = Lux.apply(model, Batch(ModelInput.(point, atoms)), ps, st)
-    d_pred, st = ret
+    v_pred, st = ret
 
-    ((d_pred .- (1 .+ tanh.(d_real)) ./ 2) .^ 2 |> mean,
+    ((v_pred .- (1 .+ tanh.(d_real)) ./ 2) .^ 2 |> mean,
         st,
         (;
-            distance = abs.(d_real .- atanh.(max.(0, (2d_pred .- 1)) * (1 .- 1.0f-4))) |>
+            distance = abs.(d_real .- atanh.(max.(0, (2v_pred .- 1)) * (1 .- 1.0f-4))) |>
                        mean))
 end
 
