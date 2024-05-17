@@ -19,7 +19,7 @@ Logging.shouldlog(logger::AccumulatorLogger, args...) = shouldlog(logger.logger,
 Logging.min_enabled_level(logger) = Logging.min_enabled_level(logger.logger)
 
 empty_accumulator(::Union{Type{<:AbstractDict}, Type{<:NamedTuple}}) = Dict()
-empty_accumulator(::Type{T})::Vector{T} where {T <: Number} = T[]
+empty_accumulator(T::Type{<:Number}) = T[]
 empty_accumulator(::Type{T}) where {T} = Ref{T}()
 
 function accumulate(d::Dict, kargs::AbstractDict)
