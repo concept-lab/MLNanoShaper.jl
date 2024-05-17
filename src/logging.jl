@@ -48,19 +48,19 @@ extract(d::Ref) = d[]
 
 function get_logger(loggdir::String)::AbstractLogger
     logger = TeeLogger(TBLogger(loggdir), global_logger())
-    logger = AccumulatorLogger(logger,
-        Dict()) do logger, d, args, kargs
-        level, message = args
-        if message == "epoch"
-            kargs = extract(d)
-            for (k, v) in pairs(kargs)
-                Logging.handle_message(logger, level, k, args[3:end]...; v...)
-            end
-            d[] = Dict()
-        else
-            accumulate(d[], Dict([message => kargs]))
-        end
-    end
+    # logger = AccumulatorLogger(logger,
+    #     Dict()) do logger, d, args, kargs
+    #     level, message = args
+    #     if message == "epoch"
+    #         kargs = extract(d)
+    #         for (k, v) in pairs(kargs)
+    #             Logging.handle_message(logger, level, k, args[3:end]...; v...)
+    #         end
+    #         d[] = Dict()
+    #     else
+    #         accumulate(d[], Dict([message => kargs]))
+    #     end
+    # end
     TeeLogger(ActiveFilteredLogger(logger) do (; message)
             message in ("test", "train", "epoch")
         end,

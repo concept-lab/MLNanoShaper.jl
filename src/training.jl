@@ -155,19 +155,25 @@ function test(
         data::StructVector{@NamedTuple{
             point::Point3f, atoms::StructVector{Sphere{Float32}}, d_real::Float32}},
         training_states::Lux.Experimental.TrainState)
+	loss_vec = Float32[]
+	stats_vec = StructVector(@NamedTuple(distance::Float32)[])
     for d in BatchView(data; batchsize = 200)
         loss, _, stats = loss_fn(training_states.model, training_states.parameters,
             training_states.states, d)
         loss, stats = (loss, stats) .|> cpu_device() 
-		loss = loss |> Float64
-        @info "test" loss stats
+		push!(loss_vec,loss)
+		push!(stats_vec,stats)
     end
+	loss, stats = mean(loss_vec),mean(stats_vec)
+    @info "test" loss stats
 end
 
 function train(
         data::StructVector{@NamedTuple{
             point::Point3f, atoms::StructVector{Sphere{Float32}}, d_real::Float32}},
         training_states::Lux.Experimental.TrainState)
+	loss_vec = Float32[]
+	stats_vec = StructVector(@NamedTuple(distance::Float32)[])
     for d in BatchView(data; batchsize = 200)
         grads, loss, stats, training_states = Lux.Experimental.compute_gradients(
             AutoZygote(),
@@ -175,10 +181,13 @@ function train(
             d |> trace("train data"),
             training_states)
         training_states = Lux.Experimental.apply_gradients(training_states, grads)
-        loss, stats, parameters = (loss, stats, training_states.parameters) .|> cpu_device()
-		loss::Float64 = loss|> Float64
-        @info "train" loss stats parameters
+        loss, stats= (loss, stats) .|> cpu_device()
+		push!(loss_vec,loss)
+		push!(stats_vec,stats)
     end
+	loss, stats = mean(loss_vec),mean(stats_vec)
+	parameters = training_states.parameters |> gpu_device()
+    @info "train" loss stats parameters
     training_states
 end
 
