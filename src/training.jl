@@ -164,8 +164,8 @@ function test(
 		push!(loss_vec,loss)
 		push!(stats_vec,stats)
     end
-	loss, stats = mean(loss_vec),mean(stats_vec)
-    @info "test" loss stats
+	loss, distance = mean(loss_vec),mean(stats_vec.distance)
+    @info "test" loss distance
 end
 
 function train(
@@ -185,9 +185,9 @@ function train(
 		push!(loss_vec,loss)
 		push!(stats_vec,stats)
     end
-	loss, stats = mean(loss_vec),mean(stats_vec)
+	loss, distance = mean(loss_vec),mean(stats_vec.distance)
 	parameters = training_states.parameters |> gpu_device()
-    @info "train" loss stats parameters
+    @info "train" loss distance parameters
     training_states
 end
 
