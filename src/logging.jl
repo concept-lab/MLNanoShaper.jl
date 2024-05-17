@@ -19,7 +19,7 @@ Logging.shouldlog(logger::AccumulatorLogger, args...) = shouldlog(logger.logger,
 Logging.min_enabled_level(logger) = Logging.min_enabled_level(logger.logger)
 
 empty_accumulator(::Union{Type{<:AbstractDict}, Type{<:NamedTuple}}) = Dict()
-empty_accumulator(::Type{T}) where {T <: Number} = T[]
+empty_accumulator(::Type{T})::Vector{T} where {T <: Number} = T[]
 empty_accumulator(::Type{T}) where {T} = Ref{T}()
 
 function accumulate(d::Dict, kargs::AbstractDict)
@@ -30,7 +30,7 @@ function accumulate(d::Dict, kargs::AbstractDict)
         accumulate(d[k], kargs[k])
     end
 end
-function accumulate(d::Vector, arg::Number)
+function accumulate(d::Vector{T}, arg::T) where {T <: Number}
     push!(d, arg)
 end
 function accumulate(d::Dict, kargs::NamedTuple)
@@ -41,13 +41,13 @@ function accumulate(d::Ref, arg)
 end
 
 extract(d::Dict) = Dict(keys(d) .=> extract.(values(d)))
-function extract(d::Vector)
+function extract(d::Vector{<:Number})::Number
     mean(d)
 end
 extract(d::Ref) = d[]
 
 function get_logger(loggdir::String)::AbstractLogger
-	logger = TeeLogger(TBLogger(loggdir),global_logger())
+    logger = TeeLogger(TBLogger(loggdir), global_logger())
     logger = AccumulatorLogger(logger,
         Dict()) do logger, d, args, kargs
         level, message = args
@@ -67,6 +67,4 @@ function get_logger(loggdir::String)::AbstractLogger
         ActiveFilteredLogger(global_logger()) do (; message)
             message ∉ ("test", "train")
         end)
-
 end
-
