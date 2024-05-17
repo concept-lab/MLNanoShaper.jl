@@ -88,6 +88,7 @@ function generate_data_points((; atoms, atoms_tree, skin)::TreeTrainingData{Floa
         first(shuffle(MersenneTwister(42), points), 40), first(exact_points, 40))) do point::Point3f
         trace("point", point)
         atoms_neighboord = atoms[inrange(atoms_tree, point, cutoff_radius)]
+		@assert length(atoms_neighboord) >=1
         trace("pre input size", length(atoms_neighboord))
         (; point, atoms = atoms_neighboord, d_real = signed_distance(point, skin))
     end
