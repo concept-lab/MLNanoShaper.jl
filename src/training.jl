@@ -81,14 +81,16 @@ end
 
 function generate_data_points((; atoms, atoms_tree, skin)::TreeTrainingData{Float32},
         (; scale, cutoff_radius)::Training_parameters)
-    exact_points = shuffle(MersenneTwister(42), skin.tree.data)
+    exact_points = filter(first(shuffle(MersenneTwister(42), skin.tree.data), 40)) do pt
+		distance(pt,atoms_tree) < cutoff_radius
+	end
     points = point_grid(atoms_tree, skin.tree; scale, cutoff_radius)
 
     mapobs(vcat(
-        first(shuffle(MersenneTwister(42), points), 40), first(exact_points, 40))) do point::Point3f
+        first(shuffle(MersenneTwister(42), points), 40), exact_points)) do point::Point3f
         trace("point", point)
         atoms_neighboord = atoms[inrange(atoms_tree, point, cutoff_radius)]
-		@assert length(atoms_neighboord) >=1
+        @assert length(atoms_neighboord) >= 1
         trace("pre input size", length(atoms_neighboord))
         (; point, atoms = atoms_neighboord, d_real = signed_distance(point, skin))
     end
@@ -156,16 +158,16 @@ function test(
         data::StructVector{@NamedTuple{
             point::Point3f, atoms::StructVector{Sphere{Float32}}, d_real::Float32}},
         training_states::Lux.Experimental.TrainState)
-	loss_vec = Float32[]
-	stats_vec = StructVector(@NamedTuple{distance::Float32}[])
+    loss_vec = Float32[]
+    stats_vec = StructVector(@NamedTuple{distance::Float32}[])
     for d in BatchView(data; batchsize = 200)
         loss, _, stats = loss_fn(training_states.model, training_states.parameters,
             training_states.states, d)
-        loss, stats = (loss, stats) .|> cpu_device() 
-		push!(loss_vec,loss)
-		push!(stats_vec,stats)
+        loss, stats = (loss, stats) .|> cpu_device()
+        push!(loss_vec, loss)
+        push!(stats_vec, stats)
     end
-	loss, distance = mean(loss_vec),mean(stats_vec.distance)
+    loss, distance = mean(loss_vec), mean(stats_vec.distance)
     @info "test" loss distance
 end
 
@@ -173,8 +175,8 @@ function train(
         data::StructVector{@NamedTuple{
             point::Point3f, atoms::StructVector{Sphere{Float32}}, d_real::Float32}},
         training_states::Lux.Experimental.TrainState)
-	loss_vec = Float32[]
-	stats_vec = StructVector(@NamedTuple{distance::Float32}[])
+    loss_vec = Float32[]
+    stats_vec = StructVector(@NamedTuple{distance::Float32}[])
     for d in BatchView(data; batchsize = 200)
         grads, loss, stats, training_states = Lux.Experimental.compute_gradients(
             AutoZygote(),
@@ -182,12 +184,12 @@ function train(
             d |> trace("train data"),
             training_states)
         training_states = Lux.Experimental.apply_gradients(training_states, grads)
-        loss, stats= (loss, stats) .|> cpu_device()
-		push!(loss_vec,loss)
-		push!(stats_vec,stats)
+        loss, stats = (loss, stats) .|> cpu_device()
+        push!(loss_vec, loss)
+        push!(stats_vec, stats)
     end
-	loss, distance = mean(loss_vec),mean(stats_vec.distance)
-	parameters = training_states.parameters |> gpu_device()
+    loss, distance = mean(loss_vec), mean(stats_vec.distance)
+    parameters = training_states.parameters |> gpu_device()
     @info "train" loss distance parameters
     training_states
 end
@@ -210,12 +212,13 @@ function train(
     @info "end pre computing"
 
     for epoch in 1:nb_epoch
-		@info "epoch" epoch=Int(epoch)
+        @info "epoch" epoch=Int(epoch)
         test(test_data, training_states)
         training_states = train(train_data, training_states)
         hausdorff_distance::Float64 = pmap(test_tree) do d
-            hausdorff_metric(d, training_states, training_parameters)
-        end |> mean |> Float64 
+                                          hausdorff_metric(
+                                              d, training_states, training_parameters)
+                                      end |> mean |> Float64
         @info "test" hausdorff_distance
 
         if epoch % save_periode == 0
