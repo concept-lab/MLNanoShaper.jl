@@ -46,8 +46,8 @@ function extract(d::Vector{<:Number})::Number
 end
 extract(d::Ref) = d[]
 
-function get_logger(loggdir::String)::AbstractLogger
-    logger = TeeLogger(TBLogger(loggdir), global_logger())
+function get_logger(logdir::String)::AbstractLogger
+    # logger = TeeLogger(TBLogger(loggdir), global_logger())
     # logger = AccumulatorLogger(logger,
     #     Dict()) do logger, d, args, kargs
     #     level, message = args
@@ -61,6 +61,7 @@ function get_logger(loggdir::String)::AbstractLogger
     #         accumulate(d[], Dict([message => kargs]))
     #     end
     # end
+	logger = TBLogger(logdir)
     TeeLogger(ActiveFilteredLogger(logger) do (; message)
             message in ("test", "train", "epoch")
         end,
