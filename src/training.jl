@@ -131,8 +131,11 @@ end
 function hausdorff_metric((; atoms, atoms_tree, skin)::TreeTrainingData,
         training_states::Lux.Experimental.TrainState, training_parameters::Training_parameters)
     surface = implicit_surface(atoms_tree, atoms, training_states, training_parameters) |> first
-	@assert length(surface) >= 1
-    distance(surface, skin.tree)
+	if length(surface) >= 1
+    	distance(surface, skin.tree)
+	else
+		Inf32
+	end
 end
 
 """
