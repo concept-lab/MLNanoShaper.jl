@@ -79,19 +79,23 @@ function loss_fn(model,
                        mean))
 end
 
+function exact_points(
+        rng::AbstractRNG, atoms_tree, skin,
+        cutoff_radius)
+    filter(first(shuffle(rng, skin.tree.data), 40)) do pt
+        distance(pt, atoms_tree) < cutoff_radius
+    end
+end
+
 function generate_data_points((; atoms, atoms_tree, skin)::TreeTrainingData{Float32},
         (; scale, cutoff_radius)::Training_parameters)
-    exact_points = filter(first(shuffle(MersenneTwister(42), skin.tree.data), 40)) do pt
-		distance(pt,atoms_tree) < cutoff_radius
-	end
-    points = point_grid(atoms_tree, skin.tree; scale, cutoff_radius)
+    exact_points_v = exact_points(MersenneTwister(42), atoms_tree, skin, cutoff_radius)
+	points = first(shuffle(MersenneTwister(42), point_grid(atoms_tree, skin.tree; scale, cutoff_radius)),40)
 
     mapobs(vcat(
-        first(shuffle(MersenneTwister(42), points), 40), exact_points)) do point::Point3f
-        trace("point", point)
+        points,exact_points_v)) do point::Point3f
         atoms_neighboord = atoms[inrange(atoms_tree, point, cutoff_radius)]
-        @assert length(atoms_neighboord) >= 1
-        trace("pre input size", length(atoms_neighboord))
+        # @assert length(atoms_neighboord) >= 1
         (; point, atoms = atoms_neighboord, d_real = signed_distance(point, skin))
     end
 end
@@ -130,12 +134,13 @@ end
 
 function hausdorff_metric((; atoms, atoms_tree, skin)::TreeTrainingData,
         training_states::Lux.Experimental.TrainState, training_parameters::Training_parameters)
-    surface = implicit_surface(atoms_tree, atoms, training_states, training_parameters) |> first
-	if length(surface) >= 1
-    	distance(surface, skin.tree)
-	else
-		Inf32
-	end
+    surface = implicit_surface(atoms_tree, atoms, training_states, training_parameters) |>
+              first
+    if length(surface) >= 1
+        distance(surface, skin.tree)
+    else
+        Inf32
+    end
 end
 
 """
