@@ -219,11 +219,11 @@ function train(
         @info "epoch" epoch=Int(epoch)
         test(test_data, training_states)
         training_states = train(train_data, training_states)
-        hausdorff_distance::Float64 = pmap(test_tree) do d
-                                          hausdorff_metric(
-                                              d, training_states, training_parameters)
-                                      end |> mean |> Float64
-        @info "test" hausdorff_distance
+        # hausdorff_distance::Float64 = pmap(test_tree) do d
+        #                                   hausdorff_metric(
+        #                                       d, training_states, training_parameters)
+        #                               end |> mean |> Float64
+        # @info "test" hausdorff_distance
 
         if epoch % save_periode == 0
             serialize(
@@ -246,7 +246,7 @@ function train(training_parameters::Training_parameters, directories::Auxiliary_
             data_ids)) do id
             load_data_pqr(Float32, "$(homedir())/$data_dir/$id")
         end; at = train_test_split)
-    optim = OptimiserChain(SignDecay(), WeightDecay(), Adam())
+    optim = OptimiserChain(WeightDecay(), Adam())
     with_logger(get_logger("$(homedir())/$log_dir/$(generate_training_name(training_parameters))")) do
         train((train_data, test_data),
             Lux.Experimental.TrainState(MersenneTwister(42), model, optim) |> gpu_device(),
