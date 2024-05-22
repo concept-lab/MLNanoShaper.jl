@@ -148,9 +148,10 @@ function train(
 
     for epoch in 1:nb_epoch
         @info "epoch" epoch=Int(epoch)
-        test_v = test(test_data, training_states)
+        test_exact = test(test_data_exact, training_states)
+        test_approximate = test(test_data_approximate, training_states)
         training_states, train_v = train(train_data, training_states)
-        @info "test" loss=test_v.loss distance=test_v.distance
+        @info "test" exact=test_exact approximaate=test_approximate
         @info "train" loss=train_v.loss distance=train_v.distance
 
         if epoch % save_periode == 0
