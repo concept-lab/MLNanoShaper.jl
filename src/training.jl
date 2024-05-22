@@ -141,7 +141,7 @@ function train(
         first(point_grid(MersenneTwister(42), atoms.tree, skin.tree, tr), 40)
     end |> StructVector
     test_data_exact = pre_compute_data_set(
-        test_tree, training_parameters) do (; atoms, skin), tr
+        test_data, training_parameters) do (; atoms, skin), tr
         first(exact_points(MersenneTwister(42), atoms.tree, skin.tree, tr), 40)
     end |> StructVector
     @info "end pre computing"

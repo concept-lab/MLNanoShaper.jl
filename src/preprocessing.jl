@@ -40,7 +40,8 @@ struct AnnotedKDTree{Type, Property, Subtype}
     data::StructVector{Type}
     tree::KDTree{Subtype}
     function AnnotedKDTree(data::StructVector, property::StaticSymbol)
-        new{eltype(data), property}(
+        new{eltype(data), dynamic(property),
+            eltype(getproperty(StructArrays.components(data), dynamic(property)))}(
             data, KDTree(getproperty(data, dynamic(property)); reorder = false))
     end
 end
@@ -49,11 +50,11 @@ function select_neighboord(
     data[inrange(tree, point, cutoff_radius)]
 end
 struct TreeTrainingData{T <: Number}
-    atoms::AnnotedKDTree{Sphere{T}, :pos, Point3{T}}
+    atoms::AnnotedKDTree{Sphere{T}, :center, Point3{T}}
     skin::RegionMesh
 end
 function TreeTrainingData((; atoms, skin)::TrainingData)
-    TreeTrainingData(AnnotedKDTree(atoms, static(:pos)), RegionMesh(skin))
+    TreeTrainingData(AnnotedKDTree(atoms, static(:center)), RegionMesh(skin))
 end
 
 function point_grid(rng::AbstractRNG, atoms_tree::KDTree,
@@ -61,12 +62,13 @@ function point_grid(rng::AbstractRNG, atoms_tree::KDTree,
         (; scale,
             cutoff_radius)::Training_parameters)
     (; mins, maxes) = atoms_tree.hyper_rec
-    Iterators.filter(
-        first(shuffle(
+    points = first(
+        shuffle(
             rng, Iterators.product(range.(mins,
                 maxes
-                ; step = scale)...) .|> Point3)),
-        1000) do point
+                ; step = scale)...) .|> Point3),
+        1000)
+    Iterators.filter(points) do point
         distance(point, atoms_tree) < cutoff_radius &&
             distance(point, skin_tree) < cutoff_radius
     end
@@ -75,18 +77,20 @@ end
 function exact_points(
         rng::AbstractRNG, atoms_tree::KDTree, skin_tree::KDTree, (;
             cutoff_radius)::Training_parameters)
-    Iterators.filter(first(shuffle(rng, skin_tree.data), 200)) do pt
+
+    points = first(shuffle(rng, skin_tree.data), 200)
+    Iterators.filter(points) do pt
         distance(pt, atoms_tree) < cutoff_radius
     end
 end
-function generate_data_points(points,(; atoms, skin)::TreeTrainingData{Float32},
+function generate_data_points(points, (; atoms, skin)::TreeTrainingData{Float32},
         (; scale, cutoff_radius)::Training_parameters)
     # exact_points_v = exact_points(MersenneTwister(42), atoms.tree, skin, cutoff_radius)
     # points = first(
     # point_grid(MersenneTwister(42), atoms.tree, skin.tree; scale, cutoff_radius), 40)
 
     mapobs(points) do point::Point3f
-        (; point, atoms = select_neighboord(point, atoms, cutoff_radius),
+        (; point, atoms = select_neighboord(point, atoms; cutoff_radius),
             d_real = signed_distance(point, skin))
     end
 end
@@ -95,11 +99,11 @@ function pre_compute_data_set(f::Function, data::AbstractVector{<:TreeTrainingDa
         tr::Training_parameters)::Vector{@NamedTuple{
         point::Point3f, atoms::StructVector{Sphere{Float32}}, d_real::Float32}}
     res = pmap(data) do d
-        points = f(d,tr)
+        points = f(d, tr)
         collect(
             @NamedTuple{
                 point::Point3f, atoms::StructVector{Sphere{Float32}}, d_real::Float32},
-            generate_data_points(points,d, tr))
+            generate_data_points(points, d, tr))
     end
     reduce(vcat, res)
 end
@@ -122,4 +126,3 @@ function load_data_pqr(T::Type{<:Number}, dir::String)
     TrainingData{T}(getproperty.(read("$dir/structure.pqr", PQR{T}), :pos) |> StructVector,
         load("$dir/triangulatedSurf.off"))
 end
-
