@@ -98,7 +98,7 @@ end
 function pre_compute_data_set(f::Function, data::AbstractVector{<:TreeTrainingData},
         tr::Training_parameters)::Vector{@NamedTuple{
         point::Point3f, atoms::StructVector{Sphere{Float32}}, d_real::Float32}}
-    res = pmap(data) do d
+    res = Folds.map(data) do d
         points = f(d, tr)
         collect(
             @NamedTuple{

@@ -22,7 +22,7 @@ using Meshing
 using NearestNeighbors
 using StructArrays
 using MLNanoShaperRunner
-using Distributed
+using Folds
 using Static
 
 function implicit_surface(atoms_tree::KDTree, atoms::StructVector{Sphere{Float32}},
@@ -126,8 +126,8 @@ function train(
     (; nb_epoch, save_periode, model_dir) = auxiliary_parameters
 
     @info "building KDtrees"
-    train_data = pmap(TreeTrainingData, train_data)
-    test_data = pmap(TreeTrainingData, test_data)
+    train_data = Folds.map(TreeTrainingData, train_data)
+    test_data = Folds.map(TreeTrainingData, test_data)
     @info "pre computing"
 
     train_data = pre_compute_data_set(
