@@ -8,6 +8,7 @@ include("Import.jl")
 @reexport using .Import
 using MLNanoShaperRunner
 include("logging.jl")
+include("preprocessing.jl")
 include("training.jl")
 include("generate_data.jl")
 include("cli.jl")
