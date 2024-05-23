@@ -4,9 +4,7 @@ export DeepSet, model, train, TrainingData, ModelInput, generate_data, ModelInpu
 
 using Reexport
 include("conf.jl")
-include("Import.jl")
 @reexport using .Import
-using MLNanoShaperRunner
 include("logging.jl")
 include("preprocessing.jl")
 include("training.jl")
