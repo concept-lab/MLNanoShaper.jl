@@ -57,6 +57,7 @@ function loss_fn(model,
             point::Point3f, atoms::StructVector{Sphere{Float32}}, d_real::Float32}})
     ret = Lux.apply(model, Batch(ModelInput.(point, atoms)), ps, st)
     v_pred, st = ret
+	v_pred = cpu_device()(v_pred)
 
     ((v_pred .- (1 .+ tanh.(d_real)) ./ 2) .^ 2 |> mean,
         st,
