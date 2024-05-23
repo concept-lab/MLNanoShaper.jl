@@ -158,7 +158,7 @@ function train(
         if epoch % save_periode == 0
             serialize(
                 "$(homedir())/$(model_dir)/$(generate_training_name(training_parameters,epoch))",
-				training_states |>cpu_device())
+				training_states.parameters |>cpu_device())
         end
     end
 end
