@@ -1,4 +1,5 @@
 using Comonicon
+using Serialization
 Option{T} = Union{T, Nothing}
 """
     train
@@ -12,7 +13,7 @@ The folowing parameters can be overided.
 - `-m, --model=String`; the model name. Can be anakin.
 
 """
-@main function train(; nb_epoch::Option{UInt} = nothing, model::Option{String} = nothing,
+@cast function train(; nb_epoch::Option{UInt} = nothing, model::Option{String} = nothing,
 	nb_data_points::Option{UInt} = nothing,name::Option{String} = nothing,cutoff_radius::Option{Float32}=nothing)
     conf = TOML.parsefile(params_file)
     if !isnothing(nb_epoch)
@@ -36,4 +37,8 @@ The folowing parameters can be overided.
     @info "Starting training"
     train(training_parameters, auxiliary_parameters)
     @info "Stop training"
+end
+
+function evaluate(name,model_name,cutoff_radius)
+
 end

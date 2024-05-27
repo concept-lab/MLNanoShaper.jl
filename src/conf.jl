@@ -29,16 +29,16 @@ struct Training_parameters
     scale::Float32
     cutoff_radius::Float32
     train_test_split::Float64
-    model::Lux.AbstractExplicitLayer
+    model::Partial
     data_ids::Vector{Int}
 end
 
 function generate_training_name(x::Training_parameters, epoch::Integer)
-	"$(x.model.name)_$(x.name)_epoch_$(epoch)_$(hash(x))"
+	"$(x.model().name)_$(x.name)_epoch_$(epoch)_$(hash(x))"
 end
 
 function generate_training_name(x::Training_parameters)
-	"$(x.model.name)_$(x.name)_$(hash(x))"
+	"$(x.model().name)_$(x.name)_$(hash(x))"
 end
 
 read_from_TOML(T::Type) = read_from_TOML(T, TOML.parsefile(params_file))
@@ -47,7 +47,7 @@ function read_from_TOML(::Type{Training_parameters}, conf::AbstractDict)
     conf = conf["Training_parameters"]
     conf = Dict(Symbol.(keys(conf)) .=> values(conf))
 
-	conf[:model] = getproperty(MLNanoShaperRunner, Symbol(conf[:model]))(;cutoff_radius=Float32(conf[:cutoff_radius]))
+	conf[:model] = Partial(getproperty(MLNanoShaperRunner, Symbol(conf[:model]));cutoff_radius=Float32(conf[:cutoff_radius]))
     unpact_dict(Training_parameters, conf)
 end
 

@@ -36,19 +36,6 @@ struct TrainingData{T <: Number}
     skin::GeometryBasics.Mesh
 end
 
-struct AnnotedKDTree{Type, Property, Subtype}
-    data::StructVector{Type}
-    tree::KDTree{Subtype}
-    function AnnotedKDTree(data::StructVector, property::StaticSymbol)
-        new{eltype(data), dynamic(property),
-            eltype(getproperty(StructArrays.components(data), dynamic(property)))}(
-            data, KDTree(getproperty(data, dynamic(property)); reorder = false))
-    end
-end
-function select_neighboord(
-        point, (; data, tree)::AnnotedKDTree; cutoff_radius)
-    data[inrange(tree, point, cutoff_radius)]
-end
 struct TreeTrainingData{T <: Number}
     atoms::AnnotedKDTree{Sphere{T}, :center, Point3{T}}
     skin::RegionMesh
@@ -77,33 +64,33 @@ end
 function exact_points(
         rng::AbstractRNG, atoms_tree::KDTree, skin_tree::KDTree, (;
             cutoff_radius)::Training_parameters)
-
     points = first(shuffle(rng, skin_tree.data), 200)
     Iterators.filter(points) do pt
         distance(pt, atoms_tree) < cutoff_radius
     end
 end
-function generate_data_points(points, (; atoms, skin)::TreeTrainingData{Float32},
-        (; scale, cutoff_radius)::Training_parameters)
+function generate_data_points(preprocessing::Lux.AbstractExplicitLayer, points,
+        (; atoms, skin)::TreeTrainingData{Float32})
+
     # exact_points_v = exact_points(MersenneTwister(42), atoms.tree, skin, cutoff_radius)
     # points = first(
     # point_grid(MersenneTwister(42), atoms.tree, skin.tree; scale, cutoff_radius), 40)
 
     mapobs(points) do point::Point3f
-        (; point, atoms = select_neighboord(point, atoms; cutoff_radius),
+        (; point, input = preprocessing((point, atoms)),
             d_real = signed_distance(point, skin))
     end
 end
-
-function pre_compute_data_set(f::Function, data::AbstractVector{<:TreeTrainingData},
-        tr::Training_parameters)::Vector{@NamedTuple{
-        point::Point3f, atoms::StructVector{Sphere{Float32}}, d_real::Float32}}
+GLobalPreprocessed=@NamedTuple{
+                point::Point3f, input::StructArray{PreprocessData{Float32}}, d_real::Float32}
+function pre_compute_data_set(f::Function,
+        preprocessing,
+        data::AbstractVector{<:TreeTrainingData})
     res = Folds.map(data) do d
-        points = f(d, tr)
+        points = f(d)
         collect(
-            @NamedTuple{
-                point::Point3f, atoms::StructVector{Sphere{Float32}}, d_real::Float32},
-            generate_data_points(points, d, tr))
+            GLobalPreprocessed,
+            generate_data_points(preprocessing, points, d))
     end
     reduce(vcat, res)
 end

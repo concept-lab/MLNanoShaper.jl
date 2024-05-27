@@ -52,12 +52,11 @@ function loss_fn(model,
         ps,
         st,
         (; point,
-            atoms,
-            d_real)::StructVector{@NamedTuple{
-            point::Point3f, atoms::StructVector{Sphere{Float32}}, d_real::Float32}})
-    ret = Lux.apply(model, Batch(ModelInput.(point, atoms)), ps, st)
+            input,
+            d_real)::StructVector{GLobalPreprocessed})
+    ret = Lux.apply(model, Batch(input), ps, st)
     v_pred, st = ret
-	v_pred = cpu_device()(v_pred)
+    v_pred = cpu_device()(v_pred)
 
     ((v_pred .- (1 .+ tanh.(d_real)) ./ 2) .^ 2 |> mean,
         st,
@@ -77,9 +76,15 @@ function hausdorff_metric((; atoms, atoms_tree, skin)::TreeTrainingData,
     end
 end
 
+function evaluate_model(data, training_states::Lux.Experimental.TrainState,
+        training_parameters::Training_parameters)
+    (; value, time) = @timed hausdorff_metric.(
+        data, Ref(training_states), Ref(training_parameters)) |> mean
+    (; metric = value, time)
+end
+
 function test(
-        data::StructVector{@NamedTuple{
-            point::Point3f, atoms::StructVector{Sphere{Float32}}, d_real::Float32}},
+        data::StructVector{GLobalPreprocessed},
         training_states::Lux.Experimental.TrainState)
     loss_vec = Float32[]
     stats_vec = StructVector(@NamedTuple{distance::Float32}[])
@@ -95,8 +100,7 @@ function test(
 end
 
 function train(
-        data::StructVector{@NamedTuple{
-            point::Point3f, atoms::StructVector{Sphere{Float32}}, d_real::Float32}},
+        data::StructVector{GLobalPreprocessed},
         training_states::Lux.Experimental.TrainState)
     loss_vec = Float32[]
     stats_vec = StructVector(@NamedTuple{distance::Float32}[])
@@ -115,6 +119,10 @@ function train(
     training_states, (; loss, distance)
 end
 
+function serialized_model(x::Lux.Experimental.TrainState, y::Training_parameters)
+    SerializedModel(y.model, x.parameters |> cpu_device())
+end
+
 """
 	train((train_data,test_data),training_states; nb_epoch)
 train the model on the data with nb_epoch
@@ -130,20 +138,21 @@ function train(
     train_data = Folds.map(TreeTrainingData, train_data)
     test_data = Folds.map(TreeTrainingData, test_data)
     @info "pre computing"
+	model = get_preprocessing(training_parameters.model())
 
     train_data = pre_compute_data_set(
-        train_data, training_parameters) do (; atoms, skin), tr
-        vcat(first(point_grid(MersenneTwister(42), atoms.tree, skin.tree, tr),
+        model, train_data) do (; atoms, skin)
+        vcat(first(point_grid(MersenneTwister(42), atoms.tree, skin.tree, training_parameters),
                 40),
-            first(exact_points(MersenneTwister(42), atoms.tree, skin.tree, tr), 40))
+            first(exact_points(MersenneTwister(42), atoms.tree, skin.tree, training_parameters), 40))
     end |> StructVector
     test_data_approximate = pre_compute_data_set(
-        test_data, training_parameters) do (; atoms, skin), tr
-        first(point_grid(MersenneTwister(42), atoms.tree, skin.tree, tr), 40)
+        model,test_data) do (; atoms, skin) 
+        first(point_grid(MersenneTwister(42), atoms.tree, skin.tree, training_parameters), 40)
     end |> StructVector
     test_data_exact = pre_compute_data_set(
-        test_data, training_parameters) do (; atoms, skin), tr
-        first(exact_points(MersenneTwister(42), atoms.tree, skin.tree, tr), 40)
+        model,test_data) do (; atoms, skin)
+        first(exact_points(MersenneTwister(42), atoms.tree, skin.tree,training_parameters ), 40)
     end |> StructVector
     @info "end pre computing"
 
@@ -158,7 +167,7 @@ function train(
         if epoch % save_periode == 0
             serialize(
                 "$(homedir())/$(model_dir)/$(generate_training_name(training_parameters,epoch))",
-				training_states.parameters |>cpu_device())
+                serialized_model(training_states, training_parameters))
         end
     end
 end
@@ -179,7 +188,9 @@ function train(training_parameters::Training_parameters, directories::Auxiliary_
     optim = OptimiserChain(WeightDecay(), Adam())
     with_logger(get_logger("$(homedir())/$log_dir/$(generate_training_name(training_parameters))")) do
         train((train_data, test_data),
-            Lux.Experimental.TrainState(MersenneTwister(42), model, optim) |> gpu_device(),
+            Lux.Experimental.TrainState(
+                MersenneTwister(42), drop_preprocessing(model()), optim) |>
+            gpu_device(),
             training_parameters, directories)
     end
 end
