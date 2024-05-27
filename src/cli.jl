@@ -1,5 +1,6 @@
 using Comonicon
 using Serialization
+using Random
 Option{T} = Union{T, Nothing}
 """
     train
@@ -14,7 +15,7 @@ The folowing parameters can be overided.
 
 """
 @cast function train(; nb_epoch::Option{UInt} = nothing, model::Option{String} = nothing,
-	nb_data_points::Option{UInt} = nothing,name::Option{String} = nothing,cutoff_radius::Option{Float32}=nothing)
+        nb_data_points::Option{UInt} = nothing, name::Option{String} = nothing, cutoff_radius::Option{Float32} = nothing)
     conf = TOML.parsefile(params_file)
     if !isnothing(nb_epoch)
         conf["Training_parameters"]["nb_epoch"] = nb_epoch
@@ -23,7 +24,7 @@ The folowing parameters can be overided.
         conf["Training_parameters"]["cutoff_radius"] = cutoff_radius
     end
     if !isnothing(name)
-		conf["Training_parameters"]["name"] = name
+        conf["Training_parameters"]["name"] = name
     end
     if !isnothing(model)
         conf["Training_parameters"]["model"] = model
@@ -39,6 +40,15 @@ The folowing parameters can be overided.
     @info "Stop training"
 end
 
-function evaluate(name,model_name,cutoff_radius)
+function evaluate_model(name::String, data, training_parameters::Training_parameters)
+    model_serilized::SerializedModel = deserialize("$(homedir())/dataset/models/$name")
+    model = model_serilized.model()
+    model = StatefulLuxLayer(model,
+        model_serilized.parameters,
+        Lux.initialstates(MersenneTwister(42), model))
+    evaluate_model(model, data, training_parameters)
+end
 
+function evaluate_model(names::AbstractArray{String}, data, tr::Training_parameters)
+    evaluate_model.(names, Ref(data), Ref(tr)) |> StructArray
 end

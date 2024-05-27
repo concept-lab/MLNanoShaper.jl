@@ -26,15 +26,14 @@ using Folds
 using Static
 
 function implicit_surface(atoms_tree::KDTree, atoms::StructVector{Sphere{Float32}},
-        training_states::Lux.Experimental.TrainState, (;
+        model::Lux.StatefulLuxLayer, (;
             cutoff_radius)::Training_parameters)
     (; mins, maxes) = atoms_tree.hyper_rec
     isosurface(
         MarchingCubes(), SVector{3, Float32}; origin = mins, widths = maxes - mins) do x
         atoms_neighboord = atoms[inrange(atoms_tree, x, cutoff_radius)] |> StructVector
         if length(atoms_neighboord) > 0
-            training_states.model(ModelInput(Point3f(x), atoms_neighboord),
-                training_states.parameters, training_states.states) |> first
+			model(ModelInput(Point3f(x), atoms_neighboord))
         else
             0.0f0
         end - 0.5f0
@@ -66,8 +65,8 @@ function loss_fn(model,
 end
 
 function hausdorff_metric((; atoms, atoms_tree, skin)::TreeTrainingData,
-        training_states::Lux.Experimental.TrainState, training_parameters::Training_parameters)
-    surface = implicit_surface(atoms_tree, atoms, training_states, training_parameters) |>
+        model::StatefulLuxLayer, training_parameters::Training_parameters)
+    surface = implicit_surface(atoms_tree, atoms, model, training_parameters) |>
               first
     if length(surface) >= 1
         distance(surface, skin.tree)
@@ -76,10 +75,10 @@ function hausdorff_metric((; atoms, atoms_tree, skin)::TreeTrainingData,
     end
 end
 
-function evaluate_model(data, training_states::Lux.Experimental.TrainState,
+function evaluate_model(model::StatefulLuxLayer,data,
         training_parameters::Training_parameters)
     (; value, time) = @timed hausdorff_metric.(
-        data, Ref(training_states), Ref(training_parameters)) |> mean
+        data, Ref(model), Ref(training_parameters)) |> mean
     (; metric = value, time)
 end
 
