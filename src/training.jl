@@ -112,7 +112,7 @@ function serialized_model_from_preprocessed_states(
                       (;)
                   else
                       parameters[keys(parameters)[i - 1]]
-                  end for i in 1:(1 + length(keys(parameters)))]
+                  end for i in 1:(1 + length(keys(parameters)))] |> NamedTuple
     SerializedModel(y.model, parameters |> cpu_device())
 end
 
