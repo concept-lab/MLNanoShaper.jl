@@ -1,6 +1,6 @@
 module MLNanoShaper
 export DeepSet, model, train, TrainingData, ModelInput, generate_data, ModelInput,
-    load_data,train
+    load_data,train,evaluate_model
 
 using Reexport
 include("conf.jl")

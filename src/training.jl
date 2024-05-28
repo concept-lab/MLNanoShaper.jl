@@ -25,21 +25,6 @@ using MLNanoShaperRunner
 using Folds
 using Static
 
-function implicit_surface(atoms_tree::KDTree, atoms::StructVector{Sphere{Float32}},
-        model::Lux.StatefulLuxLayer, (;
-            cutoff_radius)::Training_parameters)
-    (; mins, maxes) = atoms_tree.hyper_rec
-    isosurface(
-        MarchingCubes(), SVector{3, Float32}; origin = mins, widths = maxes - mins) do x
-        atoms_neighboord = atoms[inrange(atoms_tree, x, cutoff_radius)] |> StructVector
-        if length(atoms_neighboord) > 0
-			model(ModelInput(Point3f(x), atoms_neighboord))
-        else
-            0.0f0
-        end - 0.5f0
-    end
-end
-
 """
     loss_fn(model, ps, st, (; point, atoms, d_real))
 
@@ -64,22 +49,25 @@ function loss_fn(model,
                        mean))
 end
 
-function hausdorff_metric((; atoms, atoms_tree, skin)::TreeTrainingData,
+function implicit_surface(atoms::AnnotedKDTree{Sphere{T}, :center, Point3{T}}, 
+        model::Lux.StatefulLuxLayer, (;
+            cutoff_radius)::Training_parameters) where T
+    (; mins, maxes) = atoms.tree.hyper_rec
+    isosurface(
+        MarchingCubes(), SVector{3, Float32}; origin = mins, widths = maxes - mins) do x
+            model((Point3f(x), atoms))- 0.5f0
+    end
+end
+
+function hausdorff_metric((; atoms,  skin)::TreeTrainingData,
         model::StatefulLuxLayer, training_parameters::Training_parameters)
-    surface = implicit_surface(atoms_tree, atoms, model, training_parameters) |>
+    surface = implicit_surface(atoms, model, training_parameters) |>
               first
     if length(surface) >= 1
         distance(surface, skin.tree)
     else
         Inf32
     end
-end
-
-function evaluate_model(model::StatefulLuxLayer,data,
-        training_parameters::Training_parameters)
-    (; value, time) = @timed hausdorff_metric.(
-        data, Ref(model), Ref(training_parameters)) |> mean
-    (; metric = value, time)
 end
 
 function test(
@@ -137,21 +125,29 @@ function train(
     train_data = Folds.map(TreeTrainingData, train_data)
     test_data = Folds.map(TreeTrainingData, test_data)
     @info "pre computing"
-	model = get_preprocessing(training_parameters.model())
+    model = get_preprocessing(training_parameters.model())
 
     train_data = pre_compute_data_set(
         model, train_data) do (; atoms, skin)
-        vcat(first(point_grid(MersenneTwister(42), atoms.tree, skin.tree, training_parameters),
+        vcat(
+            first(
+                point_grid(MersenneTwister(42), atoms.tree, skin.tree, training_parameters),
                 40),
-            first(exact_points(MersenneTwister(42), atoms.tree, skin.tree, training_parameters), 40))
+            first(
+                exact_points(
+                    MersenneTwister(42), atoms.tree, skin.tree, training_parameters),
+                40))
     end |> StructVector
     test_data_approximate = pre_compute_data_set(
-        model,test_data) do (; atoms, skin) 
-        first(point_grid(MersenneTwister(42), atoms.tree, skin.tree, training_parameters), 40)
+        model, test_data) do (; atoms, skin)
+        first(point_grid(MersenneTwister(42), atoms.tree, skin.tree, training_parameters),
+            40)
     end |> StructVector
     test_data_exact = pre_compute_data_set(
-        model,test_data) do (; atoms, skin)
-        first(exact_points(MersenneTwister(42), atoms.tree, skin.tree,training_parameters ), 40)
+        model, test_data) do (; atoms, skin)
+        first(
+            exact_points(MersenneTwister(42), atoms.tree, skin.tree, training_parameters),
+            40)
     end |> StructVector
     @info "end pre computing"
 
@@ -171,20 +167,26 @@ function train(
     end
 end
 
+function get_dataset((; data_ids, train_test_split)::Training_parameters,
+        (; data_dir)::Auxiliary_parameters)
+    train_data, test_data = splitobs(
+        mapobs(shuffle(MersenneTwister(42),
+            data_ids)) do id
+            load_data_pqr(Float32, "$(homedir())/$data_dir/$id")
+        end; at = train_test_split)
+    (; train_data, test_data)
+end
+
 """
     train(training_parameters::Training_parameters, directories::Auxiliary_parameters)
 
 train the model given `Training_parameters` and `Auxiliary_parameters`.
 """
 function train(training_parameters::Training_parameters, directories::Auxiliary_parameters)
-    (; data_ids, train_test_split, model) = training_parameters
-    (; data_dir, log_dir) = directories
-    train_data, test_data = splitobs(
-        mapobs(shuffle(MersenneTwister(42),
-            data_ids)) do id
-            load_data_pqr(Float32, "$(homedir())/$data_dir/$id")
-        end; at = train_test_split)
+    (; model) = training_parameters
+    (; log_dir) = directories
     optim = OptimiserChain(WeightDecay(), Adam())
+	(;train_data,test_data) = get_dataset(training_parameters,directories)
     with_logger(get_logger("$(homedir())/$log_dir/$(generate_training_name(training_parameters))")) do
         train((train_data, test_data),
             Lux.Experimental.TrainState(

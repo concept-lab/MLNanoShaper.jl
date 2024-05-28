@@ -40,15 +40,31 @@ The folowing parameters can be overided.
     @info "Stop training"
 end
 
+function evaluate_model(model::StatefulLuxLayer, data,
+        training_parameters::Training_parameters)
+    (; value, time) = @timed hausdorff_metric.(
+        data, Ref(model), Ref(training_parameters)) |> mean
+    (; metric = value, time)
+end
+
 function evaluate_model(name::String, data, training_parameters::Training_parameters)
-    model_serilized::SerializedModel = deserialize("$(homedir())/dataset/models/$name")
+    model_serilized::SerializedModel = deserialize("$(homedir())/datasets/models/$name")
     model = model_serilized.model()
     model = StatefulLuxLayer(model,
-        model_serilized.parameters,
+        model_serilized.weights,
         Lux.initialstates(MersenneTwister(42), model))
     evaluate_model(model, data, training_parameters)
 end
 
-function evaluate_model(names::AbstractArray{String}, data, tr::Training_parameters)
-    evaluate_model.(names, Ref(data), Ref(tr)) |> StructArray
+function evaluate_model(names::AbstractArray{String}, tr::Training_parameters,
+        directories::Auxiliary_parameters)
+		(; test_data) = get_dataset(tr, directories)
+		test_data = test_data[1:10] .|> TreeTrainingData
+    evaluate_model.(names, Ref(test_data), Ref(tr)) |> StructArray
+end
+
+function evaluate_model(names::AbstractArray{String})
+    conf = TOML.parsefile(params_file)
+    evaluate_model(names, read_from_TOML(Training_parameters, conf),
+        read_from_TOML(Auxiliary_parameters, conf))
 end
