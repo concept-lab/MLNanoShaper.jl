@@ -106,8 +106,9 @@ function train(
     training_states, (; loss, distance)
 end
 
-function serialized_model(x::Lux.Experimental.TrainState, y::Training_parameters)
-    SerializedModel(y.model, x.parameters |> cpu_device())
+function serialized_model_from_preprocessed_states((;parameters)::Lux.Experimental.TrainState, y::Training_parameters)
+	parameters =  [Symbol("layer_$i") => if i == 1 (;) else parameters[keys(parameters)[i-1]] end for i in 1:(1+length(keys(parameters)))]
+    SerializedModel(y.model, parameters |> cpu_device())
 end
 
 """
@@ -162,7 +163,7 @@ function train(
         if epoch % save_periode == 0
             serialize(
                 "$(homedir())/$(model_dir)/$(generate_training_name(training_parameters,epoch))",
-                serialized_model(training_states, training_parameters))
+                serialized_model_from_preprocessed_states(training_states, training_parameters))
         end
     end
 end
