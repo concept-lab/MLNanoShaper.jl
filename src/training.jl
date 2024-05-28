@@ -49,17 +49,17 @@ function loss_fn(model,
                        mean))
 end
 
-function implicit_surface(atoms::AnnotedKDTree{Sphere{T}, :center, Point3{T}}, 
+function implicit_surface(atoms::AnnotedKDTree{Sphere{T}, :center, Point3{T}},
         model::Lux.StatefulLuxLayer, (;
-            cutoff_radius)::Training_parameters) where T
+            cutoff_radius)::Training_parameters) where {T}
     (; mins, maxes) = atoms.tree.hyper_rec
     isosurface(
         MarchingCubes(), SVector{3, Float32}; origin = mins, widths = maxes - mins) do x
-            model((Point3f(x), atoms))- 0.5f0
+        model((Point3f(x), atoms)) - 0.5f0
     end
 end
 
-function hausdorff_metric((; atoms,  skin)::TreeTrainingData,
+function hausdorff_metric((; atoms, skin)::TreeTrainingData,
         model::StatefulLuxLayer, training_parameters::Training_parameters)
     surface = implicit_surface(atoms, model, training_parameters) |>
               first
@@ -106,8 +106,13 @@ function train(
     training_states, (; loss, distance)
 end
 
-function serialized_model_from_preprocessed_states((;parameters)::Lux.Experimental.TrainState, y::Training_parameters)
-	parameters =  [Symbol("layer_$i") => if i == 1 (;) else parameters[keys(parameters)[i-1]] end for i in 1:(1+length(keys(parameters)))]
+function serialized_model_from_preprocessed_states(
+        (; parameters)::Lux.Experimental.TrainState, y::Training_parameters)
+    parameters = [Symbol("layer_$i") => if i == 1
+                      (;)
+                  else
+                      parameters[keys(parameters)[i - 1]]
+                  end for i in 1:(1 + length(keys(parameters)))]
     SerializedModel(y.model, parameters |> cpu_device())
 end
 
@@ -163,7 +168,8 @@ function train(
         if epoch % save_periode == 0
             serialize(
                 "$(homedir())/$(model_dir)/$(generate_training_name(training_parameters,epoch))",
-                serialized_model_from_preprocessed_states(training_states, training_parameters))
+                serialized_model_from_preprocessed_states(
+                    training_states, training_parameters))
         end
     end
 end
@@ -187,7 +193,7 @@ function train(training_parameters::Training_parameters, directories::Auxiliary_
     (; model) = training_parameters
     (; log_dir) = directories
     optim = OptimiserChain(WeightDecay(), Adam())
-	(;train_data,test_data) = get_dataset(training_parameters,directories)
+    (; train_data, test_data) = get_dataset(training_parameters, directories)
     with_logger(get_logger("$(homedir())/$log_dir/$(generate_training_name(training_parameters))")) do
         train((train_data, test_data),
             Lux.Experimental.TrainState(
