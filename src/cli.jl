@@ -42,8 +42,10 @@ end
 
 function evaluate_model(model::StatefulLuxLayer, data,
         training_parameters::Training_parameters)
-    (; value, time) = @timed hausdorff_metric.(
-        data, Ref(model), Ref(training_parameters)) |> mean
+    (; value, time) = @timed filter(hausdorff_metric.(
+        data, Ref(model), Ref(training_parameters))) do x
+        !isinf(x)
+    end |> mean
     (; metric = value, time)
 end
 
@@ -58,8 +60,8 @@ end
 
 function evaluate_model(names::AbstractArray{String}, tr::Training_parameters,
         directories::Auxiliary_parameters)
-		(; test_data) = get_dataset(tr, directories)
-		test_data = test_data[1:10] .|> TreeTrainingData
+    (; test_data) = get_dataset(tr, directories)
+    test_data = test_data[1:10] .|> TreeTrainingData
     evaluate_model.(names, Ref(test_data), Ref(tr)) |> StructArray
 end
 
