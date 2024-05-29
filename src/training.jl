@@ -48,14 +48,20 @@ function loss_fn(model,
             distance = abs.(d_real .- atanh.(max.(0, (2v_pred .- 1)) * (1 .- 1.0f-4))) |>
                        mean))
 end
-
+get_cutoff_radius(x::Lux.AbstractExplicitLayer) = get_preprocessing(x).fun.kargs[:cutoff_radius]
+get_cutoff_radius(x::Lux.StatefulLuxLayer) = get_cutoff_radius(x.model)
 function implicit_surface(atoms::AnnotedKDTree{Sphere{T}, :center, Point3{T}},
         model::Lux.StatefulLuxLayer, (;
             cutoff_radius)::Training_parameters) where {T}
     (; mins, maxes) = atoms.tree.hyper_rec
+    cutoff_radius = get_cutoff_radius(model)
     isosurface(
         MarchingCubes(), SVector{3, Float32}; origin = mins, widths = maxes - mins) do x
-        model((Point3f(x), atoms)) - 0.5f0
+        if distance(Point3f(x), atoms.tree) >= cutoff_radius
+            0.0f0
+        else
+			only(model((Point3f(x), atoms)))-0.5f0
+        end
     end
 end
 
@@ -63,7 +69,7 @@ function hausdorff_metric((; atoms, skin)::TreeTrainingData,
         model::StatefulLuxLayer, training_parameters::Training_parameters)
     surface = implicit_surface(atoms, model, training_parameters) |>
               first
-    if length(surface) >= 1
+    if length(surface) >= 0
         distance(surface, skin.tree)
     else
         Inf32
