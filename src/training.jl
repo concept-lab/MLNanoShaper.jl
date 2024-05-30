@@ -145,7 +145,7 @@ function train(
         model, train_data) do (; atoms, skin)
         vcat(
             first(
-                point_grid(MersenneTwister(42), atoms.tree, skin.tree, training_parameters),
+                approximates_points(MersenneTwister(42), atoms.tree, skin.tree, training_parameters),
                 40),
             first(
                 exact_points(
@@ -154,7 +154,7 @@ function train(
     end |> StructVector
     test_data_approximate = pre_compute_data_set(
         model, test_data) do (; atoms, skin)
-        first(point_grid(MersenneTwister(42), atoms.tree, skin.tree, training_parameters),
+        first(approximates_points(MersenneTwister(42), atoms.tree, skin.tree, training_parameters),
             40)
     end |> StructVector
     test_data_exact = pre_compute_data_set(

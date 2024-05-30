@@ -72,10 +72,6 @@ end
 function generate_data_points(preprocessing::Lux.AbstractExplicitLayer, points,
         (; atoms, skin)::TreeTrainingData{Float32})
 
-    # exact_points_v = exact_points(MersenneTwister(42), atoms.tree, skin, cutoff_radius)
-    # points = first(
-    # point_grid(MersenneTwister(42), atoms.tree, skin.tree; scale, cutoff_radius), 40)
-
     mapobs(points) do point::Point3f
         (; point, input = preprocessing((point, atoms)),
             d_real = signed_distance(point, skin))
