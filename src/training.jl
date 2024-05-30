@@ -52,6 +52,14 @@ function get_cutoff_radius(x::Lux.AbstractExplicitLayer)
     get_preprocessing(x).fun.kargs[:cutoff_radius]
 end
 get_cutoff_radius(x::Lux.StatefulLuxLayer) = get_cutoff_radius(x.model)
+
+evaluate_model(model::Lux.StatefulLuxLayer,x::Point3f,atoms::AnnotedKDTree;cutoff_radius) = 
+        if distance(Point3f(x), atoms.tree) >= cutoff_radius
+            -0.5f0
+        else
+            only(model((Point3f(x), atoms))) - 0.5f0
+        end
+
 function implicit_surface(atoms::AnnotedKDTree{Sphere{T},:center,Point3{T}},
     model::Lux.StatefulLuxLayer, (;
         cutoff_radius)) where {T}
@@ -59,11 +67,7 @@ function implicit_surface(atoms::AnnotedKDTree{Sphere{T},:center,Point3{T}},
     cutoff_radius = get_cutoff_radius(model)
     isosurface(
         MarchingCubes(), SVector{3,Float32}; origin=mins, widths=maxes - mins, samples=(((maxes - mins) * 2).|> floor .|> Int |>Tuple)) do x
-        if distance(Point3f(x), atoms.tree) >= cutoff_radius
-            -0.5f0
-        else
-            only(model((Point3f(x), atoms))) - 0.5f0
-        end
+			evaluate_model(model,Point3f(x),atoms;cutoff_radius)
     end
 end
 
