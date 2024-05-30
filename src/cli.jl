@@ -48,13 +48,15 @@ function evaluate_model(model::StatefulLuxLayer, data,
     end |> mean
     (; metric = value, time)
 end
-
-function evaluate_model(name::String, data, training_parameters::Training_parameters)
-    model_serilized::SerializedModel = deserialize("$(homedir())/datasets/models/$name")
+function extract_model(model_serilized::SerializedModel)::StatefulLuxLayer
     model = model_serilized.model()
-    model = StatefulLuxLayer(model,
+    StatefulLuxLayer(model,
         model_serilized.weights,
         Lux.initialstates(MersenneTwister(42), model))
+end
+
+function evaluate_model(name::String, data, training_parameters::Training_parameters)
+    model = "$(homedir())/datasets/models/$name" |> deserialize |> extract_model
     evaluate_model(model, data, training_parameters)
 end
 

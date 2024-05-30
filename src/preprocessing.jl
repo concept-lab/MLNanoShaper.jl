@@ -44,7 +44,7 @@ function TreeTrainingData((; atoms, skin)::TrainingData)
     TreeTrainingData(AnnotedKDTree(atoms, static(:center)), RegionMesh(skin))
 end
 
-function point_grid(rng::AbstractRNG, atoms_tree::KDTree,
+function approximates_points(rng::AbstractRNG, atoms_tree::KDTree,
         skin_tree::KDTree{Point3f},
         (; scale,
             cutoff_radius)::Training_parameters)
@@ -56,8 +56,8 @@ function point_grid(rng::AbstractRNG, atoms_tree::KDTree,
                 ; step = scale)...) .|> Point3),
         1000)
     Iterators.filter(points) do point
-        distance(point, atoms_tree) < cutoff_radius &&
-            distance(point, skin_tree) < cutoff_radius
+        distance(point, atoms_tree) < cutoff_radius
+            # && distance(point, skin_tree) < cutoff_radius
     end
 end
 
