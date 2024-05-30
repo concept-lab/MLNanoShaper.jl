@@ -43,7 +43,11 @@ end
 function TreeTrainingData((; atoms, skin)::TrainingData)
     TreeTrainingData(AnnotedKDTree(atoms, static(:center)), RegionMesh(skin))
 end
-
+function point_grid(mins::AbstractVector, maxes, scale::Number)
+    Iterators.product(range.(mins,
+        maxes
+        ; step = scale)...) .|> Point3
+end
 function approximates_points(rng::AbstractRNG, atoms_tree::KDTree,
         skin_tree::KDTree{Point3f},
         (; scale,
@@ -51,13 +55,11 @@ function approximates_points(rng::AbstractRNG, atoms_tree::KDTree,
     (; mins, maxes) = atoms_tree.hyper_rec
     points = first(
         shuffle(
-            rng, Iterators.product(range.(mins,
-                maxes
-                ; step = scale)...) .|> Point3),
+            rng, point_grid(mins, maxes, scale)),
         1000)
     Iterators.filter(points) do point
         distance(point, atoms_tree) < cutoff_radius
-            # && distance(point, skin_tree) < cutoff_radius
+        # && distance(point, skin_tree) < cutoff_radius
     end
 end
 
@@ -71,14 +73,13 @@ function exact_points(
 end
 function generate_data_points(preprocessing::Lux.AbstractExplicitLayer, points,
         (; atoms, skin)::TreeTrainingData{Float32})
-
     mapobs(points) do point::Point3f
         (; point, input = preprocessing((point, atoms)),
             d_real = signed_distance(point, skin))
     end
 end
-GLobalPreprocessed=@NamedTuple{
-                point::Point3f, input::StructArray{PreprocessData{Float32}}, d_real::Float32}
+GLobalPreprocessed = @NamedTuple{
+    point::Point3f, input::StructArray{PreprocessData{Float32}}, d_real::Float32}
 function pre_compute_data_set(f::Function,
         preprocessing,
         data::AbstractVector{<:TreeTrainingData})
