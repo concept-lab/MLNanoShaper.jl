@@ -158,7 +158,15 @@ function train(
         vcat(
             first(
                 approximates_points(
-                    MersenneTwister(42), atoms.tree, skin.tree, training_parameters),
+                    MersenneTwister(42), atoms.tree, skin.tree, training_parameters) do point
+                    distance(point, skin.tree) < 2 * training_parameters.cutoff_radius
+                end,
+                100),
+            first(
+                approximates_points(
+                    MersenneTwister(42), atoms.tree, skin.tree, training_parameters) do point
+                    distance(point, skin.tree) > 2 * training_parameters.cutoff_radius
+                end,
                 100),
             first(
                 exact_points(
@@ -169,8 +177,9 @@ function train(
         model, test_data) do (; atoms, skin)
         first(
             approximates_points(
-                MersenneTwister(42), atoms.tree, skin.tree, training_parameters),
-            100)
+                MersenneTwister(42), atoms.tree, skin.tree, training_parameters) do point
+                distance(point, skin.tree) < 2 * training_parameters.cutoff_radius
+            end, 100)
     end |> StructVector
     test_data_exact = pre_compute_data_set(
         model, test_data) do (; atoms, skin)

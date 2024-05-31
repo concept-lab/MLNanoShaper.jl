@@ -21,7 +21,7 @@ To run this script, please run `using Pluto;Pluto.run` in a new Julia shell.
 import WGLMakie as Mk, Meshes as Ms
 
 # ╔═╡ 69ee1b79-b99d-4e3a-9769-254b1939aba6
-model = "$(homedir())/datasets/models/deep_angular_dense_3Ai1_epoch_50_3072647476597656565" |> deserialize |> MLNanoShaper.extract_model
+model = "$(homedir())/datasets/models/angular_dense_3Aet_epoch_100_14939994193637200192" |> deserialize |> MLNanoShaper.extract_model
 
 
 # ╔═╡ f7041ca8-97be-4998-9c10-2cbed79eb135

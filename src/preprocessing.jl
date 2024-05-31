@@ -48,7 +48,7 @@ function point_grid(mins::AbstractVector, maxes, scale::Number)
         maxes
         ; step = scale)...) .|> Point3
 end
-function approximates_points(rng::AbstractRNG, atoms_tree::KDTree,
+function approximates_points(predicate,rng::AbstractRNG, atoms_tree::KDTree,
         skin_tree::KDTree{Point3f},
         (; scale,
             cutoff_radius)::Training_parameters)
@@ -59,7 +59,7 @@ function approximates_points(rng::AbstractRNG, atoms_tree::KDTree,
         1000)
     Iterators.filter(points) do point
         distance(point, atoms_tree) < cutoff_radius &&
-            distance(point, skin_tree) < 6*cutoff_radius
+		predicate(point)
     end
 end
 
