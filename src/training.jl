@@ -48,9 +48,9 @@ function loss_fn(model,
     v_pred, st = ret
     v_pred = cpu_device()(v_pred)
     coefficient = ignore_derivatives() do
-        exp.(-abs.(d_real)) .+ .01f0
+        0.08f0 * exp.(-abs.(d_real / 3)) .+ 0.02f0
     end .|> Float32
-    coefficient .* ((v_pred .- σ.(d_real)) .^ 2 |> mean,
+    (mean(coefficient .* (v_pred .- σ.(d_real)) .^ 2),
         st,
         (;
             distance = abs.(d_real .- loggit.(max.(0, v_pred) * (1 .- 1.0f-4))) |>
