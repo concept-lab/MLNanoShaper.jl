@@ -26,6 +26,11 @@ using Folds
 using Static
 using ProgressLogging
 
+
+function loggit(x)
+	log(x) - log(1-x)
+end
+
 """
     loss_fn(model, ps, st, (; point, atoms, d_real))
 
@@ -43,10 +48,10 @@ function loss_fn(model,
     v_pred, st = ret
     v_pred = cpu_device()(v_pred)
 
-    ((v_pred .- (1 .+ tanh.(d_real)) ./ 2) .^ 2 |> mean,
+    ((v_pred .- σ.(d_real)) .^ 2 |> mean,
         st,
         (;
-            distance = abs.(d_real .- atanh.(max.(0, (2v_pred .- 1)) * (1 .- 1.0f-4))) |>
+            distance = abs.(d_real .- loggit.(max.(0,v_pred) * (1 .- 1.0f-4))) |>
                        mean))
 end
 function get_cutoff_radius(x::Lux.AbstractExplicitLayer)

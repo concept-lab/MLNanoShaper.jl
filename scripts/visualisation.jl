@@ -21,14 +21,25 @@ To run this script, please run `using Pluto;Pluto.run` in a new Julia shell.
 import WGLMakie as Mk, Meshes as Ms
 
 # ╔═╡ 69ee1b79-b99d-4e3a-9769-254b1939aba6
-model = "$(homedir())/datasets/models/angular_dense_3Aet_epoch_100_14939994193637200192" |> deserialize |> MLNanoShaper.extract_model
+model = "$(homedir())/datasets/models/deep_angular_dense_3Aef_epoch_100_502727117824899233" |> deserialize |> MLNanoShaper.extract_model
 
 
 # ╔═╡ f7041ca8-97be-4998-9c10-2cbed79eb135
 atoms = MLNanoShaperRunner.AnnotedKDTree(getfield.(read("/home/tristan/datasets/pqr/1/structure.pqr",PQR{Float32}),:pos) |>StructVector,static(:center))
 
 # ╔═╡ 2e208c01-0893-4ab0-a1db-51cada6a95b6
-points,top = MLNanoShaper.implicit_surface(atoms,model,(;cutoff_radius=3f0,step=.5f0))
+_points,_top = MLNanoShaper.implicit_surface(atoms,model,(;cutoff_radius=3f0,step=1f0))
+
+# ╔═╡ d38242b4-0bee-44c8-9885-42e8441faf25
+function select_in_domaine(predicate,(point,top))
+	top = filter(top)do top
+		any(top) do id
+			point[id] |> predicate
+		end
+	end
+	#point = filter(predicate,point)
+	point,top
+end
 
 # ╔═╡ 4a1478c6-d200-4073-8d9d-1cbab26ff94d
 invert((a,b,c)::NgonFace)= NgonFace(a,c,b)
@@ -36,8 +47,17 @@ invert((a,b,c)::NgonFace)= NgonFace(a,c,b)
 # ╔═╡ 9f2d57c6-cc75-43ac-a431-76f92229bda4
 invert((a,b,c)::Tuple)= (a,c,b)
 
+# ╔═╡ 1ba3214e-6be0-439c-82a3-75df5513bcba
+points,top = select_in_domaine((_points,_top)) do (x,y,z)
+		 -10 <= x <= 20
+	 end
+
 # ╔═╡ 8b7580c3-8f2c-4d33-83bc-d368e9df19e2
- mesh = Ms.SimpleMesh(points .|>Tuple ,top .|> Tuple .|>invert .|>Ms.connect)
+ mesh = begin
+	 
+	 Ms.SimpleMesh(points .|>Tuple ,top .|> Tuple .|>invert .|>Ms.connect)
+	 
+ end
 
 # ╔═╡ cf2a31e2-502a-4be6-af8e-154b726db1ea
 m1 = load("$(homedir())/datasets/pqr/1/triangulatedSurf.off")
@@ -47,9 +67,9 @@ m1 = load("$(homedir())/datasets/pqr/1/triangulatedSurf.off")
 
 # ╔═╡ e7e6584b-5059-46f6-a614-76866f1b1df9
 begin
-	res = Ms.viz(mesh;color=:red)
-	Ms.viz!(m2;color=:green)
-	res
+res = Ms.viz(mesh;color=:red)
+Ms.viz!(m2;color=:green)
+res
 end
 
 # ╔═╡ Cell order:
@@ -60,8 +80,10 @@ end
 # ╠═69ee1b79-b99d-4e3a-9769-254b1939aba6
 # ╠═f7041ca8-97be-4998-9c10-2cbed79eb135
 # ╠═2e208c01-0893-4ab0-a1db-51cada6a95b6
+# ╠═d38242b4-0bee-44c8-9885-42e8441faf25
 # ╠═4a1478c6-d200-4073-8d9d-1cbab26ff94d
 # ╠═9f2d57c6-cc75-43ac-a431-76f92229bda4
+# ╠═1ba3214e-6be0-439c-82a3-75df5513bcba
 # ╠═8b7580c3-8f2c-4d33-83bc-d368e9df19e2
 # ╠═cf2a31e2-502a-4be6-af8e-154b726db1ea
 # ╠═eec7338d-a319-478c-9cde-663e38b3e523
