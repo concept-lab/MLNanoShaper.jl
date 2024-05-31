@@ -50,7 +50,7 @@ function loss_fn(model,
     coefficient = ignore_derivatives() do
         exp.(-abs.(d_real)) .+ .01f0
     end .|> Float32
-    coefficient * ((v_pred .- σ.(d_real)) .^ 2 |> mean,
+    coefficient .* ((v_pred .- σ.(d_real)) .^ 2 |> mean,
         st,
         (;
             distance = abs.(d_real .- loggit.(max.(0, v_pred) * (1 .- 1.0f-4))) |>
