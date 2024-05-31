@@ -24,6 +24,7 @@ using StructArrays
 using MLNanoShaperRunner
 using Folds
 using Static
+using ProgressLogging
 
 """
     loss_fn(model, ps, st, (; point, atoms, d_real))
@@ -158,29 +159,28 @@ function train(
             first(
                 approximates_points(
                     MersenneTwister(42), atoms.tree, skin.tree, training_parameters),
-                40),
+                100),
             first(
                 exact_points(
                     MersenneTwister(42), atoms.tree, skin.tree, training_parameters),
-                40))
+                100))
     end |> StructVector
     test_data_approximate = pre_compute_data_set(
         model, test_data) do (; atoms, skin)
         first(
             approximates_points(
                 MersenneTwister(42), atoms.tree, skin.tree, training_parameters),
-            40)
+            100)
     end |> StructVector
     test_data_exact = pre_compute_data_set(
         model, test_data) do (; atoms, skin)
         first(
             exact_points(MersenneTwister(42), atoms.tree, skin.tree, training_parameters),
-            40)
+            100)
     end |> StructVector
     @info "end pre computing"
 
-    for epoch in 1:nb_epoch
-        @info "epoch" epoch=Int(epoch)
+    @progress name="training" for epoch in 1:nb_epoch
         test_exact = test(test_data_exact, training_states)
         test_approximate = test(test_data_approximate, training_states)
         training_states, train_v = train(train_data, training_states)

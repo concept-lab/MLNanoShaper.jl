@@ -58,8 +58,8 @@ function approximates_points(rng::AbstractRNG, atoms_tree::KDTree,
             rng, point_grid(mins, maxes, scale)),
         1000)
     Iterators.filter(points) do point
-        distance(point, atoms_tree) < cutoff_radius
-        # && distance(point, skin_tree) < cutoff_radius
+        distance(point, atoms_tree) < cutoff_radius &&
+            distance(point, skin_tree) < 6*cutoff_radius
     end
 end
 
