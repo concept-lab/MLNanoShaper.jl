@@ -48,7 +48,7 @@ function loss_fn(model,
     v_pred, st = ret
     v_pred = cpu_device()(v_pred)
     coefficient = ignore_derivatives() do
-        0.08f0 * exp.(-abs.(d_real / 3)) .+ 0.02f0
+        0.08f0 * exp.(-abs.(d_real / 2)) .+ 0.02f0
     end .|> Float32
     (mean(coefficient .* (v_pred .- σ.(d_real)) .^ 2),
         st,
@@ -167,7 +167,7 @@ function train(
                     MersenneTwister(42), atoms.tree, skin.tree, training_parameters) do point
                     distance(point, skin.tree) < 2 * training_parameters.cutoff_radius
                 end,
-                100),
+                200),
             first(
                 approximates_points(
                     MersenneTwister(42), atoms.tree, skin.tree, training_parameters) do point
@@ -177,7 +177,7 @@ function train(
             first(
                 exact_points(
                     MersenneTwister(42), atoms.tree, skin.tree, training_parameters),
-                100))
+                400))
     end |> StructVector
     test_data_approximate = pre_compute_data_set(
         model, test_data) do (; atoms, skin)
