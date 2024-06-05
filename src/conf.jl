@@ -35,11 +35,11 @@ struct Training_parameters
 end
 
 function generate_training_name(x::Training_parameters, epoch::Integer)
-	"$(x.model().name)_$(x.name)_$(Dates.format(now(),"yyyy-mm-dd"))_epoch_$(epoch)_$(hash(x))"
+    "$(x.model().name)_$(x.name)_$(Dates.format(now(),"yyyy-mm-dd"))_epoch_$(epoch)_$(hash(x))"
 end
 
 function generate_training_name(x::Training_parameters)
-	"$(x.model().name)_$(x.name)_$(Dates.format(now(),"yyyy-mm-dd"))_$(hash(x))"
+    "$(x.model().name)_$(x.name)_$(Dates.format(now(),"yyyy-mm-dd"))_$(hash(x))"
 end
 
 read_from_TOML(T::Type) = read_from_TOML(T, TOML.parsefile(params_file))
@@ -47,8 +47,11 @@ read_from_TOML(T::Type) = read_from_TOML(T, TOML.parsefile(params_file))
 function read_from_TOML(::Type{Training_parameters}, conf::AbstractDict)
     conf = conf["Training_parameters"]
     conf = Dict(Symbol.(keys(conf)) .=> values(conf))
+    conf[:model_kargs] = Dict(Symbol.(keys(conf[:model_kargs])) .=>
+        values(conf[:model_kargs]))
 
-	conf[:model] = Partial(getproperty(MLNanoShaperRunner, Symbol(conf[:model]));cutoff_radius=Float32(conf[:cutoff_radius]))
+    conf[:model] = Partial(getproperty(MLNanoShaperRunner, Symbol(conf[:model]));
+        cutoff_radius = Float32(conf[:cutoff_radius]), conf[:model_kargs]...)
     unpact_dict(Training_parameters, conf)
 end
 

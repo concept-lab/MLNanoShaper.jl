@@ -14,8 +14,12 @@ The folowing parameters can be overided.
 - `-m, --model=String`; the model name. Can be anakin.
 
 """
-@cast function train(; nb_epoch::Option{UInt} = nothing, model::Option{String} = nothing,
-        nb_data_points::Option{UInt} = nothing, name::Option{String} = nothing, cutoff_radius::Option{Float32} = nothing)
+@cast function train(; nb_epoch::Option{UInt} = nothing,
+        model::Option{String} = nothing,
+        model_kargs::Option{Dict{String}} = nothing,
+        nb_data_points::Option{UInt} = nothing,
+        name::Option{String} = nothing,
+        cutoff_radius::Option{Float32} = nothing)
     conf = TOML.parsefile(params_file)
     if !isnothing(nb_epoch)
         conf["Training_parameters"]["nb_epoch"] = nb_epoch
@@ -28,6 +32,9 @@ The folowing parameters can be overided.
     end
     if !isnothing(model)
         conf["Training_parameters"]["model"] = model
+    end
+    if !isnothing(model_kargs)
+        conf["Training_parameters"]["model_kargs"] = model_kargs
     end
     if !isnothing(nb_data_points)
         conf["Training_parameters"]["data_ids"] = conf["Training_parameters"]["data_ids"][begin:(begin + nb_data_points)]

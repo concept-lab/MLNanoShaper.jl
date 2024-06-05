@@ -37,8 +37,8 @@ struct BayesianStats
     nb_false::Int
     function BayesianStats(
             nb_true_positives::Int, nb_true_negatives::Int, nb_true::Int, nb_false::Int)
-        @assert nb_true_positives <= nb_true "got $nb_true_positives true positives for $nb_true true values"
-        @assert nb_true_negatives <= nb_false "got $nb_true_negatives true negatives for $nb_false true values"
+        @assert nb_true_positives<=nb_true "got $nb_true_positives true positives for $nb_true true values"
+        @assert nb_true_negatives<=nb_false "got $nb_true_negatives true negatives for $nb_false true values"
         new(nb_true_positives, nb_true_negatives, nb_true, nb_false)
     end
 end
@@ -98,7 +98,7 @@ function loss_fn(model,
     error = v_pred .- v_real
     D_distance = d_real .- loggit.(max.(0, v_pred) * (1 .- 1.0f-4))
     (mean(coefficient .* error .^ 2),
-	st, (; stats = BayesianStats(vec(v_real) .>= 0.5, vec(v_pred) .>= 0.5),
+        st, (; stats = BayesianStats(vec(v_real) .>= 0.5, vec(v_pred) .>= 0.5),
             bias_error = mean(error),
             bias_distance = mean(D_distance),
             abs_distance = abs.(D_distance) |> mean))
@@ -224,7 +224,10 @@ function train(
             first(
                 exact_points(
                     MersenneTwister(42), atoms.tree, skin.tree, training_parameters),
-                400))
+                400)
+            first(
+                shuffle(MersenneTwister(42), atoms.data), 100)
+        )
     end |> StructVector
     test_data_approximate = pre_compute_data_set(
         model, test_data) do (; atoms, skin)

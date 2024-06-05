@@ -63,11 +63,12 @@ nb_epoch=100
 save_periode=10
 
 [Training_parameters]
-name="ani"
+name="A"
 scale=1.0
 cutoff_radius=3.0
 train_test_split=0.8
-model = "anakin"
+model = "might_angular_dense"
+model_kargs.van_der_wal_channel=false
 data_ids = [
 1,
 10,
