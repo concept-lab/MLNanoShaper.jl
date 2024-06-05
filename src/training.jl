@@ -30,6 +30,49 @@ using ChainRulesCore
 function loggit(x)
     log(x) - log(1 - x)
 end
+struct BayesianStats
+    nb_true_positives::Int
+    nb_true_negatives::Int
+    nb_true::Int
+    nb_false::Int
+    function BayesianStats(
+            nb_true_positives::Int, nb_true_negatives::Int, nb_true::Int, nb_false::Int)
+        @assert nb_true_positives <= nb_true "got $nb_true_positives true positives for $nb_true true values"
+        @assert nb_true_negatives <= nb_false "got $nb_true_negatives true negatives for $nb_false true values"
+        new(nb_true_positives, nb_true_negatives, nb_true, nb_false)
+    end
+end
+function BayesianStats(real::AbstractVector{Bool}, pred::AbstractVector{Bool})
+    nb_true_positives = count(real .&& pred)
+    nb_true_negatives = count(.!real .&& pred)
+    nb_true = count(real)
+    nb_false = count(.!real)
+    BayesianStats(nb_true_positives, nb_true_negatives, nb_true, nb_false)
+end
+function reduce_stats((;
+        nb_true_positives, nb_true_negatives, nb_true, nb_false)::BayesianStats)
+    (; false_positive_rate = 1 - nb_true_positives / nb_true,
+        true_negative_rate = nb_true_negatives / nb_false)
+end
+function aggregate(x::AbstractArray{BayesianStats})
+    nb_true_positives = sum(getproperty.(x, :nb_true_positives))
+    nb_true_negatives = sum(getproperty.(x, :nb_true_negatives))
+    nb_true = sum(getproperty.(x, :nb_true))
+    nb_false = sum(getproperty.(x, :nb_false))
+    BayesianStats(nb_true_positives, nb_true_negatives, nb_true, nb_false) |> reduce_stats
+end
+aggregate(x::AbstractArray{<:Number}) = mean(x)
+Metric = @NamedTuple{
+    stats::BayesianStats,
+    bias_error::Float32,
+    bias_distance::Float32,
+    abs_distance::Float32}
+
+function aggregate(w::AbstractArray{<:Metric})
+    map(propertynames(w)) do p
+        p => getproperty(w, p) |> aggregate
+    end |> NamedTuple
+end
 
 """
     loss_fn(model, ps, st, (; point, atoms, d_real))
@@ -48,13 +91,17 @@ function loss_fn(model,
     v_pred, st = ret
     v_pred = cpu_device()(v_pred)
     coefficient = ignore_derivatives() do
-        0.08f0 * exp.(-abs.(d_real / 2)) .+ 0.02f0
+        0.8f0 * exp.(-abs.(d_real)) .+ 0.2f0
     end .|> Float32
-    (mean(coefficient .* (v_pred .- σ.(d_real)) .^ 2),
-        st,
-        (;
-            distance = abs.(d_real .- loggit.(max.(0, v_pred) * (1 .- 1.0f-4))) |>
-                       mean))
+    v_real = σ.(d_real)
+
+    error = v_pred .- v_real
+    D_distance = d_real .- loggit.(max.(0, v_pred) * (1 .- 1.0f-4))
+    (mean(coefficient .* error .^ 2),
+	st, (; stats = BayesianStats(vec(v_real) .>= 0.5, vec(v_pred) .>= 0.5),
+            bias_error = mean(error),
+            bias_distance = mean(D_distance),
+            abs_distance = abs.(D_distance) |> mean))
 end
 function get_cutoff_radius(x::Lux.AbstractExplicitLayer)
     get_preprocessing(x).fun.kargs[:cutoff_radius]
@@ -100,7 +147,7 @@ function test(
         data::StructVector{GLobalPreprocessed},
         training_states::Lux.Experimental.TrainState)
     loss_vec = Float32[]
-    stats_vec = StructVector(@NamedTuple{distance::Float32}[])
+    stats_vec = StructVector(Metric[])
     for d in BatchView(data; batchsize = 200)
         loss, _, stats = loss_fn(training_states.model, training_states.parameters,
             training_states.states, d)
@@ -108,15 +155,15 @@ function test(
         push!(loss_vec, loss)
         push!(stats_vec, stats)
     end
-    loss, distance = mean(loss_vec), mean(stats_vec.distance)
-    (; loss, distance)
+    loss, stats = mean(loss_vec), aggregate(stats_vec)
+    (; loss, stats)
 end
 
 function train(
         data::StructVector{GLobalPreprocessed},
         training_states::Lux.Experimental.TrainState)
     loss_vec = Float32[]
-    stats_vec = StructVector(@NamedTuple{distance::Float32}[])
+    stats_vec = StructVector(Metric[])
     for d in BatchView(data; batchsize = 200)
         grads, loss, stats, training_states = Lux.Experimental.compute_gradients(
             AutoZygote(),
@@ -128,8 +175,8 @@ function train(
         push!(loss_vec, loss)
         push!(stats_vec, stats)
     end
-    loss, distance = mean(loss_vec), mean(stats_vec.distance)
-    training_states, (; loss, distance)
+    loss, stats = mean(loss_vec), aggregate(stats_vec)
+    training_states, (; loss, stats)
 end
 
 function serialized_model_from_preprocessed_states(
@@ -200,7 +247,7 @@ function train(
         test_approximate = test(test_data_approximate, training_states)
         training_states, train_v = train(train_data, training_states)
         @info "test" exact=test_exact approximate=test_approximate
-        @info "train" loss=train_v.loss distance=train_v.distance
+        @info "train" loss=train_v.loss stats=train_v.stats
 
         if epoch % save_periode == 0
             serialize(
