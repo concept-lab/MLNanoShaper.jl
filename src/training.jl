@@ -54,6 +54,13 @@ function reduce_stats((;
     (; false_positive_rate = 1 - nb_true_positives / nb_true,
         true_negative_rate = nb_true_negatives / nb_false)
 end
+
+Metric = @NamedTuple{
+    stats::BayesianStats,
+    bias_error::Float32,
+    bias_distance::Float32,
+    abs_distance::Float32}
+
 function aggregate(x::AbstractArray{BayesianStats})
     nb_true_positives = sum(getproperty.(x, :nb_true_positives))
     nb_true_negatives = sum(getproperty.(x, :nb_true_negatives))
@@ -62,16 +69,13 @@ function aggregate(x::AbstractArray{BayesianStats})
     BayesianStats(nb_true_positives, nb_true_negatives, nb_true, nb_false) |> reduce_stats
 end
 aggregate(x::AbstractArray{<:Number}) = mean(x)
-Metric = @NamedTuple{
-    stats::BayesianStats,
-    bias_error::Float32,
-    bias_distance::Float32,
-    abs_distance::Float32}
-
-function aggregate(w::AbstractArray{<:Metric})
+function aggregate(w::StructArray{<:Metric})
     map(propertynames(w)) do p
-        p => getproperty(w, p) |> aggregate
+		p => aggregate(getproperty(w, p))
     end |> NamedTuple
+end
+function aggregate(::Any)
+	error("not espected")
 end
 
 """
@@ -174,6 +178,7 @@ function train(
         loss, stats = (loss, stats) .|> cpu_device()
         push!(loss_vec, loss)
         push!(stats_vec, stats)
+		@debug stats_vec
     end
     loss, stats = mean(loss_vec), aggregate(stats_vec)
     training_states, (; loss, stats)
@@ -187,6 +192,13 @@ function serialized_model_from_preprocessed_states(
                       parameters[keys(parameters)[i - 1]]
                   end for i in 1:(1 + length(keys(parameters)))] |> NamedTuple
     SerializedModel(y.model, parameters |> cpu_device())
+end
+
+struct DataSet
+    exact::StructVector{GLobalPreprocessed}
+    approximate::StructVector{GLobalPreprocessed}
+    inner::StructVector{GLobalPreprocessed}
+    atoms_center::StructVector{GLobalPreprocessed}
 end
 
 """
@@ -205,52 +217,43 @@ function train(
     test_data = Folds.map(TreeTrainingData, test_data)
     @info "pre computing"
     model = get_preprocessing(training_parameters.model())
-
-    train_data = pre_compute_data_set(
-        model, train_data) do (; atoms, skin)
-        vcat(
-            first(
-                approximates_points(
-                    MersenneTwister(42), atoms.tree, skin.tree, training_parameters) do point
-                    distance(point, skin.tree) < 2 * training_parameters.cutoff_radius
-                end,
-                200),
-            first(
-                approximates_points(
-                    MersenneTwister(42), atoms.tree, skin.tree, training_parameters) do point
-                    distance(point, skin.tree) > 2 * training_parameters.cutoff_radius
-                end,
-                100),
-            first(
-                exact_points(
-                    MersenneTwister(42), atoms.tree, skin.tree, training_parameters),
-                400)
-            first(
-                shuffle(MersenneTwister(42), atoms.data), 100)
-        )
-    end |> StructVector
-    test_data_approximate = pre_compute_data_set(
-        model, test_data) do (; atoms, skin)
-        first(
+    processing = Function[
+        (; atoms, skin)::TreeTrainingData -> first(
             approximates_points(
                 MersenneTwister(42), atoms.tree, skin.tree, training_parameters) do point
                 distance(point, skin.tree) < 2 * training_parameters.cutoff_radius
-            end, 100)
-    end |> StructVector
-    test_data_exact = pre_compute_data_set(
-        model, test_data) do (; atoms, skin)
-        first(
-            exact_points(MersenneTwister(42), atoms.tree, skin.tree, training_parameters),
-            100)
-    end |> StructVector
+            end,
+            200),
+        (; atoms, skin)::TreeTrainingData -> first(
+            approximates_points(
+                MersenneTwister(42), atoms.tree, skin.tree, training_parameters) do point
+                distance(point, skin.tree) > 2 * training_parameters.cutoff_radius
+            end,
+            100),
+        (; atoms, skin)::TreeTrainingData -> first(
+            exact_points(
+                MersenneTwister(42), atoms.tree, skin.tree, training_parameters),
+            400),
+        (; atoms)::TreeTrainingData -> first(
+            shuffle(MersenneTwister(42), atoms.data.center), 100)
+    ]
+    train_data, test_data = map([train_data, test_data]) do data
+        DataSet(map(processing) do f
+            pre_compute_data_set(f, model, data) |> StructVector
+		end...)
+    end
     @info "end pre computing"
 
     @progress name="training" for epoch in 1:nb_epoch
-        test_exact = test(test_data_exact, training_states)
-        test_approximate = test(test_data_approximate, training_states)
-        training_states, train_v = train(train_data, training_states)
-        @info "test" exact=test_exact approximate=test_approximate
-        @info "train" loss=train_v.loss stats=train_v.stats
+        prop = propertynames(train_data)
+		train_v = Dict{Symbol,NamedTuple}(prop .=> [(;)])
+        for p::Symbol in prop
+            training_states, _train_v = train(getproperty(train_data, p), training_states)
+			train_v[p] =  _train_v
+        end
+        test_v = Dict(prop .=>
+            test.(getproperty.(Ref(test_data), prop), Ref(training_states)))
+        @info "training" test_v train_v
 
         if epoch % save_periode == 0
             serialize(

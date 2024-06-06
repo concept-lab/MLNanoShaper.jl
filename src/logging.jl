@@ -61,11 +61,11 @@ function get_logger(logdir::String)::AbstractLogger
     #         accumulate(d[], Dict([message => kargs]))
     #     end
     # end
-	logger = TBLogger(logdir)
+    logger = TBLogger(logdir)
     TeeLogger(ActiveFilteredLogger(logger) do (; message)
-            message in ("test", "train", "epoch")
+            message in ("training",)
         end,
         ActiveFilteredLogger(global_logger()) do (; message)
-            message ∉ ("test", "train")
+            message ∉ ("training",)
         end)
 end
