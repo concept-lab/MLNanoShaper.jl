@@ -244,6 +244,7 @@ function train(
     end
     @info "end pre computing"
 
+    @info "Starting training"
     @progress name="training" for epoch in 1:nb_epoch
         prop = propertynames(train_data)
 		train_v = Dict{Symbol,NamedTuple}(prop .=> [(;)])
@@ -253,7 +254,7 @@ function train(
         end
         test_v = Dict(prop .=>
             test.(getproperty.(Ref(test_data), prop), Ref(training_states)))
-        @info "training" test_v train_v
+        @info "log" test=test_v train=train_v
 
         if epoch % save_periode == 0
             serialize(
@@ -262,6 +263,7 @@ function train(
                     training_states, training_parameters))
         end
     end
+    @info "Stop training"
 end
 
 function get_dataset((; data_ids, train_test_split)::Training_parameters,

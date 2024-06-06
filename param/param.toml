@@ -67,7 +67,7 @@ name="A"
 scale=1.0
 cutoff_radius=3.0
 train_test_split=0.8
-model = "might_angular_dense"
+model = "medium_angular_dense"
 model_kargs.van_der_wal_channel=false
 data_ids = [
 1,

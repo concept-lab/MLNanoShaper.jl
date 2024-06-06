@@ -63,9 +63,9 @@ function get_logger(logdir::String)::AbstractLogger
     # end
     logger = TBLogger(logdir)
     TeeLogger(ActiveFilteredLogger(logger) do (; message)
-            message in ("training",)
+            message in ("log",)
         end,
         ActiveFilteredLogger(global_logger()) do (; message)
-            message ∉ ("training",)
+            message ∉ ("log",)
         end)
 end

@@ -1,7 +1,6 @@
 using Comonicon
 using Serialization
 using Random
-Option{T} = Union{T, Nothing}
 """
     train
 
@@ -14,37 +13,40 @@ The folowing parameters can be overided.
 - `-m, --model=String`; the model name. Can be anakin.
 
 """
-@cast function train(; nb_epoch::Option{UInt} = nothing,
-        model::Option{String} = nothing,
-        model_kargs::Option{Dict{String}} = nothing,
-        nb_data_points::Option{UInt} = nothing,
-        name::Option{String} = nothing,
-        cutoff_radius::Option{Float32} = nothing)
+@option struct ModelArgs
+	van_der_wals::Bool
+end
+
+
+@cast function train(; nb_epoch::Int = 0,
+        model::String = "",
+		model_kargs::ModelArgs = ModelArgs(false),
+        nb_data_points::Int = 0,
+        name::String = "",
+        cutoff_radius::Float32 = 0.0f0)
     conf = TOML.parsefile(params_file)
-    if !isnothing(nb_epoch)
-        conf["Training_parameters"]["nb_epoch"] = nb_epoch
+    if nb_epoch > 0 
+        conf["Training_parameters"]["nb_epoch"] = nb_epoch |> UInt
     end
-    if !isnothing(cutoff_radius)
+    if cutoff_radius != 0.0f0
         conf["Training_parameters"]["cutoff_radius"] = cutoff_radius
     end
-    if !isnothing(name)
+    if name != 0
         conf["Training_parameters"]["name"] = name
     end
-    if !isnothing(model)
+    if model != "" 
         conf["Training_parameters"]["model"] = model
     end
-    if !isnothing(model_kargs)
+    if length(model_kargs) > 0
         conf["Training_parameters"]["model_kargs"] = model_kargs
     end
-    if !isnothing(nb_data_points)
+    if nb_data_points > 0
         conf["Training_parameters"]["data_ids"] = conf["Training_parameters"]["data_ids"][begin:(begin + nb_data_points)]
     end
 
     training_parameters = read_from_TOML(Training_parameters, conf)
     auxiliary_parameters = read_from_TOML(Auxiliary_parameters, conf)
-    @info "Starting training"
     train(training_parameters, auxiliary_parameters)
-    @info "Stop training"
 end
 
 function evaluate_model(model::StatefulLuxLayer, data,
@@ -79,3 +81,4 @@ function evaluate_model(names::AbstractArray{String})
     evaluate_model(names, read_from_TOML(Training_parameters, conf),
         read_from_TOML(Auxiliary_parameters, conf))
 end
+@main
