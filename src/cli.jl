@@ -1,6 +1,9 @@
 using Comonicon
 using Serialization
 using Random
+using Configurations
+using Logging: global_logger
+using TerminalLoggers: TerminalLogger
 """
     train
 
@@ -9,24 +12,25 @@ Parameters are specified in the `param/param.toml` file.
 The folowing parameters can be overided.
 
 # Options
-- `-e, --nb-epoch=Uint`; the number of epoch to compute.
-- `-m, --model=String`; the model name. Can be anakin.
+- `-e, --nb-epoch <Int>`: the number of epoch to compute.
+- `-m, --model <String>`: the model name. Can be anakin.
+- `-n, --name <String>`: name of the training run
+- `-c, --cutoff-radius <Float32>`: the cutoff_radius used in training
 
 """
 @option struct ModelArgs
-	van_der_wals::Bool
+    van_der_wal_channel::Bool = false
 end
-
-
 @cast function train(; nb_epoch::Int = 0,
         model::String = "",
-		model_kargs::ModelArgs = ModelArgs(false),
+        model_kargs::ModelArgs,
         nb_data_points::Int = 0,
         name::String = "",
         cutoff_radius::Float32 = 0.0f0)
+    global_logger(TerminalLogger())
     conf = TOML.parsefile(params_file)
-    if nb_epoch > 0 
-        conf["Training_parameters"]["nb_epoch"] = nb_epoch |> UInt
+    if nb_epoch > 0
+        conf["Auxiliary_parameters"]["nb_epoch"] = nb_epoch |> UInt
     end
     if cutoff_radius != 0.0f0
         conf["Training_parameters"]["cutoff_radius"] = cutoff_radius
@@ -34,11 +38,11 @@ end
     if name != 0
         conf["Training_parameters"]["name"] = name
     end
-    if model != "" 
+    if model != ""
         conf["Training_parameters"]["model"] = model
     end
-    if length(model_kargs) > 0
-        conf["Training_parameters"]["model_kargs"] = model_kargs
+    if model_kargs != ModelArgs()
+        conf["Training_parameters"]["model_kargs"] = Configurations.to_dict(model_kargs)
     end
     if nb_data_points > 0
         conf["Training_parameters"]["data_ids"] = conf["Training_parameters"]["data_ids"][begin:(begin + nb_data_points)]
