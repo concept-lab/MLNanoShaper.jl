@@ -40,6 +40,7 @@ The folowing parameters can be overided.
         cutoff_radius::Float32 = 0.0f0,
 		gpu::Bool=false)
 	if gpu
+		@info "using gpu"
 		@eval using LuxCUDA
 	end
     global_logger(TerminalLogger())
