@@ -233,7 +233,7 @@ function train(
         (; atoms, skin)::TreeTrainingData -> first(
             exact_points(
                 MersenneTwister(42), atoms.tree, skin.tree, training_parameters),
-            400),
+            1000),
         (; atoms)::TreeTrainingData -> first(
             shuffle(MersenneTwister(42), atoms.data.center), 100)
     ]
