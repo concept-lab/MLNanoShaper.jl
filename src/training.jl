@@ -30,6 +30,12 @@ using ChainRulesCore
 function loggit(x)
     log(x) - log(1 - x)
 end
+
+function KL_log(true_probabilities, log_espected_probabilities)
+    sum(true_probabilities * (log_espected_probabilities - log(true_probabilities)),
+        dims = 1)
+end
+
 struct BayesianStats
     nb_true_positives::Int
     nb_true_negatives::Int
@@ -74,10 +80,37 @@ function aggregate(w::StructArray{<:Metric})
         p => aggregate(getproperty(w, p))
     end |> NamedTuple
 end
-function aggregate(::Any)
-    error("not espected")
+function aggregate(x::Any)
+    error("not espected $x of type $(typeof(x))")
 end
 
+"""
+    categorical_loss(model, ps, st, (; point, atoms, d_real))
+
+The loss function used by in training.
+Return the KL divergence between true probability and empirical probability
+Return the error with the espected distance as a metric.
+"""
+function categorical_loss(model,
+        ps,
+        st,
+        (; point,
+            input,
+            d_real)::StructVector{GLobalPreprocessed})
+    ret = Lux.apply(model, Batch(input), ps, st)
+    v_pred, st = ret
+    v_pred = cpu_device()(v_pred)
+    is_inside = d_real .> 1.0f-5
+    is_outside = d_real .< 1.0f-5
+    is_surface = abs.(d_real) .<= 1.0f-5
+    probabilities = zeros32(2, length(d_real))
+    probabilities[1, :] = is_inside + 1 / 2 * is_surface
+    probabilities[2, :] = is_outside + 1 / 2 * is_surface
+    (KL_log(probabilities, hcat(v_pred, -v_pred)) |> sum,
+        st, (; stats = BayesianStats(vec(probabilities) .>= 0.5, v_pred .>= 0),
+            bias_error = mean(error),
+            abs_error = mean(abs.(error))))
+end
 """
     loss_fn(model, ps, st, (; point, atoms, d_real))
 
@@ -85,7 +118,7 @@ The loss function used by in training.
 compare the predicted (square) distance with \$\\frac{1 + \tanh(d)}{2}\$
 Return the error with the espected distance as a metric.
 """
-function loss_fn(model,
+function continus_loss(model,
         ps,
         st,
         (; point,
@@ -98,10 +131,10 @@ function loss_fn(model,
         0.8f0 * exp.(-abs.(d_real)) .+ 0.2f0
     end .|> Float32
     v_real = σ.(d_real)
-
     error = v_pred .- v_real
+    loss = mean(coefficient .* error .^ 2)
     D_distance = d_real .- loggit.(max.(0, v_pred) * (1 .- 1.0f-4))
-    (mean(coefficient .* error .^ 2),
+    (loss,
         st, (; stats = BayesianStats(vec(v_real) .>= 0.5, vec(v_pred) .>= 0.5),
             bias_error = mean(error),
             abs_error = mean(abs.(error)),
@@ -148,11 +181,12 @@ function hausdorff_metric((; atoms, skin)::TreeTrainingData,
     end
 end
 
-function test(
+function test_protein(
         data::StructVector{GLobalPreprocessed},
-        training_states::Lux.Experimental.TrainState)
+        training_states::Lux.Experimental.TrainState, (; categorical))
     loss_vec = Float32[]
     stats_vec = StructVector(Metric[])
+    loss_fn = categorical ? categorical_loss : continus_loss
     for d in BatchView(data; batchsize = 200)
         loss, _, stats = loss_fn(training_states.model, training_states.parameters,
             training_states.states, d)
@@ -164,11 +198,12 @@ function test(
     (; loss, stats)
 end
 
-function train(
+function train_protein(
         data::StructVector{GLobalPreprocessed},
-        training_states::Lux.Experimental.TrainState)
+        training_states::Lux.Experimental.TrainState, (; categorical)::Training_parameters)
     loss_vec = Float32[]
     stats_vec = StructVector(Metric[])
+    loss_fn = categorical ? categorical_loss : continus_loss
     for d in BatchView(data; batchsize = 200)
         grads, loss, stats, training_states = Lux.Experimental.compute_gradients(
             AutoZygote(),
@@ -250,11 +285,14 @@ function train(
         prop = propertynames(train_data)
         train_v = Dict{Symbol, NamedTuple}(prop .=> [(;)])
         for p::Symbol in prop
-            training_states, _train_v = train(getproperty(train_data, p), training_states)
+            training_states, _train_v = train_protein(
+                getproperty(train_data, p), training_states, training_parameters)
             train_v[p] = _train_v
         end
-        test_v = Dict(prop .=>
-            test.(getproperty.(Ref(test_data), prop), Ref(training_states)))
+        test_v = Dict(
+            prop .=>
+                test_protein.(getproperty.(Ref(test_data), prop), Ref(training_states)),
+            Ref(training_parameters))
         @info "log" test=test_v train=train_v
 
         if epoch % save_periode == 0

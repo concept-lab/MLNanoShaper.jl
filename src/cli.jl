@@ -32,6 +32,7 @@ The folowing parameters can be overided.
 # Flags
 
 - `--gpu, -g `: should we do the training on the gpu
+- `--categorical, -c `: should we use the categorical version of the model
 
 """
 @cast function train(; nb_epoch::Int = 0,
@@ -40,10 +41,12 @@ The folowing parameters can be overided.
         nb_data_points::Int = 0,
         name::String = "",
         cutoff_radius::Float32 = 0.0f0,
-		ref_distance::Float32 = 00f0,
-		gpu::Bool=false)
+        ref_distance::Float32 = 00.0f0,
+        categorical::Bool,
+        gpu::Bool = false)
     global_logger(TerminalLogger())
     conf = TOML.parsefile(params_file)
+    conf["Auxiliary_parameters"]["categorical"] = categorical
     if nb_epoch > 0
         conf["Auxiliary_parameters"]["nb_epoch"] = nb_epoch |> UInt
     end
@@ -53,9 +56,9 @@ The folowing parameters can be overided.
     if name != 0
         conf["Training_parameters"]["name"] = name
     end
-	if ref_distance > 0
+    if ref_distance > 0
         conf["Training_parameters"]["ref_distance"] = ref_distance
-	end
+    end
     if model != ""
         conf["Training_parameters"]["model"] = model
     end

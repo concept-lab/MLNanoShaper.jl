@@ -33,6 +33,7 @@ struct Training_parameters
     model::Partial
     data_ids::Vector{Int}
 	ref_distance::Float32
+	categorical::Bool
 end
 
 function generate_training_name(x::Training_parameters, epoch::Integer)
