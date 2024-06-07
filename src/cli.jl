@@ -4,6 +4,7 @@ using Random
 using Configurations
 using Logging: global_logger
 using TerminalLoggers: TerminalLogger
+using LuxCUDA
 
 @option struct ModelArgs
     van_der_wal_channel::Bool = false
@@ -39,10 +40,6 @@ The folowing parameters can be overided.
         name::String = "",
         cutoff_radius::Float32 = 0.0f0,
 		gpu::Bool=false)
-	if gpu
-		@info "using gpu"
-		@eval using LuxCUDA
-	end
     global_logger(TerminalLogger())
     conf = TOML.parsefile(params_file)
     if nb_epoch > 0
