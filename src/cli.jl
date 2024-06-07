@@ -4,29 +4,44 @@ using Random
 using Configurations
 using Logging: global_logger
 using TerminalLoggers: TerminalLogger
+
+@option struct ModelArgs
+    van_der_wal_channel::Bool = false
+end
+
 """
-    train
+	train [options] [flags]
 
 Train a model.
+
+# Intro
+
 Parameters are specified in the `param/param.toml` file.
 The folowing parameters can be overided.
 
 # Options
-- `-e, --nb-epoch <Int>`: the number of epoch to compute.
-- `-m, --model <String>`: the model name. Can be anakin.
-- `-n, --name <String>`: name of the training run
-- `-c, --cutoff-radius <Float32>`: the cutoff_radius used in training
+
+- `--nb-epoch, -e <Int>`: the number of epoch to compute.
+- `--model, -m <String>`: the model name. Can be anakin.
+- `--nb-data-points, -d <Int>`: the number of proteins in the dataset to use
+- `--name, -n <String>`: name of the training run
+- `--cutoff-radius, -c <Float32>`: the cutoff_radius used in training
+
+# Flags
+
+- `--gpu, -g `: should we do the training on the gpu
 
 """
-@option struct ModelArgs
-    van_der_wal_channel::Bool = false
-end
 @cast function train(; nb_epoch::Int = 0,
         model::String = "",
         model_kargs::ModelArgs,
         nb_data_points::Int = 0,
         name::String = "",
-        cutoff_radius::Float32 = 0.0f0)
+        cutoff_radius::Float32 = 0.0f0,
+		gpu::Bool=false)
+	if gpu
+		@eval using LuxCUDA
+	end
     global_logger(TerminalLogger())
     conf = TOML.parsefile(params_file)
     if nb_epoch > 0
