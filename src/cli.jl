@@ -27,6 +27,7 @@ The folowing parameters can be overided.
 - `--nb-data-points, -d <Int>`: the number of proteins in the dataset to use
 - `--name, -n <String>`: name of the training run
 - `--cutoff-radius, -c <Float32>`: the cutoff_radius used in training
+- `--ref-distance, -d <Float32>`: the reference distane (in A) used to rescale distance to surface in loss
 
 # Flags
 
@@ -39,6 +40,7 @@ The folowing parameters can be overided.
         nb_data_points::Int = 0,
         name::String = "",
         cutoff_radius::Float32 = 0.0f0,
+		ref_distance::Float32 = 00f0,
 		gpu::Bool=false)
     global_logger(TerminalLogger())
     conf = TOML.parsefile(params_file)
@@ -51,6 +53,9 @@ The folowing parameters can be overided.
     if name != 0
         conf["Training_parameters"]["name"] = name
     end
+	if ref_distance > 0
+        conf["Training_parameters"]["ref_distance"] = ref_distance
+	end
     if model != ""
         conf["Training_parameters"]["model"] = model
     end

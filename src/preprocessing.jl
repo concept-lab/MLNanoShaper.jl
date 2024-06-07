@@ -72,10 +72,10 @@ function exact_points(
     end
 end
 function generate_data_points(preprocessing::Lux.AbstractExplicitLayer, points,
-        (; atoms, skin)::TreeTrainingData{Float32})
+	(; atoms, skin)::TreeTrainingData{Float32},(;ref_distance)::Training_parameters)
     mapobs(points) do point::Point3f
         (; point, input = preprocessing((point, atoms)),
-            d_real = signed_distance(point, skin))
+            d_real = signed_distance(point, skin) ./ref_distance)
     end
 end
 GLobalPreprocessed = @NamedTuple{

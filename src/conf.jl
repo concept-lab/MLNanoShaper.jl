@@ -32,6 +32,7 @@ struct Training_parameters
     train_test_split::Float64
     model::Partial
     data_ids::Vector{Int}
+	ref_distance::Float32
 end
 
 function generate_training_name(x::Training_parameters, epoch::Integer)

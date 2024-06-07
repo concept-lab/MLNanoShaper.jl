@@ -71,11 +71,11 @@ end
 aggregate(x::AbstractArray{<:Number}) = mean(x)
 function aggregate(w::StructArray{<:Metric})
     map(propertynames(w)) do p
-		p => aggregate(getproperty(w, p))
+        p => aggregate(getproperty(w, p))
     end |> NamedTuple
 end
 function aggregate(::Any)
-	error("not espected")
+    error("not espected")
 end
 
 """
@@ -104,6 +104,7 @@ function loss_fn(model,
     (mean(coefficient .* error .^ 2),
         st, (; stats = BayesianStats(vec(v_real) .>= 0.5, vec(v_pred) .>= 0.5),
             bias_error = mean(error),
+            abs_error = mean(abs.(error)),
             bias_distance = mean(D_distance),
             abs_distance = abs.(D_distance) |> mean))
 end
@@ -178,7 +179,7 @@ function train(
         loss, stats = (loss, stats) .|> cpu_device()
         push!(loss_vec, loss)
         push!(stats_vec, stats)
-		@debug stats_vec
+        @debug stats_vec
     end
     loss, stats = mean(loss_vec), aggregate(stats_vec)
     training_states, (; loss, stats)
@@ -235,22 +236,22 @@ function train(
                 MersenneTwister(42), atoms.tree, skin.tree, training_parameters),
             1000),
         (; atoms)::TreeTrainingData -> first(
-            shuffle(MersenneTwister(42), atoms.data.center), 100)
+            shuffle(MersenneTwister(42), atoms.data.center), 200)
     ]
     train_data, test_data = map([train_data, test_data]) do data
         DataSet(map(processing) do f
             pre_compute_data_set(f, model, data) |> StructVector
-		end...)
+        end...)
     end
     @info "end pre computing"
 
     @info "Starting training"
     @progress name="training" for epoch in 1:nb_epoch
         prop = propertynames(train_data)
-		train_v = Dict{Symbol,NamedTuple}(prop .=> [(;)])
+        train_v = Dict{Symbol, NamedTuple}(prop .=> [(;)])
         for p::Symbol in prop
             training_states, _train_v = train(getproperty(train_data, p), training_states)
-			train_v[p] =  _train_v
+            train_v[p] = _train_v
         end
         test_v = Dict(prop .=>
             test.(getproperty.(Ref(test_data), prop), Ref(training_states)))
