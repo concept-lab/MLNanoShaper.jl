@@ -275,7 +275,7 @@ function train(
     ]
     train_data, test_data = map([train_data, test_data]) do data
         DataSet(map(processing) do f
-            pre_compute_data_set(f, model, data) |> StructVector
+            pre_compute_data_set(f, model, data,training_parameters) |> StructVector
         end...)
     end
     @info "end pre computing"

@@ -82,12 +82,12 @@ GLobalPreprocessed = @NamedTuple{
     point::Point3f, input::StructArray{PreprocessData{Float32}}, d_real::Float32}
 function pre_compute_data_set(f::Function,
         preprocessing,
-		data::AbstractVector{<:TreeTrainingData})::Vector{GLobalPreprocessed}
+		data::AbstractVector{<:TreeTrainingData},training_parameters::Training_parameters)::Vector{GLobalPreprocessed}
     res = Folds.map(data) do d
         points = f(d)
         collect(
             GLobalPreprocessed,
-            generate_data_points(preprocessing, points, d))
+            generate_data_points(preprocessing, points, d,training_parameters))
     end
     reduce(vcat, res)
 end
