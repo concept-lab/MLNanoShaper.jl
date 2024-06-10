@@ -61,7 +61,6 @@ function reduce_stats((;
         true_negative_rate = nb_true_negatives / nb_false)
 end
 
-
 function aggregate(x::AbstractArray{BayesianStats})
     nb_true_positives = sum(getproperty.(x, :nb_true_positives))
     nb_true_negatives = sum(getproperty.(x, :nb_true_negatives))
@@ -82,7 +81,7 @@ end
 CategoricalMetric = @NamedTuple{
     stats::BayesianStats,
     bias_error::Float32,
-	abs_error::Float32}
+    abs_error::Float32}
 
 """
     categorical_loss(model, ps, st, (; point, atoms, d_real))
@@ -96,7 +95,8 @@ function categorical_loss(model,
         st,
         (; point,
             input,
-			d_real)::StructVector{GLobalPreprocessed}) ::Tuple{Float32,CategoricalMetric}
+            d_real)::StructVector{GLobalPreprocessed})::Tuple{
+        Float32, Any, CategoricalMetric}
     ret = Lux.apply(model, Batch(input), ps, st)
     v_pred, st = ret
     v_pred = cpu_device()(v_pred)
@@ -131,7 +131,7 @@ function continus_loss(model,
         st,
         (; point,
             input,
-			d_real)::StructVector{GLobalPreprocessed})::Tuple{Float32,ContinousMetric}
+            d_real)::StructVector{GLobalPreprocessed})::Tuple{Float32, Any, ContinousMetric}
     ret = Lux.apply(model, Batch(input), ps, st)
     v_pred, st = ret
     v_pred = cpu_device()(v_pred)
@@ -189,13 +189,11 @@ function hausdorff_metric((; atoms, skin)::TreeTrainingData,
     end
 end
 
-
-
 function test_protein(
         data::StructVector{GLobalPreprocessed},
-        training_states::Lux.Experimental.TrainState, (; categorical))
+        training_states::Lux.Experimental.TrainState, (; categorical)::Training_parameters)
     loss_vec = Float32[]
-	stats_vec = StructVector((categorical ? CategoricalMetric : ContinousMetric)[])
+    stats_vec = StructVector((categorical ? CategoricalMetric : ContinousMetric)[])
     loss_fn = categorical ? categorical_loss : continus_loss
     for d in BatchView(data; batchsize = 200)
         loss, _, stats = loss_fn(training_states.model, training_states.parameters,
@@ -285,7 +283,7 @@ function train(
     ]
     train_data, test_data = map([train_data, test_data]) do data
         DataSet(map(processing) do f
-            pre_compute_data_set(f, model, data,training_parameters) |> StructVector
+            pre_compute_data_set(f, model, data, training_parameters) |> StructVector
         end...)
     end
     @info "end pre computing"
@@ -301,8 +299,8 @@ function train(
         end
         test_v = Dict(
             prop .=>
-                test_protein.(getproperty.(Ref(test_data), prop), Ref(training_states)),
-            Ref(training_parameters))
+            test_protein.(getproperty.(Ref(test_data), prop),
+                Ref(training_states), Ref(training_parameters)))
         @info "log" test=test_v train=train_v
 
         if epoch % save_periode == 0
