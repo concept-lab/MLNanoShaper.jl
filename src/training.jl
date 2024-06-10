@@ -61,11 +61,6 @@ function reduce_stats((;
         true_negative_rate = nb_true_negatives / nb_false)
 end
 
-Metric = @NamedTuple{
-    stats::BayesianStats,
-    bias_error::Float32,
-    bias_distance::Float32,
-    abs_distance::Float32}
 
 function aggregate(x::AbstractArray{BayesianStats})
     nb_true_positives = sum(getproperty.(x, :nb_true_positives))
@@ -75,7 +70,7 @@ function aggregate(x::AbstractArray{BayesianStats})
     BayesianStats(nb_true_positives, nb_true_negatives, nb_true, nb_false) |> reduce_stats
 end
 aggregate(x::AbstractArray{<:Number}) = mean(x)
-function aggregate(w::StructArray{<:Metric})
+function aggregate(w::StructArray{<:NamedTuple})
     map(propertynames(w)) do p
         p => aggregate(getproperty(w, p))
     end |> NamedTuple
@@ -83,6 +78,11 @@ end
 function aggregate(x::Any)
     error("not espected $x of type $(typeof(x))")
 end
+
+CategoricalMetric = @NamedTuple{
+    stats::BayesianStats,
+    bias_error::Float32,
+	abs_error::Float32}
 
 """
     categorical_loss(model, ps, st, (; point, atoms, d_real))
@@ -96,7 +96,7 @@ function categorical_loss(model,
         st,
         (; point,
             input,
-            d_real)::StructVector{GLobalPreprocessed})
+			d_real)::StructVector{GLobalPreprocessed}) ::Tuple{Float32,CategoricalMetric}
     ret = Lux.apply(model, Batch(input), ps, st)
     v_pred, st = ret
     v_pred = cpu_device()(v_pred)
@@ -111,8 +111,16 @@ function categorical_loss(model,
             bias_error = mean(error),
             abs_error = mean(abs.(error))))
 end
+
+ContinousMetric = @NamedTuple{
+    stats::BayesianStats,
+    bias_error::Float32,
+    abs_error::Float32,
+    bias_distance::Float32,
+    abs_distance::Float32}
+
 """
-    loss_fn(model, ps, st, (; point, atoms, d_real))
+    continus_loss(model, ps, st, (; point, atoms, d_real))
 
 The loss function used by in training.
 compare the predicted (square) distance with \$\\frac{1 + \tanh(d)}{2}\$
@@ -123,7 +131,7 @@ function continus_loss(model,
         st,
         (; point,
             input,
-            d_real)::StructVector{GLobalPreprocessed})
+			d_real)::StructVector{GLobalPreprocessed})::Tuple{Float32,ContinousMetric}
     ret = Lux.apply(model, Batch(input), ps, st)
     v_pred, st = ret
     v_pred = cpu_device()(v_pred)
@@ -181,11 +189,13 @@ function hausdorff_metric((; atoms, skin)::TreeTrainingData,
     end
 end
 
+
+
 function test_protein(
         data::StructVector{GLobalPreprocessed},
         training_states::Lux.Experimental.TrainState, (; categorical))
     loss_vec = Float32[]
-    stats_vec = StructVector(Metric[])
+	stats_vec = StructVector((categorical ? CategoricalMetric : ContinousMetric)[])
     loss_fn = categorical ? categorical_loss : continus_loss
     for d in BatchView(data; batchsize = 200)
         loss, _, stats = loss_fn(training_states.model, training_states.parameters,
@@ -202,7 +212,7 @@ function train_protein(
         data::StructVector{GLobalPreprocessed},
         training_states::Lux.Experimental.TrainState, (; categorical)::Training_parameters)
     loss_vec = Float32[]
-    stats_vec = StructVector(Metric[])
+    stats_vec = StructVector((categorical ? CategoricalMetric : ContinousMetric)[])
     loss_fn = categorical ? categorical_loss : continus_loss
     for d in BatchView(data; batchsize = 200)
         grads, loss, stats, training_states = Lux.Experimental.compute_gradients(
@@ -275,7 +285,7 @@ function train(
     ]
     train_data, test_data = map([train_data, test_data]) do data
         DataSet(map(processing) do f
-            pre_compute_data_set(f, model, data,training_parameters) |> StructVector
+            pre_compute_data_set(f, model, data) |> StructVector
         end...)
     end
     @info "end pre computing"
