@@ -46,7 +46,7 @@ The folowing parameters can be overided.
         gpu::Bool = false)
     global_logger(TerminalLogger())
     conf = TOML.parsefile(params_file)
-    conf["Auxiliary_parameters"]["categorical"] = categorical
+    conf["Training_parameters"]["categorical"] = categorical
     if nb_epoch > 0
         conf["Auxiliary_parameters"]["nb_epoch"] = nb_epoch |> UInt
     end
