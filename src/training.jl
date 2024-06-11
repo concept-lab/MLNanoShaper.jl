@@ -107,7 +107,7 @@ function categorical_loss(model,
     probabilities[1, :] = is_inside + 1 / 2 * is_surface
     probabilities[2, :] = is_outside + 1 / 2 * is_surface
     (KL_log(probabilities, hcat(v_pred, -v_pred)) |> sum,
-        st, (; stats = BayesianStats(vec(probabilities) .>= 0.5, v_pred .>= 0),
+        st, (; stats = BayesianStats(vec(d_real) .>= 0.0, v_pred .>= 0),
             bias_error = mean(error),
             abs_error = mean(abs.(error))))
 end
@@ -143,7 +143,8 @@ function continus_loss(model,
     loss = mean(coefficient .* error .^ 2)
     D_distance = d_real .- loggit.(max.(0, v_pred) * (1 .- 1.0f-4))
     (loss,
-        st, (; stats = BayesianStats(vec(v_real) .>= 0.5, vec(v_pred) .>= 0.5),
+        st,
+        (; stats = BayesianStats(vec(v_real) .>= 0.5, vec(v_pred) .>= 0.5),
             bias_error = mean(error),
             abs_error = mean(abs.(error)),
             bias_distance = mean(D_distance),
