@@ -32,7 +32,7 @@ function loggit(x)
 end
 
 function KL_log(true_probabilities, log_espected_probabilities)
-    sum(true_probabilities * (log_espected_probabilities - log(true_probabilities)),
+    sum(true_probabilities .* (log_espected_probabilities - log.(true_probabilities)),
         dims = 1)
 end
 
@@ -79,9 +79,7 @@ function aggregate(x::Any)
 end
 
 CategoricalMetric = @NamedTuple{
-    stats::BayesianStats,
-    bias_error::Float32,
-    abs_error::Float32}
+    stats::BayesianStats}
 
 """
     categorical_loss(model, ps, st, (; point, atoms, d_real))
@@ -103,13 +101,14 @@ function categorical_loss(model,
     is_inside = d_real .> 1.0f-5
     is_outside = d_real .< 1.0f-5
     is_surface = abs.(d_real) .<= 1.0f-5
-    probabilities = zeros32(2, length(d_real))
-    probabilities[1, :] = is_inside + 1 / 2 * is_surface
-    probabilities[2, :] = is_outside + 1 / 2 * is_surface
-    (KL_log(probabilities, hcat(v_pred, -v_pred)) |> sum,
-        st, (; stats = BayesianStats(vec(d_real) .>= 0.0, v_pred .>= 0),
-            bias_error = mean(error),
-            abs_error = mean(abs.(error))))
+    probabilities = ignore_derivatives() do
+    	probabilities = zeros32(2, length(d_real))
+        probabilities[1, :] = is_inside + 1 / 2 * is_surface
+        probabilities[2, :] = is_outside + 1 / 2 * is_surface
+		probabilities
+    end
+    (KL_log(probabilities, vcat(v_pred, -v_pred)) |> mean,
+        st, (; stats = BayesianStats(vec(d_real) .>= 0.0, vec(v_pred) .>= 0)))
 end
 
 ContinousMetric = @NamedTuple{
