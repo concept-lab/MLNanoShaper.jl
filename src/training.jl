@@ -97,15 +97,16 @@ function categorical_loss(model,
         Float32, Any, CategoricalMetric}
     ret = Lux.apply(model, Batch(input), ps, st)
     v_pred, st = ret
+    v_pred -= log.(exp.(v_pred) + exp.(-v_pred))
     v_pred = cpu_device()(v_pred)
     is_inside = d_real .> 1.0f-5
     is_outside = d_real .< 1.0f-5
     is_surface = abs.(d_real) .<= 1.0f-5
     probabilities = ignore_derivatives() do
-    	probabilities = zeros32(2, length(d_real))
+        probabilities = zeros32(2, length(d_real))
         probabilities[1, :] = is_inside + 1 / 2 * is_surface
         probabilities[2, :] = is_outside + 1 / 2 * is_surface
-		probabilities
+        probabilities
     end
     (KL_log(probabilities, vcat(v_pred, -v_pred)) |> mean,
         st, (; stats = BayesianStats(vec(d_real) .>= 0.0, vec(v_pred) .>= 0)))
