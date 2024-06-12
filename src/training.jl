@@ -31,8 +31,9 @@ function loggit(x)
     log(x) - log(1 - x)
 end
 
-function KL_log(true_probabilities, log_espected_probabilities)
-    sum(true_probabilities .* (log_espected_probabilities - log.(true_probabilities)),
+function KL(true_probabilities::AbstractArray{T},
+        expected_probabilities::AbstractArray{T}) where {T <: Number}
+    sum(true_probabilities .* (log.(true_probabilities ./ expected_probabilities)),
         dims = 1)
 end
 
@@ -53,10 +54,17 @@ function BayesianStats(real::AbstractVector{Bool}, pred::AbstractVector{Bool})
     nb_true_negatives = count(.!real .&& pred)
     nb_true = count(real)
     nb_false = count(.!real)
+    ignore_derivatives() do
+        @info "statistics" nb_true nb_false nb_true_positives nb_true_negatives
+    end
     BayesianStats(nb_true_positives, nb_true_negatives, nb_true, nb_false)
 end
 function reduce_stats((;
         nb_true_positives, nb_true_negatives, nb_true, nb_false)::BayesianStats)
+    ignore_derivatives() do
+        @info "reduce" nb_true nb_false nb_true_positives nb_true_negatives
+    end
+
     (; false_positive_rate = 1 - nb_true_positives / nb_true,
         true_negative_rate = nb_true_negatives / nb_false)
 end
@@ -97,19 +105,24 @@ function categorical_loss(model,
         Float32, Any, CategoricalMetric}
     ret = Lux.apply(model, Batch(input), ps, st)
     v_pred, st = ret
-    v_pred -= log.(exp.(v_pred) + exp.(-v_pred))
+    v_pred = vcat(v_pred, -v_pred)
+    v_pred::Matrix{Float32} = exp.(v_pred) ./ sum(exp.(v_pred); dims = 1)
     v_pred = cpu_device()(v_pred)
-    is_inside = d_real .> 1.0f-5
-    is_outside = d_real .< 1.0f-5
-    is_surface = abs.(d_real) .<= 1.0f-5
+    epsilon = 1.0f-5
+    is_inside = d_real .> epsilon
+    is_outside = d_real .< epsilon
+    is_surface = abs.(d_real) .<= epsilon
     probabilities = ignore_derivatives() do
         probabilities = zeros32(2, length(d_real))
-        probabilities[1, :] = is_inside + 1 / 2 * is_surface
-        probabilities[2, :] = is_outside + 1 / 2 * is_surface
+        probabilities[1, :] = (1 - epsilon) * is_inside + 1 / 2 * is_surface +
+                              epsilon * is_outside
+        probabilities[2, :] = (1 - epsilon) * is_outside + 1 / 2 * is_surface +
+                              epsilon * is_inside
+        @info "values" d_real v_pred probabilities
         probabilities
     end
-    (KL_log(probabilities, vcat(v_pred, -v_pred)) |> mean,
-        st, (; stats = BayesianStats(vec(d_real) .>= 0.0, vec(v_pred) .>= 0)))
+    (KL(probabilities, v_pred) |> mean,
+        st, (; stats = BayesianStats(vec(d_real) .> epsilon, vec(v_pred[1, :]) .> 0.5f0)))
 end
 
 ContinousMetric = @NamedTuple{
