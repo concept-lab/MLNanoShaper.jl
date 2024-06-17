@@ -318,7 +318,7 @@ function train(
             prop .=>
             test_protein.(getproperty.(Ref(test_data), prop),
                 Ref(training_states), Ref(training_parameters)))
-        @info "log" test=test_v train=train_v
+        @debug "log" test=test_v train=train_v
 
         if epoch % save_periode == 0
             serialize(
