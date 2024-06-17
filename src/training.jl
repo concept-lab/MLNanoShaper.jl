@@ -88,7 +88,18 @@ end
 
 CategoricalMetric = @NamedTuple{
     stats::BayesianStats}
-
+function generate_true_probabilities(d_real::AbstractArray)
+    epsilon = 1.0f-5
+    is_inside = d_real .> epsilon
+    is_outside = d_real .< epsilon
+    is_surface = abs.(d_real) .<= epsilon
+    probabilities = zeros32(2, length(d_real))
+    probabilities[1, :] = (1 - epsilon) * is_inside + 1 / 2 * is_surface +
+                          epsilon * is_outside
+    probabilities[2, :] = (1 - epsilon) * is_outside + 1 / 2 * is_surface +
+                          epsilon * is_inside
+    probabilities
+end
 """
     categorical_loss(model, ps, st, (; point, atoms, d_real))
 
@@ -106,21 +117,9 @@ function categorical_loss(model,
     ret = Lux.apply(model, Batch(input), ps, st)
     v_pred, st = ret
     v_pred = vcat(v_pred, -v_pred)
-    v_pred::Matrix{Float32} = exp.(v_pred) ./ sum(exp.(v_pred); dims = 1)
+    v_pred = exp.(v_pred) ./ sum(exp.(v_pred); dims = 1)
     v_pred = cpu_device()(v_pred)
-    epsilon = 1.0f-5
-    is_inside = d_real .> epsilon
-    is_outside = d_real .< epsilon
-    is_surface = abs.(d_real) .<= epsilon
-    probabilities = ignore_derivatives() do
-        probabilities = zeros32(2, length(d_real))
-        probabilities[1, :] = (1 - epsilon) * is_inside + 1 / 2 * is_surface +
-                              epsilon * is_outside
-        probabilities[2, :] = (1 - epsilon) * is_outside + 1 / 2 * is_surface +
-                              epsilon * is_inside
-        # @info "values" d_real v_pred probabilities
-        probabilities
-    end
+	probabilities = ignore_derivatives(generate_true_probabilities(d_real))
     (KL(probabilities, v_pred) |> mean,
         st, (; stats = BayesianStats(vec(d_real) .> epsilon, vec(v_pred[1, :]) .> 0.5f0)))
 end
