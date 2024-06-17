@@ -118,7 +118,7 @@ function categorical_loss(model,
                               epsilon * is_outside
         probabilities[2, :] = (1 - epsilon) * is_outside + 1 / 2 * is_surface +
                               epsilon * is_inside
-        @info "values" d_real v_pred probabilities
+        # @info "values" d_real v_pred probabilities
         probabilities
     end
     (KL(probabilities, v_pred) |> mean,
