@@ -220,6 +220,12 @@ version = "0.2.5"
 [[deps.CRC32c]]
 uuid = "8bf52ea8-c179-5cab-976a-9e18b702a9bc"
 
+[[deps.CRlibm_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "e329286945d0cfc04456972ea732551869af1cfc"
+uuid = "4e9b3aee-d8a1-5a3d-ad8b-7d824db253f0"
+version = "1.0.1+0"
+
 [[deps.CUDA]]
 deps = ["AbstractFFTs", "Adapt", "BFloat16s", "CEnum", "CUDA_Driver_jll", "CUDA_Runtime_Discovery", "CUDA_Runtime_jll", "Crayons", "DataFrames", "ExprTools", "GPUArrays", "GPUCompiler", "KernelAbstractions", "LLVM", "LLVMLoopInfo", "LazyArtifacts", "Libdl", "LinearAlgebra", "Logging", "NVTX", "Preferences", "PrettyTables", "Printf", "Random", "Random123", "RandomNumbers", "Reexport", "Requires", "SparseArrays", "StaticArrays", "Statistics"]
 git-tree-sha1 = "6e945e876652f2003e6ca74e19a3c45017d3e9f6"
@@ -463,6 +469,12 @@ git-tree-sha1 = "0fba8b706d0178b4dc7fd44a96a92382c9065c2c"
 uuid = "244e2a9f-e319-4986-a169-4d1fe445cd52"
 version = "0.1.2"
 
+[[deps.DelaunayTriangulation]]
+deps = ["EnumX", "ExactPredicates", "Random"]
+git-tree-sha1 = "1755070db557ec2c37df2664c75600298b0c1cfc"
+uuid = "927a84f5-c5f4-47a5-9785-b46e178433df"
+version = "1.0.3"
+
 [[deps.DelimitedFiles]]
 deps = ["Mmap"]
 git-tree-sha1 = "9e2f36d3c96a820c678f2f1f1782582fcf685bae"
@@ -519,13 +531,19 @@ uuid = "4e289a0a-7415-4d19-859d-a7e5c4648b56"
 version = "1.0.4"
 
 [[deps.EnzymeCore]]
-git-tree-sha1 = "a2f4588bde1588af6279729540099895f8dee843"
+git-tree-sha1 = "88bc63137eb033acc3afe1b9875717889c718c46"
 uuid = "f151be2c-9106-41f4-ab19-57ee4f262869"
-version = "0.7.4"
+version = "0.7.5"
 weakdeps = ["Adapt"]
 
     [deps.EnzymeCore.extensions]
     AdaptExt = "Adapt"
+
+[[deps.ExactPredicates]]
+deps = ["IntervalArithmetic", "Random", "StaticArrays"]
+git-tree-sha1 = "b3f2ff58735b5f024c392fde763f29b057e4b025"
+uuid = "429591f6-91af-11e9-00e2-59fbe8cec110"
+version = "2.2.8"
 
 [[deps.ExprTools]]
 git-tree-sha1 = "27415f162e6028e81c72b82ef756bf321213b6ec"
@@ -561,9 +579,9 @@ version = "0.1.1"
 
 [[deps.FastBroadcast]]
 deps = ["ArrayInterface", "LinearAlgebra", "Polyester", "Static", "StaticArrayInterface", "StrideArraysCore"]
-git-tree-sha1 = "a6e756a880fc419c8b41592010aebe6a5ce09136"
+git-tree-sha1 = "2be93e36303143c6fffd07e2222bbade35194d9e"
 uuid = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
-version = "0.2.8"
+version = "0.3.3"
 
 [[deps.FastClosures]]
 git-tree-sha1 = "acebe244d53ee1b461970f8910c235b259e772ef"
@@ -640,9 +658,9 @@ uuid = "9fa8497b-333b-5362-9e8d-4d0656e87820"
 
 [[deps.GPUArrays]]
 deps = ["Adapt", "GPUArraysCore", "LLVM", "LinearAlgebra", "Printf", "Random", "Reexport", "Serialization", "Statistics"]
-git-tree-sha1 = "38cb19b8a3e600e509dc36a6396ac74266d108c1"
+git-tree-sha1 = "c154546e322a9c73364e8a60430b0f79b812d320"
 uuid = "0c68f7d7-f131-5f86-a1c3-88cf8149b2d7"
-version = "10.1.1"
+version = "10.2.0"
 
 [[deps.GPUArraysCore]]
 deps = ["Adapt"]
@@ -722,6 +740,18 @@ version = "1.4.0"
 [[deps.InteractiveUtils]]
 deps = ["Markdown"]
 uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
+
+[[deps.IntervalArithmetic]]
+deps = ["CRlibm_jll", "MacroTools", "RoundingEmulator"]
+git-tree-sha1 = "433b0bb201cd76cb087b017e49244f10394ebe9c"
+uuid = "d1acc4aa-44c8-5952-acd4-ba5d80a2a253"
+version = "0.22.14"
+weakdeps = ["DiffRules", "ForwardDiff", "RecipesBase"]
+
+    [deps.IntervalArithmetic.extensions]
+    IntervalArithmeticDiffRulesExt = "DiffRules"
+    IntervalArithmeticForwardDiffExt = "ForwardDiff"
+    IntervalArithmeticRecipesBaseExt = "RecipesBase"
 
 [[deps.IntervalTrees]]
 git-tree-sha1 = "dc3b97bb5c9cb7c437f74027309f2c2f09a82aaf"
@@ -915,9 +945,9 @@ weakdeps = ["ChainRulesCore", "ForwardDiff", "SpecialFunctions"]
 
 [[deps.Lux]]
 deps = ["ADTypes", "Adapt", "ArgCheck", "ArrayInterface", "ChainRulesCore", "ConcreteStructs", "ConstructionBase", "FastClosures", "Functors", "GPUArraysCore", "LinearAlgebra", "LuxCore", "LuxDeviceUtils", "LuxLib", "MacroTools", "Markdown", "OhMyThreads", "PrecompileTools", "Preferences", "Random", "Reexport", "Setfield", "WeightInitializers"]
-git-tree-sha1 = "101ffb569f50c6a19e9ebb66e828c8a320dde6ca"
+git-tree-sha1 = "4836b02ffedeee1b2748aec9e9e5306d00ae4075"
 uuid = "b2108857-7c20-44ae-9111-449ecde12c47"
-version = "0.5.53"
+version = "0.5.54"
 
     [deps.Lux.extensions]
     LuxComponentArraysExt = "ComponentArrays"
@@ -967,9 +997,9 @@ version = "0.1.15"
 
 [[deps.LuxDeviceUtils]]
 deps = ["Adapt", "ChainRulesCore", "Functors", "LuxCore", "PrecompileTools", "Preferences", "Random"]
-git-tree-sha1 = "019a79ef5c416b198c8d4d3030a0939f326a4156"
+git-tree-sha1 = "d3a5cb86d3f4a5ba0ee4d2ca501055e400960c4c"
 uuid = "34f89e08-e1d5-43b4-8944-0b49ac560553"
-version = "0.1.22"
+version = "0.1.23"
 
     [deps.LuxDeviceUtils.extensions]
     LuxDeviceUtilsAMDGPUExt = "AMDGPU"
@@ -1001,9 +1031,9 @@ version = "0.1.22"
 
 [[deps.LuxLib]]
 deps = ["ArrayInterface", "ChainRulesCore", "EnzymeCore", "FastBroadcast", "FastClosures", "GPUArraysCore", "LinearAlgebra", "LuxCore", "Markdown", "NNlib", "PrecompileTools", "Random", "Reexport", "Statistics"]
-git-tree-sha1 = "02920ad8b5f7c8a24cb32fb29dd990eac944cd71"
+git-tree-sha1 = "7b203688117c3e21f074d5a551618ec3126c4e50"
 uuid = "82251201-b29d-42c6-8e01-566dec8acb11"
-version = "0.3.26"
+version = "0.3.27"
 
     [deps.LuxLib.extensions]
     LuxLibAMDGPUExt = "AMDGPU"
@@ -1078,10 +1108,10 @@ uuid = "7269a6da-0436-5bbc-96c2-40638cbb6118"
 version = "0.4.11"
 
 [[deps.Meshes]]
-deps = ["Bessels", "CircularArrays", "Colorfy", "CoordRefSystems", "Distances", "LinearAlgebra", "NearestNeighbors", "Random", "Rotations", "SparseArrays", "StaticArrays", "StatsBase", "Transducers", "TransformsBase", "Unitful"]
-git-tree-sha1 = "b5f09891980b53473e665c4420df703a22217c37"
+deps = ["Bessels", "CircularArrays", "Colorfy", "CoordRefSystems", "DelaunayTriangulation", "Distances", "LinearAlgebra", "NearestNeighbors", "Random", "Rotations", "SparseArrays", "StaticArrays", "StatsBase", "Transducers", "TransformsBase", "Unitful"]
+git-tree-sha1 = "47776e90515339969b562e357a7bf9fa04da831c"
 uuid = "eacbb407-ea5a-433e-ab97-5258b1ca43fa"
-version = "0.44.0"
+version = "0.45.0"
 
     [deps.Meshes.extensions]
     MeshesMakieExt = "Makie"
@@ -1170,9 +1200,9 @@ version = "0.1.5"
 
 [[deps.NearestNeighbors]]
 deps = ["Distances", "StaticArrays"]
-git-tree-sha1 = "ded64ff6d4fdd1cb68dfcbb818c69e144a5b2e4c"
+git-tree-sha1 = "e4a9d37f0ee694da969def1f0dd4654642dfb51c"
 uuid = "b8a86587-4115-5ab1-83bc-aa920d37bbce"
-version = "0.4.16"
+version = "0.4.17"
 
 [[deps.NetworkOptions]]
 uuid = "ca575930-c2e3-43a9-ace4-1e988b2c1908"
@@ -1376,6 +1406,11 @@ weakdeps = ["RecipesBase"]
 
     [deps.Rotations.extensions]
     RotationsRecipesBaseExt = "RecipesBase"
+
+[[deps.RoundingEmulator]]
+git-tree-sha1 = "40b9edad2e5287e05bd413a38f61a8ff55b9557b"
+uuid = "5eaf0fd0-dfba-4ccb-bf02-d820a40db705"
+version = "0.2.1"
 
 [[deps.SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
@@ -1670,9 +1705,9 @@ version = "0.4.80"
 
 [[deps.TransformsBase]]
 deps = ["AbstractTrees"]
-git-tree-sha1 = "ecc04cc47ba1e2c57dff819f8f5e15cd097ae249"
+git-tree-sha1 = "ec6abfb538d9df83cd0535537df90510fa702b74"
 uuid = "28dd2a49-a57a-4bfb-84ca-1a49db9b96b8"
-version = "1.5.0"
+version = "1.5.1"
 
 [[deps.Twiddle]]
 git-tree-sha1 = "29509c4862bfb5da9e76eb6937125ab93986270a"
