@@ -120,6 +120,7 @@ function categorical_loss(model,
     v_pred = exp.(v_pred) ./ sum(exp.(v_pred); dims = 1)
     v_pred = cpu_device()(v_pred)
 	probabilities = ignore_derivatives(generate_true_probabilities(d_real))
+    epsilon = 1.0f-5
     (KL(probabilities, v_pred) |> mean,
         st, (; stats = BayesianStats(vec(d_real) .> epsilon, vec(v_pred[1, :]) .> 0.5f0)))
 end
