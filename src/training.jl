@@ -94,9 +94,9 @@ function generate_true_probabilities(d_real::AbstractArray)
     is_outside = d_real .< epsilon
     is_surface = abs.(d_real) .<= epsilon
     probabilities = zeros32(2, length(d_real))
-    probabilities[1, :] = (1 - epsilon) * is_inside + 1 / 2 * is_surface +
+    probabilities[1, :] .= (1 - epsilon) * is_inside + 1 / 2 * is_surface +
                           epsilon * is_outside
-    probabilities[2, :] = (1 - epsilon) * is_outside + 1 / 2 * is_surface +
+    probabilities[2, :] .= (1 - epsilon) * is_outside + 1 / 2 * is_surface +
                           epsilon * is_inside
     probabilities
 end
@@ -119,11 +119,14 @@ function categorical_loss(model,
     v_pred = vcat(v_pred, -v_pred)
     v_pred = exp.(v_pred) ./ sum(exp.(v_pred); dims = 1)
     v_pred = cpu_device()(v_pred)
-	probabilities = ignore_derivatives(generate_true_probabilities(d_real))
+	probabilities = ignore_derivatives() do
+		generate_true_probabilities(d_real)
+	end
     epsilon = 1.0f-5
     (KL(probabilities, v_pred) |> mean,
         st, (; stats = BayesianStats(vec(d_real) .> epsilon, vec(v_pred[1, :]) .> 0.5f0)))
 end
+
 
 ContinousMetric = @NamedTuple{
     stats::BayesianStats,
