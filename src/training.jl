@@ -55,14 +55,14 @@ function BayesianStats(real::AbstractVector{Bool}, pred::AbstractVector{Bool})
     nb_true = count(real)
     nb_false = count(.!real)
     ignore_derivatives() do
-        @info "statistics" nb_true nb_false nb_true_positives nb_true_negatives
+        @debug "statistics" nb_true nb_false nb_true_positives nb_true_negatives
     end
     BayesianStats(nb_true_positives, nb_true_negatives, nb_true, nb_false)
 end
 function reduce_stats((;
         nb_true_positives, nb_true_negatives, nb_true, nb_false)::BayesianStats)
     ignore_derivatives() do
-        @info "reduce" nb_true nb_false nb_true_positives nb_true_negatives
+        @debug "reduce" nb_true nb_false nb_true_positives nb_true_negatives
     end
 
     (; false_positive_rate = 1 - nb_true_positives / nb_true,
@@ -77,13 +77,15 @@ function aggregate(x::AbstractArray{BayesianStats})
     BayesianStats(nb_true_positives, nb_true_negatives, nb_true, nb_false) |> reduce_stats
 end
 aggregate(x::AbstractArray{<:Number}) = mean(x)
-function aggregate(w::StructArray{<:NamedTuple})
-    map(propertynames(w)) do p
-        p => aggregate(getproperty(w, p))
-    end |> NamedTuple
+aggregate(x::StructArray) = Dict(keys(StructArrays.components(x)) .=> aggregate.(values(StructArrays.components(x))))
+function aggregate(w::AbstractDict{<:Any, <:AbstractVector})
+    r = Dict(
+        keys(w) .=> aggregate.(values(w)))
+    r[:global] = aggregate(reduce(vcat, values(w)))
+    r
 end
 function aggregate(x::Any)
-    error("not espected $x of type $(typeof(x))")
+    error("not expected $x of type $(typeof(x))")
 end
 
 CategoricalMetric = @NamedTuple{
@@ -95,9 +97,9 @@ function generate_true_probabilities(d_real::AbstractArray)
     is_surface = abs.(d_real) .<= epsilon
     probabilities = zeros32(2, length(d_real))
     probabilities[1, :] .= (1 - epsilon) * is_inside + 1 / 2 * is_surface +
-                          epsilon * is_outside
+                           epsilon * is_outside
     probabilities[2, :] .= (1 - epsilon) * is_outside + 1 / 2 * is_surface +
-                          epsilon * is_inside
+                           epsilon * is_inside
     probabilities
 end
 """
@@ -119,14 +121,13 @@ function categorical_loss(model,
     v_pred = vcat(v_pred, -v_pred)
     v_pred = exp.(v_pred) ./ sum(exp.(v_pred); dims = 1)
     v_pred = cpu_device()(v_pred)
-	probabilities = ignore_derivatives() do
-		generate_true_probabilities(d_real)
-	end
+    probabilities = ignore_derivatives() do
+        generate_true_probabilities(d_real)
+    end
     epsilon = 1.0f-5
     (KL(probabilities, v_pred) |> mean,
         st, (; stats = BayesianStats(vec(d_real) .> epsilon, vec(v_pred[1, :]) .> 0.5f0)))
 end
-
 
 ContinousMetric = @NamedTuple{
     stats::BayesianStats,
@@ -219,8 +220,7 @@ function test_protein(
         push!(loss_vec, loss)
         push!(stats_vec, stats)
     end
-    loss, stats = mean(loss_vec), aggregate(stats_vec)
-    (; loss, stats)
+    (; loss=loss_vec, stats=stats_vec) |> StructVector
 end
 
 function train_protein(
@@ -239,10 +239,9 @@ function train_protein(
         loss, stats = (loss, stats) .|> cpu_device()
         push!(loss_vec, loss)
         push!(stats_vec, stats)
-        @debug stats_vec
     end
-    loss, stats = mean(loss_vec), aggregate(stats_vec)
-    training_states, (; loss, stats)
+
+    training_states, (;loss= loss_vec,stats= stats_vec) |> StructVector
 end
 
 function serialized_model_from_preprocessed_states(
@@ -256,9 +255,10 @@ function serialized_model_from_preprocessed_states(
 end
 
 struct DataSet
-    exact::StructVector{GLobalPreprocessed}
+    outer::StructVector{GLobalPreprocessed}
     approximate::StructVector{GLobalPreprocessed}
     inner::StructVector{GLobalPreprocessed}
+    exact::StructVector{GLobalPreprocessed}
     atoms_center::StructVector{GLobalPreprocessed}
 end
 
@@ -282,15 +282,21 @@ function train(
         (; atoms, skin)::TreeTrainingData -> first(
             approximates_points(
                 MersenneTwister(42), atoms.tree, skin.tree, training_parameters) do point
-                distance(point, skin.tree) < 2 * training_parameters.cutoff_radius
+                0 < signed_distance(point, skin) < 2training_parameters.cutoff_radius
             end,
-            200),
+            1000),
+        (; atoms, skin)::TreeTrainingData -> first(
+            approximates_points(
+                MersenneTwister(42), atoms.tree, skin.tree, training_parameters) do point
+                -2training_parameters.cutoff_radius < signed_distance(point, skin) < 0
+            end,
+            600),
         (; atoms, skin)::TreeTrainingData -> first(
             approximates_points(
                 MersenneTwister(42), atoms.tree, skin.tree, training_parameters) do point
                 distance(point, skin.tree) > 2 * training_parameters.cutoff_radius
             end,
-            100),
+            200),
         (; atoms, skin)::TreeTrainingData -> first(
             exact_points(
                 MersenneTwister(42), atoms.tree, skin.tree, training_parameters),
@@ -299,7 +305,7 @@ function train(
             shuffle(MersenneTwister(42), atoms.data.center), 200)
     ]
     train_data, test_data = map([train_data, test_data]) do data
-        DataSet(map(processing) do f
+        DataSet(Folds.map(processing) do f
             pre_compute_data_set(f, model, data, training_parameters) |> StructVector
         end...)
     end
@@ -307,8 +313,9 @@ function train(
 
     @info "Starting training"
     @progress name="training" for epoch in 1:nb_epoch
+    # for epoch in 1:nb_epoch
         prop = propertynames(train_data)
-        train_v = Dict{Symbol, NamedTuple}(prop .=> [(;)])
+		train_v = Dict{Symbol, StructVector}() 
         for p::Symbol in prop
             training_states, _train_v = train_protein(
                 getproperty(train_data, p), training_states, training_parameters)
@@ -318,7 +325,7 @@ function train(
             prop .=>
             test_protein.(getproperty.(Ref(test_data), prop),
                 Ref(training_states), Ref(training_parameters)))
-        @debug "log" test=test_v train=train_v
+        @info "log" test=aggregate(test_v) train=aggregate(train_v)
 
         if epoch % save_periode == 0
             serialize(
