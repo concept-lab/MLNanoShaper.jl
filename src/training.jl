@@ -36,7 +36,7 @@ function KL(true_probabilities::AbstractArray{T},
     epsilon = 1.0f-5
     sum(
         true_probabilities .*
-        (log.(true_probabilities ./ expected_probabilities + T(epsilon))),
+        (log.(true_probabilities ./ expected_probabilities .+ T(epsilon))),
         dims = 1)
 end
 
