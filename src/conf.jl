@@ -51,7 +51,7 @@ function read_from_TOML(::Type{Training_parameters}, conf::AbstractDict)
     conf = Dict(Symbol.(keys(conf)) .=> values(conf))
     conf[:model_kargs] = Dict(Symbol.(keys(conf[:model_kargs])) .=>
         values(conf[:model_kargs]))
-
+	conf[:model_kargs][:categorical]=conf[:categorical]
     conf[:model] = Partial(getproperty(MLNanoShaperRunner, Symbol(conf[:model]));
         cutoff_radius = Float32(conf[:cutoff_radius]), conf[:model_kargs]...)
     unpact_dict(Training_parameters, conf)
