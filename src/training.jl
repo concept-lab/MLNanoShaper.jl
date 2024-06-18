@@ -241,6 +241,7 @@ function train_protein(
             loss_fn,
             d,
             training_states)
+		@assert !isnan(loss)
         training_states = Lux.Experimental.apply_gradients(training_states, grads)
         loss, stats = (loss, stats) .|> cpu_device()
         push!(loss_vec, loss)
