@@ -33,7 +33,10 @@ end
 
 function KL(true_probabilities::AbstractArray{T},
         expected_probabilities::AbstractArray{T}) where {T <: Number}
-    sum(true_probabilities .* (log.(true_probabilities ./ expected_probabilities)),
+    epsilon = 1.0f-5
+    sum(
+        true_probabilities .*
+        (log.(true_probabilities ./ expected_probabilities + T(epsilon))),
         dims = 1)
 end
 
@@ -77,7 +80,10 @@ function aggregate(x::AbstractArray{BayesianStats})
     BayesianStats(nb_true_positives, nb_true_negatives, nb_true, nb_false) |> reduce_stats
 end
 aggregate(x::AbstractArray{<:Number}) = mean(x)
-aggregate(x::StructArray) = Dict(keys(StructArrays.components(x)) .=> aggregate.(values(StructArrays.components(x))))
+function aggregate(x::StructArray)
+    Dict(keys(StructArrays.components(x)) .=>
+        aggregate.(values(StructArrays.components(x))))
+end
 function aggregate(w::AbstractDict{<:Any, <:AbstractVector})
     r = Dict(
         keys(w) .=> aggregate.(values(w)))
@@ -220,7 +226,7 @@ function test_protein(
         push!(loss_vec, loss)
         push!(stats_vec, stats)
     end
-    (; loss=loss_vec, stats=stats_vec) |> StructVector
+    (; loss = loss_vec, stats = stats_vec) |> StructVector
 end
 
 function train_protein(
@@ -241,7 +247,7 @@ function train_protein(
         push!(stats_vec, stats)
     end
 
-    training_states, (;loss= loss_vec,stats= stats_vec) |> StructVector
+    training_states, (; loss = loss_vec, stats = stats_vec) |> StructVector
 end
 
 function serialized_model_from_preprocessed_states(
@@ -313,9 +319,9 @@ function train(
 
     @info "Starting training"
     @progress name="training" for epoch in 1:nb_epoch
-    # for epoch in 1:nb_epoch
+        # for epoch in 1:nb_epoch
         prop = propertynames(train_data)
-		train_v = Dict{Symbol, StructVector}() 
+        train_v = Dict{Symbol, StructVector}()
         for p::Symbol in prop
             training_states, _train_v = train_protein(
                 getproperty(train_data, p), training_states, training_parameters)
