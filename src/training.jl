@@ -282,13 +282,13 @@ function train(
         (; atoms, skin)::TreeTrainingData -> first(
             approximates_points(
                 MersenneTwister(42), atoms.tree, skin.tree, training_parameters) do point
-                0 < signed_distance(point, skin) < 2training_parameters.cutoff_radius
+                -2training_parameters.cutoff_radius < signed_distance(point, skin) < 0
             end,
             1000),
         (; atoms, skin)::TreeTrainingData -> first(
             approximates_points(
                 MersenneTwister(42), atoms.tree, skin.tree, training_parameters) do point
-                -2training_parameters.cutoff_radius < signed_distance(point, skin) < 0
+                0 < signed_distance(point, skin) < 2training_parameters.cutoff_radius
             end,
             600),
         (; atoms, skin)::TreeTrainingData -> first(
