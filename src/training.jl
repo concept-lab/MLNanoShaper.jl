@@ -164,7 +164,7 @@ function continus_loss(model,
     v_real = σ.(d_real)
     error = v_pred .- v_real
     loss = mean(coefficient .* error .^ 2)
-    D_distance = d_real .- loggit.(max.(0, v_pred) * (1 .- 1.0f-4))
+    D_distance = loggit.(max.(0, v_pred) * (1 .- 1.0f-4)) .- d_real
     (loss,
         st,
         (; stats = BayesianStats(vec(v_real) .>= 0.5, vec(v_pred) .>= 0.5),
