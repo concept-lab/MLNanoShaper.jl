@@ -64,12 +64,12 @@ save_periode=10
 
 [Training_parameters]
 name="A"
-scale=1.0
+scale=0.3
 cutoff_radius=3.0
 train_test_split=0.8
 model = "medium_angular_dense"
 model_kargs.van_der_wal_channel=false
-ref_distance=1.0
+ref_distance=0.3
 categorical=false
 data_ids = [
 1,
