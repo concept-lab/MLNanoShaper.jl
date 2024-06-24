@@ -98,7 +98,7 @@ Load a `TrainingData{T}` from current directory.
 You should have a pdb and an off file with name `name` in current directory.
 """
 function load_data_pdb(T::Type{<:Number}, name::String)
-    TrainingData{T}(extract_balls(T, read("$name.pdb", PDB)), load("$name.off"))
+    TrainingData{T}(extract_balls(T, read("$name.pdb", PDBFormat)), load("$name.off"))
 end
 """
 	load_data_pqr(T, name::String)

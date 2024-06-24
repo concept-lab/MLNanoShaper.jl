@@ -1,5 +1,5 @@
 using TOML
-import BioStructures: PDB,downloadpdb
+import BioStructures: PDBFormat,downloadpdb
 using Logging
 using .Import
 
@@ -20,7 +20,7 @@ function generate_data()
             _, prot_name = splitdir(prot_path)
             mesh_name = first(split(prot_name, ".")) * ".off"
             @info "generating surface" mesh_name
-            prot = read(prot_path, PDB)
+            prot = read(prot_path, PDBFormat)
             atoms = extract_balls(Float64,prot)
             open("atoms.xyzr","w") do io
                 print(io, atoms, Import.XYZR{Float64})

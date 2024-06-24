@@ -4,7 +4,7 @@ using Test
 @testset "MLNanoShaper.jl" begin
     @test begin
         using Random, MLNanoShaper, Lux, BioStructures, GeometryBasics
-        prot = read("../examples/1MH1.pdb", PDB)
+        prot = read("../examples/1MH1.pdb", PDBFormat)
         balls = extract_balls(Float32,prot)
         ps = Lux.initialparameters(MersenneTwister(42), MLNanoShaper.model)
         length(LuxCore.stateless_apply(MLNanoShaper.model,
