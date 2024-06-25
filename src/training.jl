@@ -262,10 +262,10 @@ function serialized_model_from_preprocessed_states(
 end
 
 struct DataSet
-    outer::StructVector{GLobalPreprocessed}
-    approximate::StructVector{GLobalPreprocessed}
-    inner::StructVector{GLobalPreprocessed}
-    exact::StructVector{GLobalPreprocessed}
+    outside::StructVector{GLobalPreprocessed}
+    surface::StructVector{GLobalPreprocessed}
+    inside::StructVector{GLobalPreprocessed}
+    core::StructVector{GLobalPreprocessed}
     atoms_center::StructVector{GLobalPreprocessed}
 end
 
@@ -291,7 +291,11 @@ function train(
                 MersenneTwister(42), atoms.tree, skin.tree, training_parameters) do point
                 -2training_parameters.cutoff_radius < signed_distance(point, skin) < 0
             end,
-            1000),
+            3000),
+        (; atoms, skin)::TreeTrainingData -> first(
+            exact_points(
+                MersenneTwister(42), atoms.tree, skin.tree, training_parameters),
+            3000),
         (; atoms, skin)::TreeTrainingData -> first(
             approximates_points(
                 MersenneTwister(42), atoms.tree, skin.tree, training_parameters) do point
@@ -304,10 +308,6 @@ function train(
                 distance(point, skin.tree) > 2 * training_parameters.cutoff_radius
             end,
             200),
-        (; atoms, skin)::TreeTrainingData -> first(
-            exact_points(
-                MersenneTwister(42), atoms.tree, skin.tree, training_parameters),
-            4000),
         (; atoms)::TreeTrainingData -> first(
             shuffle(MersenneTwister(42), atoms.data.center), 200)
     ]
