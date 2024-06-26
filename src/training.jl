@@ -362,7 +362,7 @@ train the model given `Training_parameters` and `Auxiliary_parameters`.
 function train(training_parameters::Training_parameters, directories::Auxiliary_parameters)
     (; model) = training_parameters
     (; log_dir) = directories
-    optim = OptimiserChain(WeightDecay(), Adam())
+    optim = OptimiserChain(WeightDecay(), Adam(1e-5))
     (; train_data, test_data) = get_dataset(training_parameters, directories)
     with_logger(get_logger("$(homedir())/$log_dir/$(generate_training_name(training_parameters))")) do
         train((train_data, test_data),
