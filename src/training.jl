@@ -131,10 +131,10 @@ function categorical_loss(model,
         generate_true_probabilities(d_real)
     end
     epsilon = 1.0f-5
-    true_vec = filter(vec(d_real)) do dist
+    true_vec = Iterators.filter(vec(d_real)) do dist
         abs(dist) > epsilon
     end .> 0
-    pred_vec = map(filter(zip(d_real, vec(v_pred[1, :]))) do (dist, _)
+    pred_vec = map(Iterators.filter(zip(d_real, vec(v_pred[1, :]))) do (dist, _)
         abs(dist) > epsilon
     end) do (_, pred)
         pred > 0.5f0
@@ -379,9 +379,9 @@ end
 train the model given `Training_parameters` and `Auxiliary_parameters`.
 """
 function train(training_parameters::Training_parameters, directories::Auxiliary_parameters)
-    (; model,leaning_rate) = training_parameters
+    (; model,learning_rate) = training_parameters
     (; log_dir) = directories
-    optim = OptimiserChain(WeightDecay(), Adam(leaning_rate))
+    optim = OptimiserChain(WeightDecay(), Adam(learning_rate))
     (; train_data, test_data) = get_dataset(training_parameters, directories)
     with_logger(get_logger("$(homedir())/$log_dir/$(generate_training_name(training_parameters))")) do
         train((train_data, test_data),
