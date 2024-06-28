@@ -34,6 +34,7 @@ struct Training_parameters
     data_ids::Vector{Int}
 	ref_distance::Float32
 	categorical::Bool
+	learning_rate::Float64
 end
 
 function generate_training_name(x::Training_parameters, epoch::Integer)

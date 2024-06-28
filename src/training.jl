@@ -131,8 +131,17 @@ function categorical_loss(model,
         generate_true_probabilities(d_real)
     end
     epsilon = 1.0f-5
+    true_vec = filter(vec(d_real)) do dist
+        abs(dist) > epsilon
+    end .> 0
+    pred_vec = map(filter(zip(d_real, vec(v_pred[1, :]))) do (dist, _)
+        abs(dist) > epsilon
+    end) do (_, pred)
+        pred > 0.5f0
+    end
+
     (KL(probabilities, v_pred) |> mean,
-        st, (; stats = BayesianStats(vec(d_real) .> epsilon, vec(v_pred[1, :]) .> 0.5f0)))
+        st, (; stats = BayesianStats(true_vec,pred_vec )))
 end
 
 ContinousMetric = @NamedTuple{
@@ -165,9 +174,19 @@ function continus_loss(model,
     error = v_pred .- v_real
     loss = mean(coefficient .* error .^ 2)
     D_distance = loggit.(max.(0, v_pred) * (1 .- 1.0f-4)) .- d_real
+
+    epsilon = 1.0f-5
+    true_vec = filter(vec(d_real)) do dist
+        abs(dist) > epsilon
+    end .> 0.5f0
+    pred_vec = map(filter(zip(d_real, vec(v_pred))) do (dist, _)
+        abs(dist) > epsilon
+    end) do (_, pred)
+        pred > 0.5f0
+    end
     (loss,
         st,
-        (; stats = BayesianStats(vec(v_real) .>= 0.5, vec(v_pred) .>= 0.5),
+        (; stats = BayesianStats(true_vec,pred_vec ),
             bias_error = mean(error),
             abs_error = mean(abs.(error)),
             bias_distance = mean(D_distance),
@@ -360,9 +379,9 @@ end
 train the model given `Training_parameters` and `Auxiliary_parameters`.
 """
 function train(training_parameters::Training_parameters, directories::Auxiliary_parameters)
-    (; model) = training_parameters
+    (; model,leaning_rate) = training_parameters
     (; log_dir) = directories
-    optim = OptimiserChain(WeightDecay(), Adam(1e-5))
+    optim = OptimiserChain(WeightDecay(), Adam(leaning_rate))
     (; train_data, test_data) = get_dataset(training_parameters, directories)
     with_logger(get_logger("$(homedir())/$log_dir/$(generate_training_name(training_parameters))")) do
         train((train_data, test_data),

@@ -43,6 +43,7 @@ The folowing parameters can be overided.
         cutoff_radius::Float32 = 0.0f0,
         ref_distance::Float32 = 00.0f0,
         categorical::Bool,
+        learning_rate::Float64=0.,
         gpu::Bool = false)
     global_logger(TerminalLogger())
     conf = TOML.parsefile(params_file)
@@ -55,6 +56,9 @@ The folowing parameters can be overided.
     end
     if name != 0
         conf["Training_parameters"]["name"] = name
+    end
+    if learning_rate != 0.
+        conf["Training_parameters"]["learning_rate"] = learning_rate
     end
     if ref_distance > 0
         conf["Training_parameters"]["ref_distance"] = ref_distance

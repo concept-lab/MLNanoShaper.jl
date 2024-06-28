@@ -71,6 +71,7 @@ model = "medium_angular_dense"
 model_kargs.van_der_wal_channel=false
 ref_distance=0.05
 categorical=false
+learning_rate=1e-5
 data_ids = [
 1,
 10,
