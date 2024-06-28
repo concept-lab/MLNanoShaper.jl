@@ -134,14 +134,15 @@ function categorical_loss(model,
     true_vec = Iterators.filter(vec(d_real)) do dist
         abs(dist) > epsilon
     end .> 0
-    pred_vec = map(Iterators.filter(zip(d_real, vec(v_pred[1, :]))) do (dist, _)
+    pred_vec = map(Iterators.filter(zip(
+        d_real, vec(v_pred[1, :]))) do (dist, _)
         abs(dist) > epsilon
     end) do (_, pred)
         pred > 0.5f0
     end
 
     (KL(probabilities, v_pred) |> mean,
-        st, (; stats = BayesianStats(true_vec,pred_vec )))
+        st, (; stats = BayesianStats(true_vec, pred_vec)))
 end
 
 ContinousMetric = @NamedTuple{
@@ -167,26 +168,23 @@ function continus_loss(model,
     ret = Lux.apply(model, Batch(input), ps, st)
     v_pred, st = ret
     v_pred = cpu_device()(v_pred)
-    coefficient = ignore_derivatives() do
-        0.8f0 * exp.(-abs.(d_real)) .+ 0.2f0
-    end .|> Float32
     v_real = σ.(d_real)
     error = v_pred .- v_real
-    loss = mean(coefficient .* error .^ 2)
+    loss = mean(error .^ 2)
     D_distance = loggit.(max.(0, v_pred) * (1 .- 1.0f-4)) .- d_real
 
     epsilon = 1.0f-5
-    true_vec = filter(vec(d_real)) do dist
+    true_vec = Iterators.filter(vec(d_real)) do dist
         abs(dist) > epsilon
     end .> 0.5f0
-    pred_vec = map(filter(zip(d_real, vec(v_pred))) do (dist, _)
+    pred_vec = map(Iterators.filter(zip(d_real, vec(v_pred))) do (dist, _)
         abs(dist) > epsilon
     end) do (_, pred)
         pred > 0.5f0
     end
     (loss,
         st,
-        (; stats = BayesianStats(true_vec,pred_vec ),
+        (; stats = BayesianStats(true_vec, pred_vec),
             bias_error = mean(error),
             abs_error = mean(abs.(error)),
             bias_distance = mean(D_distance),
@@ -379,7 +377,7 @@ end
 train the model given `Training_parameters` and `Auxiliary_parameters`.
 """
 function train(training_parameters::Training_parameters, directories::Auxiliary_parameters)
-    (; model,learning_rate) = training_parameters
+    (; model, learning_rate) = training_parameters
     (; log_dir) = directories
     optim = OptimiserChain(WeightDecay(), Adam(learning_rate))
     (; train_data, test_data) = get_dataset(training_parameters, directories)
@@ -390,4 +388,5 @@ function train(training_parameters::Training_parameters, directories::Auxiliary_
             gpu_device(),
             training_parameters, directories)
     end
+end
 end
