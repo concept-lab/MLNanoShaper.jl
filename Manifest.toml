@@ -644,9 +644,9 @@ uuid = "9fa8497b-333b-5362-9e8d-4d0656e87820"
 
 [[deps.GPUArrays]]
 deps = ["Adapt", "GPUArraysCore", "LLVM", "LinearAlgebra", "Printf", "Random", "Reexport", "Serialization", "Statistics"]
-git-tree-sha1 = "a1fa65df0cfd3b489df8471975d096593aafbe85"
+git-tree-sha1 = "5c9de6d5af87acd2cf719e214ed7d51e14017b7a"
 uuid = "0c68f7d7-f131-5f86-a1c3-88cf8149b2d7"
-version = "10.2.1"
+version = "10.2.2"
 
 [[deps.GPUArraysCore]]
 deps = ["Adapt"]
@@ -662,9 +662,9 @@ version = "0.26.5"
 
 [[deps.GeoInterface]]
 deps = ["Extents"]
-git-tree-sha1 = "801aef8228f7f04972e596b09d4dba481807c913"
+git-tree-sha1 = "9fff8990361d5127b770e3454488360443019bb3"
 uuid = "cf35fbd7-0cd7-5166-be24-54bfbe79505f"
-version = "1.3.4"
+version = "1.3.5"
 
 [[deps.GeometryBasics]]
 deps = ["EarCut_jll", "Extents", "GeoInterface", "IterTools", "LinearAlgebra", "StaticArrays", "StructArrays", "Tables"]
@@ -795,9 +795,9 @@ version = "0.2.4"
 
 [[deps.KernelAbstractions]]
 deps = ["Adapt", "Atomix", "InteractiveUtils", "LinearAlgebra", "MacroTools", "PrecompileTools", "Requires", "SparseArrays", "StaticArrays", "UUIDs", "UnsafeAtomics", "UnsafeAtomicsLLVM"]
-git-tree-sha1 = "b8fcefe4418e4a7a2c3aaac883fecddd8efbe286"
+git-tree-sha1 = "d0448cebd5919e06ca5edc7a264631790de810ec"
 uuid = "63c18a36-062a-441e-b654-da1e3ab1ce7c"
-version = "0.9.21"
+version = "0.9.22"
 weakdeps = ["EnzymeCore"]
 
     [deps.KernelAbstractions.extensions]
@@ -990,9 +990,9 @@ version = "0.3.2"
 
 [[deps.LuxCore]]
 deps = ["Functors", "Random", "Setfield"]
-git-tree-sha1 = "7c35b1078906497ca8cbcde5be40a03eb1990b85"
+git-tree-sha1 = "2891b2234064728106303ed45cf7a2061b0d95c1"
 uuid = "bb33d45b-7691-41d6-9220-0943567d0623"
-version = "0.1.16"
+version = "0.1.17"
 
 [[deps.LuxDeviceUtils]]
 deps = ["Adapt", "ChainRulesCore", "Functors", "LuxCore", "Preferences", "Random"]
@@ -1096,9 +1096,9 @@ version = "2.28.2+1"
 
 [[deps.MeshIO]]
 deps = ["ColorTypes", "FileIO", "GeometryBasics", "Printf"]
-git-tree-sha1 = "8c26ab950860dfca6767f2bbd90fdf1e8ddc678b"
+git-tree-sha1 = "dc182956229ff16d5a4d90a562035e633bd2561d"
 uuid = "7269a6da-0436-5bbc-96c2-40638cbb6118"
-version = "0.4.11"
+version = "0.4.12"
 
 [[deps.Meshes]]
 deps = ["Bessels", "CircularArrays", "Colorfy", "CoordRefSystems", "DelaunayTriangulation", "Distances", "LinearAlgebra", "NearestNeighbors", "Random", "Rotations", "SparseArrays", "StaticArrays", "StatsBase", "Transducers", "TransformsBase", "Unitful"]

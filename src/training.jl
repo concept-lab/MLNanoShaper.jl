@@ -42,42 +42,44 @@ end
 
 struct BayesianStats
     nb_true_positives::Int
-    nb_true_negatives::Int
+    nb_false_negatives::Int
     nb_true::Int
     nb_false::Int
     function BayesianStats(
-            nb_true_positives::Int, nb_true_negatives::Int, nb_true::Int, nb_false::Int)
+            nb_true_positives::Int, nb_false_negatives::Int, nb_true::Int, nb_false::Int)
         @assert nb_true_positives<=nb_true "got $nb_true_positives true positives for $nb_true true values"
-        @assert nb_true_negatives<=nb_false "got $nb_true_negatives true negatives for $nb_false true values"
-        new(nb_true_positives, nb_true_negatives, nb_true, nb_false)
+        @assert nb_false_negatives<=nb_false "got $nb_false_negatives true negatives for $nb_false true values"
+        new(nb_true_positives, nb_false_negatives, nb_true, nb_false)
     end
 end
 function BayesianStats(real::AbstractVector{Bool}, pred::AbstractVector{Bool})
     nb_true_positives = count(real .&& pred)
-    nb_true_negatives = count(.!real .&& pred)
+    nb_false_negatives = count(.! real .&& pred)
     nb_true = count(real)
     nb_false = count(.!real)
     ignore_derivatives() do
-        @debug "statistics" nb_true nb_false nb_true_positives nb_true_negatives
+        @debug "statistics" nb_true nb_false nb_true_positives nb_false_negatives
     end
-    BayesianStats(nb_true_positives, nb_true_negatives, nb_true, nb_false)
+    BayesianStats(nb_true_positives, nb_false_negatives, nb_true, nb_false)
 end
 function reduce_stats((;
-        nb_true_positives, nb_true_negatives, nb_true, nb_false)::BayesianStats)
+        nb_true_positives, nb_false_negatives, nb_true, nb_false)::BayesianStats)
     ignore_derivatives() do
-        @debug "reduce" nb_true nb_false nb_true_positives nb_true_negatives
+        @debug "reduce" nb_true nb_false nb_true_positives nb_false_negatives
     end
 
-    (; false_positive_rate = 1 - nb_true_positives / nb_true,
-        true_negative_rate = nb_true_negatives / nb_false)
+    false_positive_rate = 1 - nb_true_positives / nb_true
+    false_negative_rate = nb_false_negatives / nb_false
+	error_rate = max(false_positive_rate,false_negative_rate)
+	(;false_positive_rate,false_negative_rate,error_rate)
 end
 
 function aggregate(x::AbstractArray{BayesianStats})
     nb_true_positives = sum(getproperty.(x, :nb_true_positives))
-    nb_true_negatives = sum(getproperty.(x, :nb_true_negatives))
+    nb_false_negatives = sum(getproperty.(x, :nb_false_negatives))
     nb_true = sum(getproperty.(x, :nb_true))
     nb_false = sum(getproperty.(x, :nb_false))
-    BayesianStats(nb_true_positives, nb_true_negatives, nb_true, nb_false) |> reduce_stats
+    BayesianStats(nb_true_positives, nb_false_negatives, nb_true, nb_false) |> reduce_stats
 end
 aggregate(x::AbstractArray{<:Number}) = mean(x)
 function aggregate(x::StructArray)
@@ -318,15 +320,15 @@ function train(
                 MersenneTwister(42), atoms.tree, skin.tree, training_parameters) do point
                 0 < signed_distance(point, skin) < 2training_parameters.cutoff_radius
             end,
-            600),
+            1500),
         (; atoms, skin)::TreeTrainingData -> first(
             approximates_points(
                 MersenneTwister(42), atoms.tree, skin.tree, training_parameters) do point
                 distance(point, skin.tree) > 2 * training_parameters.cutoff_radius
             end,
-            200),
+            1200),
         (; atoms)::TreeTrainingData -> first(
-            shuffle(MersenneTwister(42), atoms.data.center), 200)
+            shuffle(MersenneTwister(42), atoms.data.center), 300)
     ]
     train_data, test_data = map([train_data, test_data]) do data
         DataSet(Folds.map(processing) do f
