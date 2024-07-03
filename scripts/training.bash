@@ -1,5 +1,5 @@
 #!/bin/bash
-batch_name=small_grid_4
+batch_name=continuous_1
 parallel --jobs 4\
 	~/.julia/bin/mlnanoshaper train\
 		--model={1}\
