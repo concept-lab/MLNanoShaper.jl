@@ -1,5 +1,7 @@
 [deps]
 FileIO = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
+Folds = "41a02a25-b8f0-4f67-bc48-60067656b558"
+GLFW_jll = "0656b61e-2033-5cc2-a64a-77c0f6c09b89"
 GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
 GeometryBasics = "5c1252a2-5f33-56bf-86c9-59e7332b4326"
 MLNanoShaper = "0ae43799-6878-4589-9bc9-cf11e8180012"
@@ -9,3 +11,6 @@ Serialization = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
 Static = "aedffcd0-7271-4cad-89d0-dc628f76c6d3"
 StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
 WGLMakie = "276b4fcb-3e11-5398-bf8b-a0c2d153d008"
+
+[compat]
+GLFW_jll = "=3.3.9"

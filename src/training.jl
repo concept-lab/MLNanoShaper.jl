@@ -198,25 +198,31 @@ end
 get_cutoff_radius(x::Lux.StatefulLuxLayer) = get_cutoff_radius(x.model)
 
 function evaluate_model(
-        model::Lux.StatefulLuxLayer, x::Point3f, atoms::AnnotedKDTree; cutoff_radius)
+        model::Lux.StatefulLuxLayer, x::Point3f, atoms::AnnotedKDTree; cutoff_radius,default_value=-0f0)
     if distance(Point3f(x), atoms.tree) >= cutoff_radius
-        -0.5f0
+		default_value
     else
-        only(model((Point3f(x), atoms))) - 0.5f0
+        only(model((Point3f(x), atoms)))
     end
 end
-function implicit_surface(atoms::AnnotedKDTree{Sphere{T}, :center, Point3{T}},
+"""
+    implicit_surface(atoms::AnnotedKDTree{Sphere{T}, :center, Point3{T}},
         model::Lux.StatefulLuxLayer, (;
             cutoff_radius, step)) where {T}
+
+	Create a mesh form the isosurface of function `pos -> model(atoms,pos)` using marching cubes algorithm and using step size `step`.  
+"""
+function implicit_surface(atoms::AnnotedKDTree{Sphere{T}, :center, Point3{T}},
+        model::Lux.StatefulLuxLayer, (;
+            cutoff_radius, default_value, iso_value, step)) where {T}
     (; mins, maxes) = atoms.tree.hyper_rec
     ranges = range.(mins, maxes; step)
     grid = Point3f.(reshape(ranges[1], :, 1, 1), reshape(ranges[2], 1, :, 1),
         reshape(ranges[3], 1, 1, :))
     volume = Folds.map(grid) do x
-        evaluate_model(model, x, atoms; cutoff_radius)
-    end
+        evaluate_model(model, x, atoms; cutoff_radius,default_value)
+    end .- iso_value
 
-    cutoff_radius = get_cutoff_radius(model)
     isosurface(volume,
         MarchingCubes(), SVector{3, Float32}; origin = mins, widths = maxes - mins)
 end
