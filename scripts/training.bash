@@ -53,7 +53,7 @@ parallel --jobs 2\
 		 --categorical {5}\
 	::: medium_angular_dense\
 	::: 3.0\
-	::: 2e-5\
+	::: 2e-6\
 	::: true false\
 	:::  true false
  parallel --jobs 1\
@@ -66,6 +66,6 @@ parallel --jobs 2\
 		 --categorical {5}\
 	::: tiny_angular_dense light_angular_dense medium_angular_dense\
 	::: 4.0\
-	::: 1e-7\
+	::: 1e-8\
 	::: true false\
 	:::  true false
