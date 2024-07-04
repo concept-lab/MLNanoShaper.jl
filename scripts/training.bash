@@ -10,7 +10,7 @@ parallel --jobs 4\
 		--categorical {5}\
 	::: tiny_angular_dense light_angular_dense medium_angular_dense\
 	::: 2.0\
-	::: 1e-5\
+	::: 2e-6\
  	::: true false\
 	::: true false
 
