@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.42
+# v0.19.43
 
 using Markdown
 using InteractiveUtils
@@ -46,10 +46,10 @@ models = [
 
 
 # ╔═╡ f7041ca8-97be-4998-9c10-2cbed79eb135
-atoms = MLNanoShaperRunner.AnnotedKDTree(getfield.(read("/home/tristan/datasets/pqr/$prot_num/structure.pqr", PQR{Float32}), :pos) |> StructVector, static(:center))
+atoms = MLNanoShaperRunner.AnnotedKDTree(getfield.(read("$(homedir())/datasets/pqr/$prot_num/structure.pqr", PQR{Float32}), :pos) |> StructVector, static(:center))
 
 # ╔═╡ 58cf0ac8-d68d-47a7-b08f-098b65d19908
-surface= load("/home/tristan/datasets/pqr/$prot_num/triangulatedSurf.off")
+surface= load("$(homedir())/datasets/pqr/$prot_num/triangulatedSurf.off")
 
 # ╔═╡ 7f3602e9-028f-44fc-b7dd-052f76438dae
 full_data = map(MLNanoShaper.implicit_surface.(Ref(atoms), models, [(; cutoff_radius=3.0f0, default_value = -10f0,iso_value=0f0,step=1.0f0),(; cutoff_radius=2.0f0, default_value = 0f0,iso_value=.5f0,step=1.0f0)])) do (points, top)
