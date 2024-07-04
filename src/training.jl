@@ -54,7 +54,7 @@ struct BayesianStats
 end
 function BayesianStats(real::AbstractVector{Bool}, pred::AbstractVector{Bool})
     nb_true_positives = count(real .&& pred)
-    nb_false_negatives = count(.! real .&& pred)
+    nb_false_negatives = count(.!real .&& pred)
     nb_true = count(real)
     nb_false = count(.!real)
     ignore_derivatives() do
@@ -70,8 +70,8 @@ function reduce_stats((;
 
     false_positive_rate = 1 - nb_true_positives / nb_true
     false_negative_rate = nb_false_negatives / nb_false
-	error_rate = max(false_positive_rate,false_negative_rate)
-	(;false_positive_rate,false_negative_rate,error_rate)
+    error_rate = max(false_positive_rate, false_negative_rate)
+    (; false_positive_rate, false_negative_rate, error_rate)
 end
 
 function aggregate(x::AbstractArray{BayesianStats})
@@ -197,12 +197,19 @@ function get_cutoff_radius(x::Lux.AbstractExplicitLayer)
 end
 get_cutoff_radius(x::Lux.StatefulLuxLayer) = get_cutoff_radius(x.model)
 
+"""
+    evaluate_model(
+        model::Lux.StatefulLuxLayer, x::Point3f, atoms::AnnotedKDTree; cutoff_radius, default_value = -0.0f0)
+
+	evaluate the model on a single point.
+	This function handle the logic in case the point is too far from the atoms. In this case default_value is returned and the model is not run.
+"""
 function evaluate_model(
-        model::Lux.StatefulLuxLayer, x::Point3f, atoms::AnnotedKDTree; cutoff_radius,default_value=-0f0)
-    if distance(Point3f(x), atoms.tree) >= cutoff_radius
-		default_value
+        model::Lux.StatefulLuxLayer, x::Point3f, atoms::AnnotedKDTree; cutoff_radius, default_value = -0.0f0)
+    if distance(x, atoms.tree) >= cutoff_radius
+        default_value
     else
-        only(model((Point3f(x), atoms)))
+        only(model((x, atoms)))
     end
 end
 """
@@ -220,7 +227,7 @@ function implicit_surface(atoms::AnnotedKDTree{Sphere{T}, :center, Point3{T}},
     grid = Point3f.(reshape(ranges[1], :, 1, 1), reshape(ranges[2], 1, :, 1),
         reshape(ranges[3], 1, 1, :))
     volume = Folds.map(grid) do x
-        evaluate_model(model, x, atoms; cutoff_radius,default_value)
+        evaluate_model(model, x, atoms; cutoff_radius, default_value)
     end .- iso_value
 
     isosurface(volume,
