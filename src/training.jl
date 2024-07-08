@@ -228,10 +228,9 @@ function implicit_surface(atoms::AnnotedKDTree{Sphere{T}, :center, Point3{T}},
         reshape(ranges[3], 1, 1, :))
     volume = Folds.map(grid) do x
 		evaluate_model(model, x, atoms; cutoff_radius, default_value) 
-    end .- iso_value
+    end 
 
-    isosurface(volume,
-        MarchingCubes(), SVector{3, Float32}; origin = mins, widths = maxes - mins)
+    isosurface(volume, MarchingCubes(iso=iso_value), SVector{3, Float32}, SVector{3, Int},mins,maxes - mins)
 end
 
 function hausdorff_metric((; atoms, skin)::TreeTrainingData,
