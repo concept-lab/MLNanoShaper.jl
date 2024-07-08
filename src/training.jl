@@ -209,7 +209,7 @@ function evaluate_model(
     if distance(x, atoms.tree) >= cutoff_radius
         default_value
     else
-        only(model((x, atoms)))
+		model((x, atoms)) |> cpu_device() |> only
     end
 end
 """
@@ -227,7 +227,7 @@ function implicit_surface(atoms::AnnotedKDTree{Sphere{T}, :center, Point3{T}},
     grid = Point3f.(reshape(ranges[1], :, 1, 1), reshape(ranges[2], 1, :, 1),
         reshape(ranges[3], 1, 1, :))
     volume = Folds.map(grid) do x
-		evaluate_model(model, x, atoms; cutoff_radius, default_value) |> cpu_device()
+		evaluate_model(model, x, atoms; cutoff_radius, default_value) 
     end .- iso_value
 
     isosurface(volume,
