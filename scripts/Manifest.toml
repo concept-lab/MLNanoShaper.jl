@@ -2,7 +2,7 @@
 
 julia_version = "1.10.4"
 manifest_format = "2.0"
-project_hash = "03639c7a68be973682fa291254bf7e2f054dcdab"
+project_hash = "604cefcc90f5eafc06b8d1f1870de7985d61f060"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "7a6b285f217ba92b5b474b783b4c2e8cf8218aaa"
@@ -180,6 +180,12 @@ uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 git-tree-sha1 = "aebf55e6d7795e02ca500a689d326ac979aaf89e"
 uuid = "9718e550-a3fa-408a-8086-8db961cd8217"
 version = "0.1.1"
+
+[[deps.BenchmarkTools]]
+deps = ["JSON", "Logging", "Printf", "Profile", "Statistics", "UUIDs"]
+git-tree-sha1 = "f1dff6729bc61f4d49e140da1af55dcd1ac97b2f"
+uuid = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
+version = "1.5.0"
 
 [[deps.Bessels]]
 git-tree-sha1 = "4435559dc39793d53a9e3d278e185e920b4619ef"
@@ -759,6 +765,12 @@ git-tree-sha1 = "05882d6995ae5c12bb5f36dd2ed3f61c98cbb172"
 uuid = "53c48c17-4a7d-5ca2-90c5-79b7896eea93"
 version = "0.8.5"
 
+[[deps.FlameGraphs]]
+deps = ["AbstractTrees", "Colors", "FileIO", "FixedPointNumbers", "IndirectArrays", "LeftChildRightSiblingTrees", "Profile"]
+git-tree-sha1 = "bd1aaf448be998ea427b1c7213b8acf2e278498b"
+uuid = "08572546-2f56-4bcf-ba4e-bab62c3a3f89"
+version = "1.0.0"
+
 [[deps.Folds]]
 deps = ["Accessors", "BangBang", "Baselet", "DefineSingletons", "Distributed", "ExternalDocstrings", "InitialValues", "MicroCollections", "Referenceables", "Requires", "Test", "ThreadedScans", "Transducers"]
 git-tree-sha1 = "7eb4bc88d8295e387a667fd43d67c157ddee76cf"
@@ -826,23 +838,11 @@ version = "0.4.11"
 deps = ["Random"]
 uuid = "9fa8497b-333b-5362-9e8d-4d0656e87820"
 
-[[deps.GLFW]]
-deps = ["GLFW_jll"]
-git-tree-sha1 = "0e09f64c12edc26f55d905b2596d28fe513e0822"
-uuid = "f7f18e0c-5ee9-5ccd-a5bf-e8befd85ed98"
-version = "3.4.2"
-
 [[deps.GLFW_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libglvnd_jll", "Xorg_libXcursor_jll", "Xorg_libXi_jll", "Xorg_libXinerama_jll", "Xorg_libXrandr_jll"]
 git-tree-sha1 = "ff38ba61beff76b8f4acad8ab0c97ef73bb670cb"
 uuid = "0656b61e-2033-5cc2-a64a-77c0f6c09b89"
 version = "3.3.9+0"
-
-[[deps.GLMakie]]
-deps = ["ColorTypes", "Colors", "FileIO", "FixedPointNumbers", "FreeTypeAbstraction", "GLFW", "GeometryBasics", "LinearAlgebra", "Makie", "Markdown", "MeshIO", "ModernGL", "Observables", "PrecompileTools", "Printf", "ShaderAbstractions", "StaticArrays"]
-git-tree-sha1 = "a4cf5ae3c181a9df5e94d83bacd190af6e2f6f6e"
-uuid = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
-version = "0.10.5"
 
 [[deps.GPUArrays]]
 deps = ["Adapt", "GPUArraysCore", "LLVM", "LinearAlgebra", "Printf", "Random", "Reexport", "Serialization", "Statistics"]
@@ -1577,12 +1577,6 @@ version = "1.2.0"
 [[deps.Mmap]]
 uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 
-[[deps.ModernGL]]
-deps = ["Libdl"]
-git-tree-sha1 = "b76ea40b5c0f45790ae09492712dd326208c28b2"
-uuid = "66fc600b-dfda-50eb-8b99-91cfa97b1301"
-version = "1.1.7"
-
 [[deps.MosaicViews]]
 deps = ["MappedArrays", "OffsetArrays", "PaddedViews", "StackViews"]
 git-tree-sha1 = "7b86a5d4d70a9f5cdf2dacb3cbe6d251d1a61dbe"
@@ -1855,6 +1849,16 @@ version = "2.3.2"
 [[deps.Printf]]
 deps = ["Unicode"]
 uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+
+[[deps.Profile]]
+deps = ["Printf"]
+uuid = "9abbd945-dff8-562f-b5e8-e1ebf5ef1b79"
+
+[[deps.ProfileSVG]]
+deps = ["Colors", "FlameGraphs", "Profile", "UUIDs"]
+git-tree-sha1 = "95ef58783baaa61cd227342b7b605d8a4dfba4a9"
+uuid = "132c30aa-f267-4189-9183-c8a63c7e05e6"
+version = "0.2.2"
 
 [[deps.ProgressLogging]]
 deps = ["Logging", "SHA", "UUIDs"]

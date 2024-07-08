@@ -33,7 +33,7 @@ html"""
 """
 
 # ╔═╡ e8a48b40-28b8-41a7-a67d-cbac2b361f84
-import GLMakie as Mk, Meshes as Ms
+import WGLMakie as Mk, Meshes as Ms
 
 # ╔═╡ ccbcea27-ea65-4b0c-8a56-c3a21fc976bb
 prot_num = 1
@@ -169,7 +169,7 @@ end
 # ╟─5f801ac4-1f27-11ef-3246-afece906b714
 # ╠═8cbe5092-8af4-4a2c-a574-e33cb9632058
 # ╠═9bbec073-a5bf-429f-bc29-7411e3041888
-# ╟─ea5ad13f-bf1f-4986-b781-a30a8ca83e7c
+# ╠═ea5ad13f-bf1f-4986-b781-a30a8ca83e7c
 # ╠═fc935a86-ceac-4d5a-8fcb-34d9c754a2f1
 # ╠═e8a48b40-28b8-41a7-a67d-cbac2b361f84
 # ╠═ccbcea27-ea65-4b0c-8a56-c3a21fc976bb
