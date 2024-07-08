@@ -11,7 +11,7 @@ using Pkg
 Pkg.activate(".")
 
 # ╔═╡ fc935a86-ceac-4d5a-8fcb-34d9c754a2f1
-using MLNanoShaper, MLNanoShaperRunner, Serialization, Static, StructArrays, FileIO, GeometryBasics, Folds
+using Revise,MLNanoShaper, MLNanoShaperRunner, Serialization, Static, StructArrays, FileIO, GeometryBasics, Folds, Lux
 
 # ╔═╡ 5f801ac4-1f27-11ef-3246-afece906b714
 md"""
@@ -42,7 +42,7 @@ prot_num = 1
 models = [
 "$(homedir())/datasets/models/tiny_angular_dense_cv_3.0A_small_grid_3_2024-06-28_epoch_100_14010870659515058109"
 "$(homedir())/datasets/models/tiny_angular_dense_v_2.0A_small_grid_4_2024-07-02_epoch_50_9474739815235648407"
-] .|> deserialize .|> MLNanoShaper.extract_model
+] .|> deserialize .|> MLNanoShaper.extract_model .|> gpu_device()
 
 
 # ╔═╡ f7041ca8-97be-4998-9c10-2cbed79eb135
@@ -51,8 +51,11 @@ atoms = MLNanoShaperRunner.AnnotedKDTree(getfield.(read("$(homedir())/datasets/p
 # ╔═╡ 58cf0ac8-d68d-47a7-b08f-098b65d19908
 surface= load("$(homedir())/datasets/pqr/$prot_num/triangulatedSurf.off")
 
+# ╔═╡ a0a5f16f-0224-47b1-ae86-c4b5bd48fd07
+param = [(; cutoff_radius=3.0f0, default_value = -10f0,iso_value=0f0,step=10.0f0),(; cutoff_radius=2.0f0, default_value = 0f0,iso_value=.5f0,step=4.0f0)]
+
 # ╔═╡ 7f3602e9-028f-44fc-b7dd-052f76438dae
-full_data = map(MLNanoShaper.implicit_surface.(Ref(atoms), models, [(; cutoff_radius=3.0f0, default_value = -10f0,iso_value=0f0,step=1.0f0),(; cutoff_radius=2.0f0, default_value = 0f0,iso_value=.5f0,step=1.0f0)])) do (points, top)
+full_data = map(MLNanoShaper.implicit_surface.(Ref(atoms), models[1:1], param[1:1])) do (points, top)
     (; points, top)
 end |> StructVector
 
@@ -176,6 +179,7 @@ end
 # ╠═69ee1b79-b99d-4e3a-9769-254b1939aba6
 # ╠═f7041ca8-97be-4998-9c10-2cbed79eb135
 # ╠═58cf0ac8-d68d-47a7-b08f-098b65d19908
+# ╠═a0a5f16f-0224-47b1-ae86-c4b5bd48fd07
 # ╠═7f3602e9-028f-44fc-b7dd-052f76438dae
 # ╠═2e208c01-0893-4ab0-a1db-51cada6a95b6
 # ╠═d38242b4-0bee-44c8-9885-42e8441faf25
