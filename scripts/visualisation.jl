@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.43
+# v0.19.42
 
 using Markdown
 using InteractiveUtils
@@ -33,16 +33,13 @@ html"""
 """
 
 # ╔═╡ e8a48b40-28b8-41a7-a67d-cbac2b361f84
-import WGLMakie as Mk, Meshes as Ms
+import GLMakie as Mk, Meshes as Ms
 
 # ╔═╡ ccbcea27-ea65-4b0c-8a56-c3a21fc976bb
 prot_num = 1
 
 # ╔═╡ 69ee1b79-b99d-4e3a-9769-254b1939aba6
-models = [
-"$(homedir())/datasets/models/tiny_angular_dense_cv_3.0A_small_grid_3_2024-06-28_epoch_100_14010870659515058109"
-"$(homedir())/datasets/models/tiny_angular_dense_v_2.0A_small_grid_4_2024-07-02_epoch_50_9474739815235648407"
-] .|> deserialize .|> MLNanoShaper.extract_model .|> gpu_device()
+models = names.|> deserialize .|> MLNanoShaper.extract_model .|> gpu_device()
 
 
 # ╔═╡ f7041ca8-97be-4998-9c10-2cbed79eb135
@@ -138,10 +135,10 @@ slice2 = get_slice(atoms,models[2],6.0,(;cutoff_radius=2.0f0,step=.1f0,default_v
 # ╔═╡ d679ca88-615e-4675-9d0a-419cd18246f9
 begin
     g = Mk.Figure(size = (1200,500))
-    Mk.Axis(g[1, 1], title="tiny_angular_dense_cv 3A")
+    Mk.Axis(g[1, 1], title="tiny_angular_dense 3A")
     plt1 = Mk.plot!(g[1, 1], exp.(slice1) ./(exp.(-slice1) .+ exp.(slice1));colormap = :rainbow,colorrange = [0,1])
 	Mk.Colorbar(g[1, 2],plt1)
-    Mk.Axis(g[1, 3], title="tiny_angular_dense_cv 2A")
+    Mk.Axis(g[1, 3], title="tiny_angular_dense 2A")
     plt2 = Mk.plot!(g[1, 3], slice2;colormap = :rainbow,colorrange = [0,1])
 	Mk.Colorbar(g[1, 4],plt2)
 	g
@@ -161,12 +158,28 @@ dist = signed_distance.(grid,Ref(RegionMesh(surface)))
 
 # ╔═╡ 44e41f3b-69c5-47f5-bb2e-b1d668eb2889
 begin
-	h = Mk.Figure(size = (600,500))
-	Mk.Axis(h[1, 1], title="tiny_angular_dense_cv 3A")
-	Mk.contour!(h[1,1],ranges[1],ranges[2],slice1,levels=[.5])
-	Mk.contour!(h[1,1],ranges[1],ranges[2],dist,levels=[0])
+	h = Mk.Figure(size = (700,500))
+	Mk.Axis(h[1, 1], title="tiny_angular_dense 3A")
+	Mk.contour!(h[1,1],ranges[1],ranges[2],slice1,levels=[.5],color=:red)
+	Mk.contour!(h[1,1],ranges[1],ranges[2],dist,levels=[0],color = :green)
+	Mk.Legend(h[1,2],[Mk.LineElement(color = :green),Mk.LineElement(color = :red)],["true value","predicted value"])
 	h
 end
+
+# ╔═╡ e272433e-cb31-46d3-a56e-7c6683afc151
+# ╠═╡ disabled = true
+#=╠═╡
+names = [
+"$(homedir())/datasets/models/tiny_angular_dense_cv_3.0A_small_grid_3_2024-06-28_epoch_100_14010870659515058109"
+"$(homedir())/datasets/models/tiny_angular_dense_v_2.0A_small_grid_4_2024-07-02_epoch_50_9474739815235648407"
+]
+  ╠═╡ =#
+
+# ╔═╡ d4e4284f-8555-4dd7-bfcc-0a3b28641d95
+names = [
+"$(homedir())/datasets/models/tiny_angular_dense__3.0A_small_grid_4_2024-07-02_epoch_50_5306041464843483272"
+"$(homedir())/datasets/models/tiny_angular_dense__2.0A_small_grid_4_2024-07-02_epoch_50_12263503258354202465"
+]
 
 # ╔═╡ Cell order:
 # ╟─5f801ac4-1f27-11ef-3246-afece906b714
@@ -176,6 +189,8 @@ end
 # ╠═fc935a86-ceac-4d5a-8fcb-34d9c754a2f1
 # ╠═e8a48b40-28b8-41a7-a67d-cbac2b361f84
 # ╠═ccbcea27-ea65-4b0c-8a56-c3a21fc976bb
+# ╠═d4e4284f-8555-4dd7-bfcc-0a3b28641d95
+# ╠═e272433e-cb31-46d3-a56e-7c6683afc151
 # ╠═69ee1b79-b99d-4e3a-9769-254b1939aba6
 # ╠═f7041ca8-97be-4998-9c10-2cbed79eb135
 # ╠═58cf0ac8-d68d-47a7-b08f-098b65d19908

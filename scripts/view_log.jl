@@ -27,33 +27,48 @@ using PlutoUI
 using GLMakie
 
 # ╔═╡ b4e78444-bc2f-4aef-b199-c4c2e9fdda09
-@bind log_name TextField((50,10);default="/home/tristan/datasets/logs/light_angular_dense_3.0Avp3_2024-06-11_6081449772438814776")
-
-# ╔═╡ 52183918-e779-492d-aeed-f2e2024785e3
-stat("/home/tristan/datasets/logs/light_angular_dense_3.0Avp3_2024-06-11_6081449772438814776")
+@bind log_name TextField((50,10);default="/home/tristan/datasets/models/tiny_angular_dense_v_3.0A_small_grid_4_2024-07-02_6969662012834908328")
 
 # ╔═╡ 947c769b-e106-40f8-9077-c7f7f2652765
-logger = TBLogger(log_name,tb_append)
+logger =  TBLogger(log_name,tb_append)
+
+# ╔═╡ b4bc2bfb-ac03-4bd9-8b8a-24af446b1ca7
+stat(log_name)
 
 # ╔═╡ 8eb1f66d-c76c-48fa-a276-1a62844f537d
 history = convert(MVHistory, logger)
 
+# ╔═╡ 2cbe388a-2ea5-4d37-abac-72230c78ed60
+length(history.storage)
+
 # ╔═╡ b2dce7d5-08e1-4fd9-80af-471462672215
 begin
 	f = Figure()
-	Axis(f[1, 1],xlabel="epoch",ylabel="loss bias")
-	lines!(f[1,1],get(history,Symbol("log/test/approximate/stats/abs_error"))...)
-	lines!(f[1,1],get(history,Symbol("log/train/approximate/stats/abs_error"))...)
+	fax=Axis(f[1, 1],xlabel="epoch",ylabel="loss",yscale=log10)
+	lines!(f[1,1],get(history,Symbol("log/test/global/loss"))...,label="test")
+	lines!(f[1,1],get(history,Symbol("log/train/global/loss"))...,label="train")
+	Legend(f[1,2],fax)
 	f
 end
 
 # ╔═╡ ccca1cbd-6135-4931-8d95-fbc790cceb80
 begin
 	g = Figure()
-	Axis(g[1, 1],xlabel="epoch",ylabel="loss")
-	lines!(g[1,1],get(history,Symbol("log/test/approximate/loss"))...)
-	lines!(g[1,1],get(history,Symbol("log/train/approximate/loss"))...)
+	gaxis=Axis(g[1, 1],xlabel="epoch",ylabel="false_negative_rate",yscale=log10)
+	lines!(g[1,1],get(history,Symbol("log/test/global/stats/stats/false_negative_rate"))...,label="test")
+	lines!(g[1,1],get(history,Symbol("log/train/global/stats/stats/false_negative_rate"))...,label="train")
+	Legend(g[1,2],gaxis)
 	g
+end
+
+# ╔═╡ 37c3e3e3-e34a-4f2d-8238-20e7dd51a6ab
+begin
+	h = Figure()
+	haxis = Axis(h[1, 1],xlabel="epoch",ylabel="false_positive_rate",yscale=log10)
+	lines!(h[1,1],get(history,Symbol("log/test/global/stats/stats/false_positive_rate"))...,label="test")
+	lines!(h[1,1],get(history,Symbol("log/train/global/stats/stats/false_positive_rate"))...,label="train")
+	Legend(h[1,2],haxis)
+	h
 end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
@@ -1584,10 +1599,12 @@ version = "3.5.0+0"
 # ╠═d9d39a48-2627-4b80-9b01-f4b3fefc542e
 # ╠═6b0c7b21-ad66-4667-be86-de5003429be7
 # ╠═b4e78444-bc2f-4aef-b199-c4c2e9fdda09
-# ╠═52183918-e779-492d-aeed-f2e2024785e3
 # ╠═947c769b-e106-40f8-9077-c7f7f2652765
+# ╠═b4bc2bfb-ac03-4bd9-8b8a-24af446b1ca7
 # ╠═8eb1f66d-c76c-48fa-a276-1a62844f537d
+# ╠═2cbe388a-2ea5-4d37-abac-72230c78ed60
 # ╠═b2dce7d5-08e1-4fd9-80af-471462672215
 # ╠═ccca1cbd-6135-4931-8d95-fbc790cceb80
+# ╠═37c3e3e3-e34a-4f2d-8238-20e7dd51a6ab
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

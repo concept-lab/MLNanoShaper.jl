@@ -1,5 +1,5 @@
 #!/bin/bash
-batch_name=continuous_2
+batch_name=final
 parallel --jobs 4\
 	~/.julia/bin/mlnanoshaper train\
 		--model={1}\
@@ -10,7 +10,7 @@ parallel --jobs 4\
 		--categorical {5}\
 	::: tiny_angular_dense light_angular_dense medium_angular_dense\
 	::: 2.0\
-	::: 2e-6\
+	::: 5e-6\
  	::: true false\
 	::: true false
 
@@ -66,6 +66,6 @@ parallel --jobs 2\
 		 --categorical {5}\
 	::: tiny_angular_dense light_angular_dense medium_angular_dense\
 	::: 4.0\
-	::: 1e-8\
+	::: 1e-9\
 	::: true false\
 	:::  true false
