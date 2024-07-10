@@ -209,7 +209,7 @@ function evaluate_model(
     if distance(x, atoms.tree) >= cutoff_radius
         default_value
     else
-		model((x, atoms)) |> cpu_device() |> only
+		model((x, atoms)) |> cpu_device() |> first
     end
 end
 """
