@@ -11,7 +11,10 @@ using Pkg,Revise
 Pkg.activate(".")
 
 # ╔═╡ e9f0f433-0fe9-4096-b484-b432ec54afc8
-using MLNanoShaper, MLNanoShaperRunner, FileIO, StructArrays, Static, Serialization,GeometryBasics, LuxCUDA, Lux, Profile, ProfileSVG, ChainRulesCore,Folds,BenchmarkTools, Zygote,Distances, LinearAlgebra
+using MLNanoShaper, MLNanoShaperRunner, FileIO, StructArrays, Static, Serialization,GeometryBasics, LuxCUDA, Lux, Profile, ProfileSVG, ChainRulesCore,Folds,BenchmarkTools, Zygote,Distances, LinearAlgebra, LoopVectorization, Folds, StaticTools
+
+# ╔═╡ e4a81477-34da-4891-9d0e-34a30ada4ac3
+using Base.Threads
 
 # ╔═╡ e4fc0299-2b72-4b8f-940d-9f55a76f83ca
 html"""
@@ -28,6 +31,9 @@ html"""
 # ╔═╡ 1c0a8115-da6e-4b09-a9ac-17672c8b73d2
 import WGLMakie as Mk
 
+# ╔═╡ 47641b85-0596-4ce4-992b-6811ff89574b
+nthreads()
+
 # ╔═╡ 26cb955f-13ac-43cf-90d1-516b729ecf3a
 function alloc_concatenated(sub_array,l)
 	similar(
@@ -35,12 +41,6 @@ function alloc_concatenated(sub_array,l)
             sub_array |> eltype,
 			(size(sub_array)[begin:end-1]...,  l))
 end
-
-# ╔═╡ 35484485-c8c5-41bd-8d06-61c92f6cae7a
-A = [1; 2 ; 3;;
-	 4; 5 ; 6;;;
-	 7; 8 ; 9;;
-	 10;11;12]
 
 # ╔═╡ 86eb31a4-9312-4a28-abae-d76227c7bf87
 function _kernel_sum!(a::CuDeviceMatrix{T},b::CuDeviceMatrix{T},nb_elements::CuDeviceVector{Int}) where T
@@ -76,14 +76,12 @@ function evaluate_and_cat(arrays,n::Int,sub_array,get_slice)
 	indexes=1:n
 	res = alloc_concatenated(sub_array , get_slice(n) |> last)
 	foreach(indexes) do i 
-		view(res,fill(:, ndims(sub_array) - 1)..., get_slice(i)) .= arrays(i)
+		@inbounds view(res,fill(:, ndims(sub_array) - 1)..., get_slice(i)) .= arrays(i)
 	end
 	res
 end
 
 # ╔═╡ f560fd11-65a0-4252-a8e0-c1bcf0e2fa3b
-# ╠═╡ disabled = true
-#=╠═╡
 function ChainRulesCore.rrule(config::RuleConfig{>:HasReverseMode}, ::typeof(evaluate_and_cat), arrays, n::Int,sub_array,get_slice)
 	indexes=1:n
 	res = alloc_concatenated(sub_array , get_slice(n) |> last)
@@ -98,38 +96,80 @@ function ChainRulesCore.rrule(config::RuleConfig{>:HasReverseMode}, ::typeof(eva
 	end
 		res,pullback_evaluate_and_cat
 end
-  ╠═╡ =#
 
-# ╔═╡ 5b4b8b8f-f712-4c7c-8182-2d5a7d07ea48
-function make_id_product(n)
-	mapreduce(vcat,1:n) do i
-		1:i
-	end,mapreduce(vcat,1:n) do i
-		fill(i,1:i)
+# ╔═╡ 03761cc8-aa53-4cb6-b187-187277cf943a
+function _make_id_product!(a,b,n)
+	k = 1
+	for i in 1:n
+		for j in 1:i
+			a[k] = i
+			b[k] = j
+			k +=1
+		end
 	end
 end
 
+# ╔═╡ 5b4b8b8f-f712-4c7c-8182-2d5a7d07ea48
+function make_id_product(f,n)
+	MallocArray(Int,2,n*(n+1) ÷ 2) do m
+	a = view(m,1,:)
+	b = view(m,2,:)
+	_make_id_product!(a,b,n)
+	f(a,b)
+	end
+end
+
+# ╔═╡ 16a02fec-91f5-424f-9b2b-1de3b0971654
+@inline function cut(cut_radius::T, r::T)::T where {T<:Number}
+    ifelse(r >= cut_radius, zero(T), (1 + cos(π * r / cut_radius)) / 2)
+end
+
+# ╔═╡ e3d07bac-5999-44e5-b25f-c787ae8f1322
+function MLNanoShaperRunner.symetrise((; dot, r_1, r_2, d_1, d_2)::StructArray{PreprocessData{T}};
+    cutoff_radius::T) where {T<:Number}
+	dot,r_1,r_2,d_1,d_2 = (dot, r_1, r_2, d_1, d_2) .|> gpu_device()
+    vcat(dot,
+        r_1 .+ r_2,
+        abs.(r_1 .- r_2),
+		d_1 .+ d_2, abs.(d_1 .- d_2)) .*
+        cut.(cutoff_radius, r_1) .* cut.(cutoff_radius, r_2)
+end
+
+
 # ╔═╡ 8036d772-af13-4c26-8d83-db295b5e2340
-function MLNanoShaperRunner.preprocessing((; point, atoms)::ModelInput{T}) where {T}
-    prod = make_id_product(length(atoms))
-	n_tot = length(prod[1])
-	res = StructArray{PreprocessData{T}}(undef,n_tot)
-	for n in 1:n_tot
-        res.d_1[n] = euclidean(point, atoms[prod[1][n]].center)
+# ╠═╡ skip_as_script = true
+#=╠═╡
+function MLNanoShaperRunner.preprocessing((; point,atoms)::ModelInput{T}) where {T}
+	 (;r,center) = atoms
+    make_id_product(length(atoms)) do prod_1,prod_2
+		n_tot = length(prod_1)
+		distances = euclidean.(Ref(point),center)
+		d_1 = distances[prod_1]
+		r_1 = r[prod_1]
+		d_2 = distances[prod_2]
+		r_2 = r[prod_2]
+		dot = map(1:n_tot) do n 
+			(center[prod_1[n]] - point) ⋅ (center[prod_2[n]] - point) / (d_1[n]  * d_2[n] + 1.0f-8)
+		end
+		res = StructArray{PreprocessData{T}}((dot,r_1,r_2,d_1,d_2))
+		reshape(res,1,: )
 	end
-	for n in 1:n_tot
-		res.r_1[n] = atoms[prod[1][n]].r
-	end
-	for n in 1:n_tot
-		res.d_2[n] = euclidean(point, atoms[prod[2][n]].center)
-	end
-	for n in 1:n_tot
-		res.r_2[n] = atoms[prod[2][n]].r
-	end
-	for n in 1:n_tot
-		res.dot[n] = (atoms[prod[1][n]].center - point) ⋅ (atoms[prod[2][n]].center - point) / (res.d_1[n]  * res.d_2[n] + 1.0f-8)
-	end
-	reshape(res,1,:)
+end
+  ╠═╡ =#
+
+# ╔═╡ 16da9587-faf4-49f5-8bfe-7faf85b70143
+#=╠═╡
+function select_and_preprocess(point::Point, atoms; cutoff_radius)
+    atoms = select_neighboord(point, atoms; cutoff_radius)
+    preprocessing(ModelInput(point, atoms))
+end
+  ╠═╡ =#
+
+# ╔═╡ 0b683bcc-19b4-4cef-9e82-019ff3c173bd
+function select_and_preprocess(point::Batch, atoms; cutoff_radius)
+	map(point.field) do p
+		select_and_preprocess(p,Ref(atoms);cutoff_radius)
+	end |> Batch
 end
 
 # ╔═╡ a009ddb6-ffc7-42ed-8964-d0e763adb312
@@ -145,7 +185,7 @@ surface= load("$(homedir())/datasets/pqr/$prot_num/triangulatedSurf.off")
 atoms = MLNanoShaperRunner.AnnotedKDTree(getfield.(read("$(homedir())/datasets/pqr/$prot_num/structure.pqr", PQR{Float32}), :pos) |> StructVector, static(:center))
 
 # ╔═╡ 0adf29e7-a6e4-48ae-bfe0-e5340d1d1a70
-model = "$(homedir())/datasets/models/tiny_angular_dense_c_2.0A_continuous_1_2024-07-04_epoch_40_9139422370875205944"|>
+model = "$(homedir())/datasets/models/tiny_angular_dense_c_3.0A_small_grid_4_2024-07-02_epoch_100_17553062180675335126"|>
 deserialize|> 
 MLNanoShaper.extract_model|> 
 gpu_device()
@@ -166,25 +206,64 @@ atoms.tree.hyper_rec
 51*56*48/4000* .03
 
 # ╔═╡ 045ef25b-c9ea-42a9-ab00-c8f2b7994bde
-x=atoms.data.center
+x= mapreduce(vcat,1:10) do _   atoms.data.center end
+
+# ╔═╡ 24109bae-a847-44ea-a84c-8e14e571db4c
+prod(atoms.tree.hyper_rec.maxes .- atoms.tree.hyper_rec.mins)/ length(x)
+
+# ╔═╡ 70663eda-5bd3-4f08-8792-5f848edccaff
+40 * 89 /1000
 
 # ╔═╡ f2343acb-23c2-4155-b393-c0bcea4d9760
-@benchmark  model((MLNanoShaperRunner.Batch(x), atoms) )
+@benchmark model((MLNanoShaperRunner.Batch(x), atoms) )
+
+# ╔═╡ 1b16179f-8da8-4c34-9455-5554a3151f40
+89 * 4
+
+# ╔═╡ 565892fa-df36-4fad-8872-a9e2f7de684f
+md"""
+base time : 330 ms
+
+modified kernel: 150 ms
+
+modified preprocessing: 130 ms
+
+map to gpu before symetrize : 89 ms
+
+using malloc in preprocessing : 78 ms
+"""
+
+# ╔═╡ 34d53b3e-0f9e-4088-aa7d-b1acf8516e4b
+330/89
 
 # ╔═╡ c613a4d0-59de-4726-81cc-6a073602cbf9
-CUDA.@profile  model.model((MLNanoShaperRunner.Batch(x), atoms),model.ps,model.st)  |> first
+CUDA.@profile model.model((MLNanoShaperRunner.Batch(x), atoms),model.ps,model.st)  |> first
 
-
-# ╔═╡ 26bc9d17-35ca-4900-a99b-6156ee251920
-methods(Base.mapreducedim!)
 
 # ╔═╡ 5273eaf5-2762-41ba-b634-17e170adc65e
 begin
 	Profile.clear()
-	Profile.init(n = 10^7, delay = 0.00000001)
-	@profile  model.model((MLNanoShaperRunner.Batch(x), atoms),model.ps,model.st)  |> first
+	Profile.init(n = 10^7, delay = 0.0001)
+	@profile model.model((MLNanoShaperRunner.Batch(x), atoms),model.ps,model.st)  |> first
+	ProfileSVG.save("prof.svg")
 	ProfileSVG.view(maxdepth=100)
 end
+
+# ╔═╡ 80834009-05d3-4e6b-b752-a59e91358f50
+begin
+	Profile.Allocs.clear()
+	Profile.Allocs.@profile model.model((MLNanoShaperRunner.Batch(x), atoms),model.ps,model.st)  |> first
+	results = Profile.Allocs.fetch()
+end
+
+# ╔═╡ 29d5cc70-2174-4764-a029-2144c59fb689
+a  = last(sort(results.allocs, by=x->x.size),10)
+
+# ╔═╡ 1df33244-a587-43f9-86aa-41106038feb3
+a[1].stacktrace
+
+# ╔═╡ fe1634d7-9190-4812-852e-88697fc47ff2
+methods(map)
 
 # ╔═╡ a20995b8-337f-44e0-ba7a-aeb17f8d3eb7
 y = model.model.layers.layer_1((MLNanoShaperRunner.Batch(x), atoms)).field
@@ -255,16 +334,22 @@ trace("atoms",1)
 # ╠═de53cb27-dbef-4e3d-9d12-0f3d1b5acbc4
 # ╠═1c0a8115-da6e-4b09-a9ac-17672c8b73d2
 # ╠═e9f0f433-0fe9-4096-b484-b432ec54afc8
+# ╠═e4a81477-34da-4891-9d0e-34a30ada4ac3
+# ╠═47641b85-0596-4ce4-992b-6811ff89574b
 # ╠═26cb955f-13ac-43cf-90d1-516b729ecf3a
-# ╠═35484485-c8c5-41bd-8d06-61c92f6cae7a
 # ╠═86eb31a4-9312-4a28-abae-d76227c7bf87
 # ╠═b9986ae1-4de9-44f9-9702-2ff11c683926
 # ╠═e4502591-8b74-4aa7-837d-c202bede0b8e
 # ╠═48bd4a94-48f3-4f40-869e-dee0bf0c52ee
 # ╠═f560fd11-65a0-4252-a8e0-c1bcf0e2fa3b
 # ╠═b1294b09-c1fd-46dc-b905-fb844593a444
+# ╠═03761cc8-aa53-4cb6-b187-187277cf943a
 # ╠═5b4b8b8f-f712-4c7c-8182-2d5a7d07ea48
+# ╠═16a02fec-91f5-424f-9b2b-1de3b0971654
+# ╠═e3d07bac-5999-44e5-b25f-c787ae8f1322
+# ╠═16da9587-faf4-49f5-8bfe-7faf85b70143
 # ╠═8036d772-af13-4c26-8d83-db295b5e2340
+# ╠═0b683bcc-19b4-4cef-9e82-019ff3c173bd
 # ╠═a009ddb6-ffc7-42ed-8964-d0e763adb312
 # ╠═5765cbc5-ec12-406e-b43f-9291c99b9d1d
 # ╠═2cce8a1a-97fe-45ae-bca7-584b843739d6
@@ -276,10 +361,18 @@ trace("atoms",1)
 # ╠═3ed5f526-99fd-4e91-b7f0-6bc7d8c67afa
 # ╠═f44f276c-7de9-49dc-b584-5a64a04006a0
 # ╠═045ef25b-c9ea-42a9-ab00-c8f2b7994bde
+# ╠═24109bae-a847-44ea-a84c-8e14e571db4c
+# ╠═70663eda-5bd3-4f08-8792-5f848edccaff
 # ╠═f2343acb-23c2-4155-b393-c0bcea4d9760
+# ╠═1b16179f-8da8-4c34-9455-5554a3151f40
+# ╠═565892fa-df36-4fad-8872-a9e2f7de684f
+# ╠═34d53b3e-0f9e-4088-aa7d-b1acf8516e4b
 # ╠═c613a4d0-59de-4726-81cc-6a073602cbf9
-# ╠═26bc9d17-35ca-4900-a99b-6156ee251920
 # ╠═5273eaf5-2762-41ba-b634-17e170adc65e
+# ╠═80834009-05d3-4e6b-b752-a59e91358f50
+# ╠═29d5cc70-2174-4764-a029-2144c59fb689
+# ╠═1df33244-a587-43f9-86aa-41106038feb3
+# ╠═fe1634d7-9190-4812-852e-88697fc47ff2
 # ╠═02cf980b-e542-41a4-aa5c-a5b62d1192a1
 # ╠═857b6847-3556-4435-909a-d3e5cbb0b22a
 # ╠═4e349f8d-327b-416f-b938-b8db9b9b6f87

@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.42
+# v0.19.43
 
 using Markdown
 using InteractiveUtils
@@ -33,10 +33,25 @@ html"""
 """
 
 # ╔═╡ e8a48b40-28b8-41a7-a67d-cbac2b361f84
-import GLMakie as Mk, Meshes as Ms
+import CairoMakie as Mk, Meshes as Ms
 
 # ╔═╡ ccbcea27-ea65-4b0c-8a56-c3a21fc976bb
 prot_num = 1
+
+# ╔═╡ d4e4284f-8555-4dd7-bfcc-0a3b28641d95
+# ╠═╡ disabled = true
+#=╠═╡
+names = [
+"$(homedir())/datasets/models/tiny_angular_dense__3.0A_small_grid_4_2024-07-02_epoch_50_5306041464843483272"
+"$(homedir())/datasets/models/tiny_angular_dense__2.0A_small_grid_4_2024-07-02_epoch_50_12263503258354202465"
+]
+  ╠═╡ =#
+
+# ╔═╡ e272433e-cb31-46d3-a56e-7c6683afc151
+names = [
+"$(homedir())/datasets/models/tiny_angular_dense_c_3.0A_small_grid_4_2024-07-02_epoch_100_17553062180675335126"
+"$(homedir())/datasets/models/tiny_angular_dense_c_2.0A_small_grid_4_2024-07-02_epoch_100_14787466129594685029"
+]
 
 # ╔═╡ 69ee1b79-b99d-4e3a-9769-254b1939aba6
 models = names.|> deserialize .|> MLNanoShaper.extract_model .|> gpu_device()
@@ -52,9 +67,12 @@ surface= load("$(homedir())/datasets/pqr/$prot_num/triangulatedSurf.off")
 param = [(; cutoff_radius=3.0f0, default_value = -10f0,iso_value=0f0,step=10.0f0),(; cutoff_radius=2.0f0, default_value = 0f0,iso_value=.5f0,step=4.0f0)]
 
 # ╔═╡ 7f3602e9-028f-44fc-b7dd-052f76438dae
+# ╠═╡ skip_as_script = true
+#=╠═╡
 full_data = map(MLNanoShaper.implicit_surface.(Ref(atoms), models[1:1], param[1:1])) do (points, top)
     (; points, top)
 end |> StructVector
+  ╠═╡ =#
 
 # ╔═╡ d38242b4-0bee-44c8-9885-42e8441faf25
 function select_in_domaine(predicate, (; points, top))
@@ -68,7 +86,9 @@ function select_in_domaine(predicate, (; points, top))
 end
 
 # ╔═╡ 2e208c01-0893-4ab0-a1db-51cada6a95b6
+#=╠═╡
 data = select_in_domaine.(((x, _, z),) -> -5 <= x <= 5, full_data)
+  ╠═╡ =#
 
 # ╔═╡ 4a1478c6-d200-4073-8d9d-1cbab26ff94d
 invert((a, b, c)::NgonFace) = NgonFace(a, c, b)
@@ -77,16 +97,22 @@ invert((a, b, c)::NgonFace) = NgonFace(a, c, b)
 invert((a, b, c)::Tuple) = (a, c, b)
 
 # ╔═╡ 8b7580c3-8f2c-4d33-83bc-d368e9df19e2
+# ╠═╡ disabled = true
+#=╠═╡
 meshes = map(data) do (; points, top)
     Ms.SimpleMesh(points .|> Tuple, top .|> Tuple .|> invert .|> Ms.connect)
 
 end
+  ╠═╡ =#
 
 # ╔═╡ ca888076-9b41-4510-a129-2a039a8bf0ce
+# ╠═╡ disabled = true
+#=╠═╡
 full_meshes = map(full_data) do (; points, top)
     Ms.SimpleMesh(points .|> Tuple, top .|> Tuple .|> invert .|> Ms.connect)
 
 end
+  ╠═╡ =#
 
 # ╔═╡ cf2a31e2-502a-4be6-af8e-154b726db1ea
 _ref = load("$(homedir())/datasets/pqr/$prot_num/triangulatedSurf.off")
@@ -95,6 +121,7 @@ _ref = load("$(homedir())/datasets/pqr/$prot_num/triangulatedSurf.off")
 ref = Ms.SimpleMesh(coordinates(_ref) .|> Tuple, GeometryBasics.faces(_ref) .|> Tuple .|> Ms.connect)
 
 # ╔═╡ e7e6584b-5059-46f6-a614-76866f1b1df9
+#=╠═╡
 begin
     f = Mk.Figure(size = (1000,700))
     Mk.Axis3(f[1, 1], title="tiny_angular_dense_cv 3A")
@@ -110,6 +137,7 @@ begin
 	Mk.Legend(f[1:2,3],[Mk.LineElement(color = :green),Mk.LineElement(color = :red)],["true value","predicted value"])
 	f
 end
+  ╠═╡ =#
 
 # ╔═╡ e78e5812-1927-4f67-bd3a-9bd1b577f9ad
 function get_input_slice(atoms,step,z)
@@ -165,21 +193,6 @@ begin
 	Mk.Legend(h[1,2],[Mk.LineElement(color = :green),Mk.LineElement(color = :red)],["true value","predicted value"])
 	h
 end
-
-# ╔═╡ e272433e-cb31-46d3-a56e-7c6683afc151
-# ╠═╡ disabled = true
-#=╠═╡
-names = [
-"$(homedir())/datasets/models/tiny_angular_dense_cv_3.0A_small_grid_3_2024-06-28_epoch_100_14010870659515058109"
-"$(homedir())/datasets/models/tiny_angular_dense_v_2.0A_small_grid_4_2024-07-02_epoch_50_9474739815235648407"
-]
-  ╠═╡ =#
-
-# ╔═╡ d4e4284f-8555-4dd7-bfcc-0a3b28641d95
-names = [
-"$(homedir())/datasets/models/tiny_angular_dense__3.0A_small_grid_4_2024-07-02_epoch_50_5306041464843483272"
-"$(homedir())/datasets/models/tiny_angular_dense__2.0A_small_grid_4_2024-07-02_epoch_50_12263503258354202465"
-]
 
 # ╔═╡ Cell order:
 # ╟─5f801ac4-1f27-11ef-3246-afece906b714
