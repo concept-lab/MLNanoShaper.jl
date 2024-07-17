@@ -10,5 +10,5 @@ Documentation for [MLNanoShaper](https://github.com/hack-hard/MLNanoShaper.jl).
 ```
 
 ```@autodocs
-Modules = [MLNanoShaper]
+Modules = [MLNanoShaper,MLNanoShaperRunner]
 ```
