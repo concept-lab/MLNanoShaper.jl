@@ -15,7 +15,7 @@ Instead of having a probe (a virtual water molecule) that rolls over the surface
 ```
 - clone the submodule
 ```
-    git submodule update
+    git submodule init
 ```
 - download dependency:
 ```
