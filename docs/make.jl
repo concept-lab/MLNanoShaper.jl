@@ -5,10 +5,10 @@ DocMeta.setdocmeta!(MLNanoShaper, :DocTestSetup, :(using MLNanoShaper); recursiv
 
 makedocs(;
     modules = [MLNanoShaper],
-    authors = "tristan <tristan.hacquard@polytechnique.org> and contributors",
+    authors = "tristan hacquard<tristan.hacquard@polytechnique.org> and contributors",
     sitename = "MLNanoShaper.jl",
     format = Documenter.HTML(;
-        canonical = "https://hack-hard.github.io/MLNanoShaper.jl",
+        canonical = "https://concept-lab.github.io/MLNanoShaper.jl",
         edit_link = "main",
         assets = String[],
         mathengine = MathJax3()),
@@ -17,5 +17,5 @@ makedocs(;
     ],)
 
 deploydocs(;
-    repo = "github.com/hack-hard/MLNanoShaper.jl",
-    devbranch = "main",)
+    repo = "https://github.com/concept-lab/MLNanoShaper.jl.git",
+) 
