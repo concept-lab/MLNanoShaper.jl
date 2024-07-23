@@ -16,10 +16,23 @@ Instead of having a probe (a virtual water molecule) that rolls over the surface
 - clone the submodule
 ```
     git submodule init
+    git submodule update
 ```
 - download dependency:
 ```
     julia -e "using Pkg; Pkg.activate(.);Pkg.instantiate(.)"
+```
+# make dirs
+```
+    mkdir ~/datasets
+    mkdir ~/datasets/models
+    mkdir ~/datasets/logs
+    mkdir ~/datasets/pqr
+```
+# install dataset
+```
+    curl https://zenodo.org/records/12772809/files/shrec.tar.gz --output datasets/shrec.tar.gz 
+    tar -czvf shrec.tar.gz datasets/pqr
 ```
 
 # To train 
@@ -40,10 +53,29 @@ The ./scripts/ folder contains some Pluto Notebooks. Theses are for creating fig
 
 Each notebooks will use the environement in scripts.
 
-
-# Compiling the C interface.
+# Interfaceing with C interface
+We have an example of code in MLNanoShaperRunner/example. Here is the commands to compile the example.
+## Compiling the C interface.
 ```
     julia --project MLNanoShaperRunner/build/build.jl
 ```
 
+## Copy the code to examples
+```
+    cp -r MLNanoShaperRunner/build/lib/lib MLNanoShaperRunner/examples
+```
+
+## Compiling the C code
+``` 
+    clang -I . -rpath . -L . -l MLNanoShaperRunner dummy_example.c -o test
+```
+
+## Copy artifacts
+The julia code needs access to some artifacts to load correcly
+```
+    cp -r ~/.julia/artifacts/d5b30ebced3f3de269a3489e10c85c81eae13b0d/ MLNanoShaperRunner/examples/share/julia/artifacts
+    cp -r ~/.julia/artifacts/abf4b5086b4eb867021118c85b2cc11a15b764a9/ MLNanoShaperRunner/examples/share/julia/artifacts
+    cp -r ~/.julia/artifacts/9cfa1f93276d8e380806650071f8447e8e38301f/ MLNanoShaperRunner/examples/share/julia/artifacts
+    cp -r ~/.julia/artifacts/69059e078be18d2f90e9876662a7672df0784b19/ MLNanoShaperRunner/examples/share/julia/artifacts
+```
 
