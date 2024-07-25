@@ -414,4 +414,3 @@ function train(training_parameters::Training_parameters, directories::Auxiliary_
             training_parameters, directories)
     end
 end
-end
