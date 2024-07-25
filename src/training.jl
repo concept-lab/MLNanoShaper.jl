@@ -164,22 +164,22 @@ Return the error with the espected distance as a metric.
 function continus_loss(model,
         ps,
         st,
-        (; point,
-            input,
-            d_real)::GlobalPreprocessed)::Tuple{Float32, Any, ContinousMetric}
-    ret = Lux.apply(model, input, ps, st)
+        (; points,
+            inputs,
+            d_reals)::GlobalPreprocessed)::Tuple{Float32, Any, ContinousMetric}
+    ret = Lux.apply(model, inputs, ps, st)
     v_pred, st = ret
     v_pred = cpu_device()(v_pred)
-    v_real = σ.(d_real)
+    v_real = σ.(d_reals)
     error = v_pred .- v_real
     loss = mean(error .^ 2)
-    D_distance = loggit.(max.(0, v_pred) * (1 .- 1.0f-4)) .- d_real
+    D_distance = loggit.(max.(0, v_pred) * (1 .- 1.0f-4)) .- d_reals
 
     epsilon = 1.0f-5
-    true_vec = Iterators.filter(vec(d_real)) do dist
+    true_vec = Iterators.filter(vec(d_reals)) do dist
         abs(dist) > epsilon
     end .> 0.5f0
-    pred_vec = map(Iterators.filter(zip(d_real, vec(v_pred))) do (dist, _)
+    pred_vec = map(Iterators.filter(zip(d_reals, vec(v_pred))) do (dist, _)
         abs(dist) > epsilon
     end) do (_, pred)
         pred > 0.5f0
@@ -362,15 +362,15 @@ function train(
         # for epoch in 1:nb_epoch
         prop = propertynames(train_data)
         train_v = Dict{Symbol, StructVector}()
+        test_v = Dict(
+            prop .=>
+            test_protein.(getproperty.(Ref(test_data), prop),
+                Ref(training_states), Ref(training_parameters)))
         for p::Symbol in prop
             training_states, _train_v = train_protein(
                 getproperty(train_data, p), training_states, training_parameters)
             train_v[p] = _train_v
         end
-        test_v = Dict(
-            prop .=>
-            test_protein.(getproperty.(Ref(test_data), prop),
-                Ref(training_states), Ref(training_parameters)))
         @info "log" test=aggregate(test_v) train=aggregate(train_v)
 
         if epoch % save_periode == 0
