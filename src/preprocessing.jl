@@ -87,9 +87,9 @@ function generate_data_points(
 end
 function pre_compute_data_set(points_generator::Function,
         preprocessing,
-        data::AbstractVector{<:TreeTrainingData}, training_parameters::Training_parameters, batch_size)::Vector{GlobalPreprocessed}
-    Folds.mapreduce(vcat,data) do protein_data::TreeTrainingData
-		points = BatchView(points_generator(protein_data);batch_size)
+        dataset::AbstractVector{<:TreeTrainingData}, training_parameters::Training_parameters)::Vector{GlobalPreprocessed}
+    Folds.mapreduce(vcat,dataset) do protein_data::TreeTrainingData
+		points = BatchView(points_generator(protein_data);batch_size = 1000)
 		Folds.map(points) do batch_points
 			generate_data_points(preprocessing, batch_points, protein_data, training_parameters)
 		end

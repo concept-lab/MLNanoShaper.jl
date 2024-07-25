@@ -248,7 +248,6 @@ function implicit_surface(atoms::AnnotedKDTree{Sphere{T}, :center, Point3{T}},
         SVector{3, Float32}, SVector{3, Int}, mins, maxes - mins)
 end
 
-
 function test_protein(
         data::StructVector{GlobalPreprocessed},
         training_states::Lux.Experimental.TrainState, (; categorical)::Training_parameters)
@@ -347,9 +346,13 @@ function train(
         (; atoms)::TreeTrainingData -> first(
             shuffle(MersenneTwister(42), atoms.data.center), 300)
     ]
-    train_data, test_data = map([train_data, test_data]) do data
-        DataSet(Folds.map(processing) do f
-			generate_data_points(model,f(data), training_parameters) |> StructVector
+    train_data, test_data = map([train_data, test_data]) do dataset
+        DataSet(Folds.map(processing) do generate_points
+            pre_compute_data_set(
+                generate_points,
+                model, 
+				dataset, 
+				training_parameters) |> StructVector
         end...)
     end
     @info "end pre computing"
