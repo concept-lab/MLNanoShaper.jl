@@ -213,13 +213,14 @@ function evaluate_model(
     end
 end
 function evaluate_model(
-        model::Lux.StatefulLuxLayer, x::Batch{Point3f}, atoms::AnnotedKDTree; cutoff_radius, default_value = -0.0f0)
-	is_close = map(x.field) do x
-    	distance(x, atoms.tree) >= cutoff_radius
-	end 
-	close_points = x.field[is_close] |> Batch
-	close_values = model((close_points,atoms)) |> cpu_device() |> first
-	ifelse.(is_close,close_values,default_value)
+        model::Lux.StatefulLuxLayer, x::Batch{Vector{Point3f}}, atoms::AnnotedKDTree;
+        cutoff_radius, default_value = -0.0f0)
+    is_close = map(x.field) do x
+        distance(x, atoms.tree) >= cutoff_radius
+    end
+    close_points = x.field[is_close] |> Batch
+    close_values = model((close_points, atoms)) |> cpu_device() |> first
+    ifelse.(is_close, close_values, default_value)
 end
 """
     implicit_surface(atoms::AnnotedKDTree{Sphere{T}, :center, Point3{T}},
@@ -412,4 +413,5 @@ function train(training_parameters::Training_parameters, directories::Auxiliary_
             gpu_device(),
             training_parameters, directories)
     end
+end
 end
