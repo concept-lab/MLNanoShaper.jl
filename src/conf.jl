@@ -9,7 +9,7 @@ using Dates
 The variables that do not influence the outome of the training run.
 This include the nb_epoch.
 """
-struct Auxiliary_parameters
+struct AuxiliaryParameters
     data_dir::String
     log_dir::String
     model_dir::String
@@ -25,7 +25,7 @@ The training parameters used in the model training.
 Default values are in the param file.
 The training is deterministric. Theses values are hased to determine a training run
 """
-struct Training_parameters
+struct TrainingParameters
     name::String
     scale::Float32
     cutoff_radius::Float32
@@ -37,17 +37,17 @@ struct Training_parameters
 	learning_rate::Float64
 end
 
-function generate_training_name(x::Training_parameters, epoch::Integer)
+function generate_training_name(x::TrainingParameters, epoch::Integer)
     "$(x.model().name)_$(x.name)_$(Dates.format(now(),"yyyy-mm-dd"))_epoch_$(epoch)_$(hash(x))"
 end
 
-function generate_training_name(x::Training_parameters)
+function generate_training_name(x::TrainingParameters)
     "$(x.model().name)_$(x.name)_$(Dates.format(now(),"yyyy-mm-dd"))_$(hash(x))"
 end
 
 read_from_TOML(T::Type) = read_from_TOML(T, TOML.parsefile(params_file))
 
-function read_from_TOML(::Type{Training_parameters}, conf::AbstractDict)
+function read_from_TOML(::Type{TrainingParameters}, conf::AbstractDict)
     conf = conf["Training_parameters"]
     conf = Dict(Symbol.(keys(conf)) .=> values(conf))
     conf[:model_kargs] = Dict(Symbol.(keys(conf[:model_kargs])) .=>
@@ -55,13 +55,13 @@ function read_from_TOML(::Type{Training_parameters}, conf::AbstractDict)
 	conf[:model_kargs][:categorical]=conf[:categorical]
     conf[:model] = Partial(getproperty(MLNanoShaperRunner, Symbol(conf[:model]));
         cutoff_radius = Float32(conf[:cutoff_radius]), conf[:model_kargs]...)
-    unpact_dict(Training_parameters, conf)
+    unpact_dict(TrainingParameters, conf)
 end
 
-function read_from_TOML(::Type{Auxiliary_parameters}, conf::AbstractDict)
+function read_from_TOML(::Type{AuxiliaryParameters}, conf::AbstractDict)
     conf = conf["Auxiliary_parameters"]
     conf = Dict(Symbol.(keys(conf)) .=> values(conf))
-    unpact_dict(Auxiliary_parameters, conf)
+    unpact_dict(AuxiliaryParameters, conf)
 end
 
 const params_file = "$( dirname(dirname(@__FILE__)))/param/param.toml"
