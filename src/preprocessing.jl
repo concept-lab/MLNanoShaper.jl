@@ -89,7 +89,7 @@ function generate_data_points(
 	(;
         points,
 		inputs = preprocessing((Batch(points), atoms)),
-        d_reals = signed_distance.(points, Ref(skin) ./ ref_distance)
+		d_reals = signed_distance.(points, Ref(skin)) ./ ref_distance
     )
 end
 function pre_compute_data_set(points_generator::Function,
