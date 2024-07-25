@@ -1506,7 +1506,7 @@ uuid = "0ae43799-6878-4589-9bc9-cf11e8180012"
 version = "1.0.0-DEV"
 
 [[deps.MLNanoShaperRunner]]
-deps = ["Adapt", "BioStructures", "CUDA", "ChainRulesCore", "ConcreteStructs", "Distances", "FiniteDiff", "FiniteDifferences", "Folds", "GeometryBasics", "LinearAlgebra", "Lux", "LuxCore", "NearestNeighbors", "Random", "Reexport", "Serialization", "SimpleChains", "Static", "StaticTools", "Statistics", "StructArrays", "TOML"]
+deps = ["Adapt", "BioStructures", "CUDA", "ChainRulesCore", "ConcreteStructs", "Distances", "FiniteDiff", "FiniteDifferences", "Folds", "GeometryBasics", "LinearAlgebra", "Lux", "LuxCore", "NearestNeighbors", "Random", "Reexport", "Serialization", "SimpleChains", "Static", "StaticTools", "Statistics", "StructArrays", "TOML", "Transducers"]
 path = "../MLNanoShaperRunner"
 uuid = "0d104b66-282b-4c8e-a741-e32dba8f77f1"
 version = "1.0.0-DEV"
