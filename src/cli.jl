@@ -70,7 +70,7 @@ The folowing parameters can be overided.
         conf["TrainingParameters"]["model_kargs"] = Configurations.to_dict(model_kargs)
     end
     if nb_data_points > 0
-        conf["TrainingParameters"]["data_ids"] = conf["Training_parameters"]["data_ids"][begin:(begin + nb_data_points)]
+        conf["TrainingParameters"]["data_ids"] = conf["TrainingParameters"]["data_ids"][begin:(begin + nb_data_points)]
     end
 
     training_parameters = read_from_TOML(TrainingParameters, conf)
