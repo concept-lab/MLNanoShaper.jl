@@ -76,6 +76,13 @@ GlobalPreprocessed = @NamedTuple{
     inputs::ConcatenatedBatch{<:StructArray{PreprocessData{Float32}}},
     d_reals::Vector{Float32}
 }
+"""
+    generate_data_points(
+        preprocessing::Lux.AbstractExplicitLayer, points::AbstractVector{<:Point3},
+        (; atoms, skin)::TreeTrainingData{Float32}, (; ref_distance)::Training_parameters)
+
+generate the data_points for a set of positions `points` on one protein.
+"""
 function generate_data_points(
         preprocessing::Lux.AbstractExplicitLayer, points::AbstractVector{<:Point3},
         (; atoms, skin)::TreeTrainingData{Float32}, (; ref_distance)::Training_parameters)
@@ -88,7 +95,7 @@ end
 function pre_compute_data_set(points_generator::Function,
         preprocessing,
         dataset::AbstractVector{<:TreeTrainingData}, training_parameters::Training_parameters)::Vector{GlobalPreprocessed}
-    Folds.mapreduce(vcat,dataset) do protein_data::TreeTrainingData
+    mapreduce(vcat,dataset) do protein_data::TreeTrainingData
 		points = BatchView(points_generator(protein_data);batch_size = 1000)
 		Folds.map(points) do batch_points
 			generate_data_points(preprocessing, batch_points, protein_data, training_parameters)
