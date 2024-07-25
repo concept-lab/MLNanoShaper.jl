@@ -78,14 +78,6 @@ The folowing parameters can be overided.
     train(training_parameters, auxiliary_parameters)
 end
 
-function evaluate_model(model::StatefulLuxLayer, data,
-        training_parameters::TrainingParameters)
-    (; value, time) = @timed filter(hausdorff_metric.(
-        data, Ref(model), Ref(training_parameters))) do x
-        !isinf(x)
-    end |> mean
-    (; metric = value, time)
-end
 function extract_model(model_serilized::SerializedModel)::StatefulLuxLayer
     model = model_serilized.model()
     StatefulLuxLayer(model,
