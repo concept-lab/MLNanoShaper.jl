@@ -88,7 +88,7 @@ function generate_data_points(
         (; atoms, skin)::TreeTrainingData{Float32}, (; ref_distance)::Training_parameters)
 	(;
         points,
-        inputs = preprocessing((points, atoms)),
+		inputs = preprocessing((Batch(points), atoms)),
         d_reals = signed_distance.(points, Ref(skin) ./ ref_distance)
     )
 end

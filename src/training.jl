@@ -120,24 +120,24 @@ Return the error with the espected distance as a metric.
 function categorical_loss(model,
         ps,
         st,
-        (; point,
-            input,
-            d_real)::GlobalPreprocessed)::Tuple{
+        (; points,
+            inputs,
+            d_reals)::GlobalPreprocessed)::Tuple{
         Float32, Any, CategoricalMetric}
-    ret = Lux.apply(model, input, ps, st)
+    ret = Lux.apply(model, inputs, ps, st)
     v_pred, st = ret
     v_pred = vcat(v_pred, -v_pred)
     v_pred = exp.(v_pred) ./ sum(exp.(v_pred); dims = 1)
     v_pred = cpu_device()(v_pred)
     probabilities = ignore_derivatives() do
-        generate_true_probabilities(d_real)
+        generate_true_probabilities(d_reals)
     end
     epsilon = 1.0f-5
-    true_vec = Iterators.filter(vec(d_real)) do dist
+    true_vec = Iterators.filter(vec(d_reals)) do dist
         abs(dist) > epsilon
     end .> 0
     pred_vec = map(Iterators.filter(zip(
-        d_real, vec(v_pred[1, :]))) do (dist, _)
+        d_reals, vec(v_pred[1, :]))) do (dist, _)
         abs(dist) > epsilon
     end) do (_, pred)
         pred > 0.5f0
