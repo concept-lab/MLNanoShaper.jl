@@ -250,7 +250,7 @@ end
 
 function test_protein(
         data::StructVector{GlobalPreprocessed},
-        training_states::Lux.Experimental.TrainState, (; categorical)::Training_parameters)
+        training_states::Lux.Experimental.TrainState, (; categorical)::TrainingParameters)
     loss_vec = Float32[]
     stats_vec = StructVector((categorical ? CategoricalMetric : ContinousMetric)[])
     loss_fn = categorical ? categorical_loss : continus_loss
@@ -266,7 +266,7 @@ end
 
 function train_protein(
         data::StructVector{GlobalPreprocessed},
-        training_states::Lux.Experimental.TrainState, (; categorical)::Training_parameters)
+        training_states::Lux.Experimental.TrainState, (; categorical)::TrainingParameters)
     loss_vec = Float32[]
     stats_vec = StructVector((categorical ? CategoricalMetric : ContinousMetric)[])
     loss_fn = categorical ? categorical_loss : continus_loss
@@ -287,7 +287,7 @@ function train_protein(
 end
 
 function serialized_model_from_preprocessed_states(
-        (; parameters)::Lux.Experimental.TrainState, y::Training_parameters)
+        (; parameters)::Lux.Experimental.TrainState, y::TrainingParameters)
     parameters = [Symbol("layer_$i") => if i == 1
                       (;)
                   else
@@ -311,8 +311,8 @@ train the model on the data with nb_epoch
 function train(
         (train_data,
             test_data)::Tuple{MLUtils.AbstractDataContainer, MLUtils.AbstractDataContainer},
-        training_states::Lux.Experimental.TrainState, training_parameters::Training_parameters,
-        auxiliary_parameters::Auxiliary_parameters)
+        training_states::Lux.Experimental.TrainState, training_parameters::TrainingParameters,
+        auxiliary_parameters::AuxiliaryParameters)
     (; nb_epoch, save_periode, model_dir) = auxiliary_parameters
 
     @info "building KDtrees"
@@ -383,8 +383,8 @@ function train(
     @info "Stop training"
 end
 
-function get_dataset((; data_ids, train_test_split)::Training_parameters,
-        (; data_dir)::Auxiliary_parameters)
+function get_dataset((; data_ids, train_test_split)::TrainingParameters,
+        (; data_dir)::AuxiliaryParameters)
     train_data, test_data = splitobs(
         mapobs(shuffle(MersenneTwister(42),
             data_ids)) do id
@@ -394,11 +394,11 @@ function get_dataset((; data_ids, train_test_split)::Training_parameters,
 end
 
 """
-    train(training_parameters::Training_parameters, directories::Auxiliary_parameters)
+    train(training_parameters::TrainingParameters, directories::AuxiliaryParameters)
 
-train the model given `Training_parameters` and `Auxiliary_parameters`.
+train the model given `TrainingParameters` and `AuxiliaryParameters`.
 """
-function train(training_parameters::Training_parameters, directories::Auxiliary_parameters)
+function train(training_parameters::TrainingParameters, directories::AuxiliaryParameters)
     (; model, learning_rate) = training_parameters
     (; log_dir) = directories
     optim = OptimiserChain(WeightDecay(), Adam(learning_rate))

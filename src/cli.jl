@@ -7,7 +7,7 @@ using TerminalLoggers: TerminalLogger
 using LuxCUDA
 
 @option struct ModelArgs
-    van_der_wal_channel::Bool = false
+    van_der_waals_channel::Bool = false
 end
 
 """
@@ -47,39 +47,39 @@ The folowing parameters can be overided.
         gpu::Bool = false)
     global_logger(TerminalLogger())
     conf = TOML.parsefile(params_file)
-    conf["Training_parameters"]["categorical"] = categorical
+    conf["TrainingParameters"]["categorical"] = categorical
     if nb_epoch > 0
-        conf["Auxiliary_parameters"]["nb_epoch"] = nb_epoch |> UInt
+        conf["AuxiliaryParameters"]["nb_epoch"] = nb_epoch |> UInt
     end
     if cutoff_radius != 0.0f0
-        conf["Training_parameters"]["cutoff_radius"] = cutoff_radius
+        conf["TrainingParameters"]["cutoff_radius"] = cutoff_radius
     end
     if name != 0
-        conf["Training_parameters"]["name"] = name
+        conf["TrainingParameters"]["name"] = name
     end
     if learning_rate != 0.
-        conf["Training_parameters"]["learning_rate"] = learning_rate
+        conf["TrainingParameters"]["learning_rate"] = learning_rate
     end
     if ref_distance > 0
-        conf["Training_parameters"]["ref_distance"] = ref_distance
+        conf["TrainingParameters"]["ref_distance"] = ref_distance
     end
     if model != ""
-        conf["Training_parameters"]["model"] = model
+        conf["TrainingParameters"]["model"] = model
     end
     if model_kargs != ModelArgs()
-        conf["Training_parameters"]["model_kargs"] = Configurations.to_dict(model_kargs)
+        conf["TrainingParameters"]["model_kargs"] = Configurations.to_dict(model_kargs)
     end
     if nb_data_points > 0
-        conf["Training_parameters"]["data_ids"] = conf["Training_parameters"]["data_ids"][begin:(begin + nb_data_points)]
+        conf["TrainingParameters"]["data_ids"] = conf["Training_parameters"]["data_ids"][begin:(begin + nb_data_points)]
     end
 
-    training_parameters = read_from_TOML(Training_parameters, conf)
-    auxiliary_parameters = read_from_TOML(Auxiliary_parameters, conf)
+    training_parameters = read_from_TOML(TrainingParameters, conf)
+    auxiliary_parameters = read_from_TOML(AuxiliaryParameters, conf)
     train(training_parameters, auxiliary_parameters)
 end
 
 function evaluate_model(model::StatefulLuxLayer, data,
-        training_parameters::Training_parameters)
+        training_parameters::TrainingParameters)
     (; value, time) = @timed filter(hausdorff_metric.(
         data, Ref(model), Ref(training_parameters))) do x
         !isinf(x)
@@ -93,13 +93,13 @@ function extract_model(model_serilized::SerializedModel)::StatefulLuxLayer
         Lux.initialstates(MersenneTwister(42), model))
 end
 
-function evaluate_model(name::String, data, training_parameters::Training_parameters)
+function evaluate_model(name::String, data, training_parameters::TrainingParameters)
     model = "$(homedir())/datasets/models/$name" |> deserialize |> extract_model
     evaluate_model(model, data, training_parameters)
 end
 
-function evaluate_model(names::AbstractArray{String}, tr::Training_parameters,
-        directories::Auxiliary_parameters)
+function evaluate_model(names::AbstractArray{String}, tr::TrainingParameters,
+        directories::AuxiliaryParameters)
     (; test_data) = get_dataset(tr, directories)
     test_data = test_data[1:10] .|> TreeTrainingData
     evaluate_model.(names, Ref(test_data), Ref(tr)) |> StructArray
@@ -107,7 +107,7 @@ end
 
 function evaluate_model(names::AbstractArray{String})
     conf = TOML.parsefile(params_file)
-    evaluate_model(names, read_from_TOML(Training_parameters, conf),
-        read_from_TOML(Auxiliary_parameters, conf))
+    evaluate_model(names, read_from_TOML(TrainingParameters, conf),
+        read_from_TOML(AuxiliaryParameters, conf))
 end
 @main

@@ -51,7 +51,7 @@ end
 function approximates_points(predicate, rng::AbstractRNG, atoms_tree::KDTree,
         skin_tree::KDTree{Point3f},
         (; scale,
-            cutoff_radius)::Training_parameters)
+            cutoff_radius)::TrainingParameters)
     (; mins, maxes) = atoms_tree.hyper_rec
     points = first(
         shuffle(
@@ -65,7 +65,7 @@ end
 
 function exact_points(
         rng::AbstractRNG, atoms_tree::KDTree, skin_tree::KDTree, (;
-            cutoff_radius)::Training_parameters)
+            cutoff_radius)::TrainingParameters)
     points = first(shuffle(rng, skin_tree.data), 200)
     Iterators.filter(points) do pt
         distance(pt, atoms_tree) < cutoff_radius
@@ -79,13 +79,13 @@ GlobalPreprocessed = @NamedTuple{
 """
     generate_data_points(
         preprocessing::Lux.AbstractExplicitLayer, points::AbstractVector{<:Point3},
-        (; atoms, skin)::TreeTrainingData{Float32}, (; ref_distance)::Training_parameters)
+        (; atoms, skin)::TreeTrainingData{Float32}, (; ref_distance)::TrainingParameters)
 
 generate the data_points for a set of positions `points` on one protein.
 """
 function generate_data_points(
         preprocessing::Lux.AbstractExplicitLayer, points::AbstractVector{<:Point3},
-        (; atoms, skin)::TreeTrainingData{Float32}, (; ref_distance)::Training_parameters)
+        (; atoms, skin)::TreeTrainingData{Float32}, (; ref_distance)::TrainingParameters)
 	(;
         points,
 		inputs = preprocessing((Batch(points), atoms)),
@@ -94,7 +94,7 @@ function generate_data_points(
 end
 function pre_compute_data_set(points_generator::Function,
         preprocessing,
-        dataset::AbstractVector{<:TreeTrainingData}, training_parameters::Training_parameters)::Vector{GlobalPreprocessed}
+        dataset::AbstractVector{<:TreeTrainingData}, training_parameters::TrainingParameters)::Vector{GlobalPreprocessed}
     mapreduce(vcat,dataset) do protein_data::TreeTrainingData
 		points = BatchView(points_generator(protein_data);batchsize = 1000)
 		Folds.map(points) do batch_points

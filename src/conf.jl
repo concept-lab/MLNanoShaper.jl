@@ -4,7 +4,7 @@ using MLNanoShaperRunner
 using Dates
 
 """
-	Auxiliary_parameters
+	AuxiliaryParameters
 
 The variables that do not influence the outome of the training run.
 This include the nb_epoch.
@@ -19,7 +19,7 @@ end
 unpact_dict(T::Type, x::AbstractDict{Symbol}) = T(getindex.(Ref(x), fieldnames(T))...)
 
 """
-	Training_parameters
+	TrainingParameters
 
 The training parameters used in the model training.
 Default values are in the param file.
@@ -48,7 +48,7 @@ end
 read_from_TOML(T::Type) = read_from_TOML(T, TOML.parsefile(params_file))
 
 function read_from_TOML(::Type{TrainingParameters}, conf::AbstractDict)
-    conf = conf["Training_parameters"]
+    conf = conf["TrainingParameters"]
     conf = Dict(Symbol.(keys(conf)) .=> values(conf))
     conf[:model_kargs] = Dict(Symbol.(keys(conf[:model_kargs])) .=>
         values(conf[:model_kargs]))
@@ -59,7 +59,7 @@ function read_from_TOML(::Type{TrainingParameters}, conf::AbstractDict)
 end
 
 function read_from_TOML(::Type{AuxiliaryParameters}, conf::AbstractDict)
-    conf = conf["Auxiliary_parameters"]
+    conf = conf["AuxiliaryParameters"]
     conf = Dict(Symbol.(keys(conf)) .=> values(conf))
     unpact_dict(AuxiliaryParameters, conf)
 end
