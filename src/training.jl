@@ -122,9 +122,9 @@ function categorical_loss(model,
         st,
         (; point,
             input,
-            d_real)::StructVector{GLobalPreprocessed})::Tuple{
+            d_real)::GlobalPreprocessed)::Tuple{
         Float32, Any, CategoricalMetric}
-    ret = Lux.apply(model, Batch(input), ps, st)
+    ret = Lux.apply(model, input, ps, st)
     v_pred, st = ret
     v_pred = vcat(v_pred, -v_pred)
     v_pred = exp.(v_pred) ./ sum(exp.(v_pred); dims = 1)
@@ -166,8 +166,8 @@ function continus_loss(model,
         st,
         (; point,
             input,
-            d_real)::StructVector{GLobalPreprocessed})::Tuple{Float32, Any, ContinousMetric}
-    ret = Lux.apply(model, Batch(input), ps, st)
+            d_real)::GlobalPreprocessed)::Tuple{Float32, Any, ContinousMetric}
+    ret = Lux.apply(model, input, ps, st)
     v_pred, st = ret
     v_pred = cpu_device()(v_pred)
     v_real = σ.(d_real)
@@ -219,12 +219,12 @@ function evaluate_model(
         distance(x, atoms.tree) <= cutoff_radius
     end
     close_points = x.field[is_close] |> Batch
-	if length(close_points.field) > 0
-    	close_values = model((close_points, atoms)) |> cpu_device() |> first
-    	ifelse.(is_close, close_values, default_value)
-	else
-		zeros(x.field)
-	end
+    if length(close_points.field) > 0
+        close_values = model((close_points, atoms)) |> cpu_device() |> first
+        ifelse.(is_close, close_values, default_value)
+    else
+        zeros(x.field)
+    end
 end
 """
     implicit_surface(atoms::AnnotedKDTree{Sphere{T}, :center, Point3{T}},
@@ -248,26 +248,16 @@ function implicit_surface(atoms::AnnotedKDTree{Sphere{T}, :center, Point3{T}},
         SVector{3, Float32}, SVector{3, Int}, mins, maxes - mins)
 end
 
-function hausdorff_metric((; atoms, skin)::TreeTrainingData,
-        model::StatefulLuxLayer, training_parameters::Training_parameters)
-    surface = implicit_surface(atoms, model, training_parameters) |>
-              first
-    if length(surface) >= 1
-        distance(surface, skin.tree)
-    else
-        Inf32
-    end
-end
 
 function test_protein(
-        data::StructVector{GLobalPreprocessed},
+        data::StructVector{GlobalPreprocessed},
         training_states::Lux.Experimental.TrainState, (; categorical)::Training_parameters)
     loss_vec = Float32[]
     stats_vec = StructVector((categorical ? CategoricalMetric : ContinousMetric)[])
     loss_fn = categorical ? categorical_loss : continus_loss
-    for d in BatchView(data; batchsize = 200)
+    for data_batch in data
         loss, _, stats = loss_fn(training_states.model, training_states.parameters,
-            training_states.states, d)
+            training_states.states, data_batch)
         loss, stats = (loss, stats) .|> cpu_device()
         push!(loss_vec, loss)
         push!(stats_vec, stats)
@@ -276,16 +266,16 @@ function test_protein(
 end
 
 function train_protein(
-        data::StructVector{GLobalPreprocessed},
+        data::StructVector{GlobalPreprocessed},
         training_states::Lux.Experimental.TrainState, (; categorical)::Training_parameters)
     loss_vec = Float32[]
     stats_vec = StructVector((categorical ? CategoricalMetric : ContinousMetric)[])
     loss_fn = categorical ? categorical_loss : continus_loss
-    for d in BatchView(data; batchsize = 200)
+    for data_batch in data
         grads, loss, stats, training_states = Lux.Experimental.compute_gradients(
             AutoZygote(),
             loss_fn,
-            d,
+            data_batch,
             training_states)
         @assert !isnan(loss)
         training_states = Lux.Experimental.apply_gradients(training_states, grads)
@@ -308,11 +298,11 @@ function serialized_model_from_preprocessed_states(
 end
 
 struct DataSet
-    outside::StructVector{GLobalPreprocessed}
-    surface::StructVector{GLobalPreprocessed}
-    inside::StructVector{GLobalPreprocessed}
-    core::StructVector{GLobalPreprocessed}
-    atoms_center::StructVector{GLobalPreprocessed}
+    outside::StructVector{GlobalPreprocessed}
+    surface::StructVector{GlobalPreprocessed}
+    inside::StructVector{GlobalPreprocessed}
+    core::StructVector{GlobalPreprocessed}
+    atoms_center::StructVector{GlobalPreprocessed}
 end
 
 """
@@ -359,7 +349,7 @@ function train(
     ]
     train_data, test_data = map([train_data, test_data]) do data
         DataSet(Folds.map(processing) do f
-            pre_compute_data_set(f, model, data, training_parameters) |> StructVector
+			generate_data_points(model,f(data), training_parameters) |> StructVector
         end...)
     end
     @info "end pre computing"

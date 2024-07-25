@@ -48,7 +48,7 @@ function point_grid(mins::AbstractVector, maxes, scale::Number)
         maxes
         ; step = scale)...) .|> Point3
 end
-function approximates_points(predicate,rng::AbstractRNG, atoms_tree::KDTree,
+function approximates_points(predicate, rng::AbstractRNG, atoms_tree::KDTree,
         skin_tree::KDTree{Point3f},
         (; scale,
             cutoff_radius)::Training_parameters)
@@ -59,7 +59,7 @@ function approximates_points(predicate,rng::AbstractRNG, atoms_tree::KDTree,
         1000)
     Iterators.filter(points) do point
         distance(point, atoms_tree) < cutoff_radius &&
-		predicate(point)
+            predicate(point)
     end
 end
 
@@ -71,25 +71,29 @@ function exact_points(
         distance(pt, atoms_tree) < cutoff_radius
     end
 end
-function generate_data_points(preprocessing::Lux.AbstractExplicitLayer, points,
-	(; atoms, skin)::TreeTrainingData{Float32},(;ref_distance)::Training_parameters)
-    mapobs(points) do point::Point3f
-        (; point, input = preprocessing((point, atoms)),
-            d_real = signed_distance(point, skin) ./ref_distance)
-    end
+GlobalPreprocessed = @NamedTuple{
+    points::Vector{Point3f},
+    inputs::ConcatenatedBatch{<:StructArray{PreprocessData{Float32}}},
+    d_reals::Vector{Float32}
+}
+function generate_data_points(
+        preprocessing::Lux.AbstractExplicitLayer, points::AbstractVector{<:Point3},
+        (; atoms, skin)::TreeTrainingData{Float32}, (; ref_distance)::Training_parameters)
+	(;
+        points,
+        inputs = preprocessing((points, atoms)),
+        d_reals = signed_distance.(points, Ref(skin) ./ ref_distance)
+    )
 end
-GLobalPreprocessed = @NamedTuple{
-    point::Point3f, input::StructArray{PreprocessData{Float32}}, d_real::Float32}
-function pre_compute_data_set(f::Function,
+function pre_compute_data_set(points_generator::Function,
         preprocessing,
-		data::AbstractVector{<:TreeTrainingData},training_parameters::Training_parameters)::Vector{GLobalPreprocessed}
-    res = Folds.map(data) do d
-        points = f(d)
-        collect(
-            GLobalPreprocessed,
-            generate_data_points(preprocessing, points, d,training_parameters))
+        data::AbstractVector{<:TreeTrainingData}, training_parameters::Training_parameters, batch_size)::Vector{GlobalPreprocessed}
+    Folds.mapreduce(vcat,data) do protein_data::TreeTrainingData
+		points = BatchView(points_generator(protein_data);batch_size)
+		Folds.map(points) do batch_points
+			generate_data_points(preprocessing, batch_points, protein_data, training_parameters)
+		end
     end
-    reduce(vcat, res)
 end
 """
 	load_data_pdb(T, name::String)
