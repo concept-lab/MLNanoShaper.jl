@@ -1,5 +1,3 @@
-using Logging
-using LoggingExtras
 
 """
 	accumulator(processing,logger)

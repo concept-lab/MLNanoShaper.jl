@@ -1,7 +1,3 @@
-using TOML
-import BioStructures: PDBFormat, downloadpdb
-using Logging
-using .Import
 
 """
 	generate_data()

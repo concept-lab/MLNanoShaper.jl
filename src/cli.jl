@@ -1,11 +1,3 @@
-using Comonicon
-using Serialization
-using Random
-using Configurations
-using Logging: global_logger
-using TerminalLoggers: TerminalLogger
-using LuxCUDA
-
 @option struct ModelArgs
     van_der_waals_channel::Bool = false
 end
