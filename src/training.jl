@@ -126,8 +126,7 @@ function categorical_loss(model,
         Float32, Any, CategoricalMetric}
     ret = Lux.apply(model, inputs, ps, st)
     v_pred, st = ret
-    v_pred = vcat(v_pred, -v_pred)
-    v_pred = exp.(v_pred) ./ sum(exp.(v_pred); dims = 1)
+    v_pred = vcat(v_pred, 1 .- v_pred)
     v_pred = cpu_device()(v_pred)
     probabilities = ignore_derivatives() do
         generate_true_probabilities(d_reals)

@@ -320,9 +320,9 @@ version = "0.9.10"
 
 [[deps.Colorfy]]
 deps = ["ColorSchemes", "Colors", "Dates"]
-git-tree-sha1 = "a5848900db241a94af4e6573dcb1d6dcdd999bd2"
+git-tree-sha1 = "ca4a43ecb1ebf99b7969b8e771c59380bef4420e"
 uuid = "03fe91ce-8ec6-4610-8e8d-e7491ccca690"
-version = "0.1.4"
+version = "0.1.6"
 
     [deps.Colorfy.extensions]
     ColorfyCategoricalArraysExt = "CategoricalArrays"
@@ -414,9 +414,9 @@ version = "0.1.3"
 
 [[deps.CoordRefSystems]]
 deps = ["Random", "Rotations", "StaticArrays", "Unitful", "Zygote"]
-git-tree-sha1 = "d93d31ffedcc133d2abef601e7dbbd879afbcdeb"
+git-tree-sha1 = "cde10407b3de9ed16a87a82dcbda3b88f302856b"
 uuid = "b46f11dc-f210-4604-bfba-323c1ec968cb"
-version = "0.9.12"
+version = "0.10.0"
 
 [[deps.CpuId]]
 deps = ["Markdown"]
@@ -1016,9 +1016,9 @@ version = "0.3.2"
 
 [[deps.LuxCore]]
 deps = ["Compat", "DispatchDoctor", "Functors", "Random", "Setfield"]
-git-tree-sha1 = "86f47269f207f77e87469280d33cfee06e0dcc78"
+git-tree-sha1 = "e25dd111094e3eefdcac5f094e7a8221b98ee44c"
 uuid = "bb33d45b-7691-41d6-9220-0943567d0623"
-version = "0.1.20"
+version = "0.1.21"
 weakdeps = ["ChainRulesCore", "EnzymeCore"]
 
     [deps.LuxCore.extensions]
@@ -1060,10 +1060,10 @@ version = "0.1.26"
     oneAPI = "8f75cd03-7ff8-4ecb-9b8f-daf728133b1b"
 
 [[deps.LuxLib]]
-deps = ["ArrayInterface", "ChainRulesCore", "DispatchDoctor", "EnzymeCore", "FastClosures", "ForwardDiff", "KernelAbstractions", "LinearAlgebra", "LuxCore", "LuxDeviceUtils", "Markdown", "NNlib", "Random", "Reexport", "StaticArraysCore", "Statistics", "UnrolledUtilities"]
-git-tree-sha1 = "cf70f34015a408b484a34d378c17aed9962a847e"
+deps = ["ArrayInterface", "ChainRulesCore", "DispatchDoctor", "EnzymeCore", "FastClosures", "ForwardDiff", "KernelAbstractions", "LinearAlgebra", "LuxCore", "LuxDeviceUtils", "Markdown", "NNlib", "Random", "Reexport", "SLEEFPirates", "StaticArraysCore", "Statistics", "UnrolledUtilities"]
+git-tree-sha1 = "28c3e6ced4d45bb112e1322668f59e23523b784c"
 uuid = "82251201-b29d-42c6-8e01-566dec8acb11"
-version = "0.3.33"
+version = "0.3.34"
 
     [deps.LuxLib.extensions]
     LuxLibCUDAExt = "CUDA"
@@ -1128,10 +1128,10 @@ uuid = "7269a6da-0436-5bbc-96c2-40638cbb6118"
 version = "0.4.12"
 
 [[deps.Meshes]]
-deps = ["Bessels", "CircularArrays", "Colorfy", "CoordRefSystems", "DelaunayTriangulation", "Distances", "LinearAlgebra", "NearestNeighbors", "Random", "Rotations", "SparseArrays", "StaticArrays", "StatsBase", "Transducers", "TransformsBase", "Unitful"]
-git-tree-sha1 = "204644a0cf9663c54c3bb749bdac2d3dd595da33"
+deps = ["Bessels", "CircularArrays", "Colorfy", "CoordRefSystems", "DelaunayTriangulation", "Distances", "LinearAlgebra", "NearestNeighbors", "Random", "Rotations", "SparseArrays", "StaticArrays", "StatsBase", "TransformsBase", "Unitful"]
+git-tree-sha1 = "445a7220897db24494cd16b90e4b2d96e53d0edc"
 uuid = "eacbb407-ea5a-433e-ab97-5258b1ca43fa"
-version = "0.47.0"
+version = "0.47.2"
 
     [deps.Meshes.extensions]
     MeshesMakieExt = "Makie"
