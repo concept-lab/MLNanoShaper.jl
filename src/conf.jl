@@ -32,9 +32,9 @@ struct TrainingParameters
     train_test_split::Float64
     model::Partial
     data_ids::Vector{Int}
-	ref_distance::Float32
-	categorical::Bool
-	learning_rate::Float64
+    ref_distance::Float32
+    categorical::Bool
+    learning_rate::Float64
 end
 
 function generate_training_name(x::TrainingParameters, epoch::Integer)
@@ -52,7 +52,7 @@ function read_from_TOML(::Type{TrainingParameters}, conf::AbstractDict)
     conf = Dict(Symbol.(keys(conf)) .=> values(conf))
     conf[:model_kargs] = Dict(Symbol.(keys(conf[:model_kargs])) .=>
         values(conf[:model_kargs]))
-	conf[:model_kargs][:categorical]=conf[:categorical]
+    conf[:model_kargs][:categorical] = conf[:categorical]
     conf[:model] = Partial(getproperty(MLNanoShaperRunner, Symbol(conf[:model]));
         cutoff_radius = Float32(conf[:cutoff_radius]), conf[:model_kargs]...)
     unpact_dict(TrainingParameters, conf)

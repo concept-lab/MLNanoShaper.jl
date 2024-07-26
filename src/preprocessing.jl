@@ -86,20 +86,21 @@ generate the data_points for a set of positions `points` on one protein.
 function generate_data_points(
         preprocessing::Lux.AbstractExplicitLayer, points::AbstractVector{<:Point3},
         (; atoms, skin)::TreeTrainingData{Float32}, (; ref_distance)::TrainingParameters)
-	(;
+    (;
         points,
-		inputs = preprocessing((Batch(points), atoms)),
-		d_reals = signed_distance.(points, Ref(skin)) ./ ref_distance
+        inputs = preprocessing((Batch(points), atoms)),
+        d_reals = signed_distance.(points, Ref(skin)) ./ ref_distance
     )
 end
 function pre_compute_data_set(points_generator::Function,
         preprocessing,
         dataset::AbstractVector{<:TreeTrainingData}, training_parameters::TrainingParameters)::Vector{GlobalPreprocessed}
-    mapreduce(vcat,dataset) do protein_data::TreeTrainingData
-		points = BatchView(points_generator(protein_data);batchsize = 1000)
-		Folds.map(points) do batch_points
-			generate_data_points(preprocessing, batch_points, protein_data, training_parameters)
-		end
+    mapreduce(vcat, dataset) do protein_data::TreeTrainingData
+        points = BatchView(points_generator(protein_data); batchsize = 1000)
+        Folds.map(points) do batch_points
+            generate_data_points(
+                preprocessing, batch_points, protein_data, training_parameters)
+        end
     end
 end
 """

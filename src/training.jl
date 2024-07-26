@@ -350,9 +350,9 @@ function train(
         DataSet(Folds.map(processing) do generate_points
             pre_compute_data_set(
                 generate_points,
-                model, 
-				dataset, 
-				training_parameters) |> StructVector
+                model,
+                dataset,
+                training_parameters) |> StructVector
         end...)
     end
     @info "end pre computing"
@@ -361,19 +361,19 @@ function train(
     @progress name="training" for epoch in 1:nb_epoch
         # for epoch in 1:nb_epoch
         prop = propertynames(train_data)
-		#train
+        #train
         train_v = Dict{Symbol, StructVector}()
         for p::Symbol in prop
             training_states, _train_v = train_protein(
                 getproperty(train_data, p), training_states, training_parameters)
             train_v[p] = _train_v
         end
-		#test
+        #test
         test_v = Dict(
             prop .=>
             test_protein.(getproperty.(Ref(test_data), prop),
                 Ref(training_states), Ref(training_parameters)))
-		#log
+        #log
         @info "log" test=aggregate(test_v) train=aggregate(train_v)
 
         if epoch % save_periode == 0
