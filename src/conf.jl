@@ -27,7 +27,7 @@ struct TrainingParameters
     model::Partial
     data_ids::Vector{Int}
     ref_distance::Float32
-	loss_type::LossType
+	loss::LossType
     learning_rate::Float64
 end
 
@@ -49,6 +49,7 @@ function read_from_TOML(::Type{TrainingParameters}, conf::AbstractDict)
     conf[:model_kargs][:categorical] = conf[:categorical]
     conf[:model] = Partial(getproperty(MLNanoShaperRunner, Symbol(conf[:model]));
         cutoff_radius = Float32(conf[:cutoff_radius]), conf[:model_kargs]...)
+	conf[:loss] = get_loss_type(conf[:loss])
     unpact_dict(TrainingParameters, conf)
 end
 

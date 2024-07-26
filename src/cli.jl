@@ -34,7 +34,7 @@ The folowing parameters can be overided.
         name::String = "",
         cutoff_radius::Float32 = 0.0f0,
         ref_distance::Float32 = 00.0f0,
-        categorical::Bool,
+        loss::String,
         learning_rate::Float64 = 0.0,
         gpu::Bool = false)
     global_logger(TerminalLogger())
@@ -48,6 +48,9 @@ The folowing parameters can be overided.
     end
     if name != 0
         conf["TrainingParameters"]["name"] = name
+    end
+    if loss != 0
+        conf["TrainingParameters"]["loss"] = loss
     end
     if learning_rate != 0.0
         conf["TrainingParameters"]["learning_rate"] = learning_rate

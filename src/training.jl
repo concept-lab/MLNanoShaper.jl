@@ -64,10 +64,10 @@ function batch_dataset((; points, inputs, d_reals)::GlobalPreprocessed)
 end
 function test_protein(
         data::GlobalPreprocessed,
-        training_states::Lux.Experimental.TrainState, (; loss_type)::TrainingParameters)
+        training_states::Lux.Experimental.TrainState, (; loss)::TrainingParameters)
     loss_vec = Float32[]
-    stats_vec = StructVector((metric_type(loss_type))[])
-    loss_fn = get_loss_fn(loss_type)
+    stats_vec = StructVector((metric_type(loss))[])
+    loss_fn = get_loss_fn(loss)
 	data = batch_dataset(data)
 	for data_batch in BatchView(data;batchsize=2000)
         loss, _, stats = loss_fn(training_states.model, training_states.parameters,
@@ -81,10 +81,10 @@ end
 
 function train_protein(
         data::StructVector{GlobalPreprocessed},
-        training_states::Lux.Experimental.TrainState, (; loss_type)::TrainingParameters)
+        training_states::Lux.Experimental.TrainState, (; loss)::TrainingParameters)
     loss_vec = Float32[]
-    stats_vec = StructVector((metric_type(loss_type))[])
-    loss_fn = get_loss_fn(loss_type)
+    stats_vec = StructVector((metric_type(loss))[])
+    loss_fn = get_loss_fn(loss)
 	data = batch_dataset(data)
 	for data_batch in BatchView(data;batchsize=2000)
         grads, loss, stats, training_states = Lux.Experimental.compute_gradients(
