@@ -6,7 +6,7 @@ using MLNanoShaperRunner
 
 GlobalPreprocessed = @NamedTuple{
     points::Vector{Point3f},
-    inputs::ConcatenatedBatch{<:StructArray{PreprocessedData{Float32}}},
+    inputs::ConcatenatedBatch{<:StructArray{MLNanoShaperRunner.PreprocessedData{Float32}}},
     d_reals::Vector{Float32}
 }
 function loggit(x)
