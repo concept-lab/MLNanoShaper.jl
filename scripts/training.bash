@@ -10,7 +10,7 @@ parallel --jobs 4\
 		--categorical {5}\
 	::: tiny_angular_dense light_angular_dense \
 	::: 2.0\
-	::: 5e-4\
+	::: 1e-4\
  	::: false\
 	::: true false
 
@@ -24,7 +24,7 @@ parallel --jobs 3\
 		--categorical {5}\
 	::: tiny_angular_dense \
 	::: 3.0\
-	::: 2e-4\
+	::: 1e-4\
  	::: false\
 	::: true false
 
@@ -53,7 +53,7 @@ parallel --jobs 3\
 		 --categorical {5}\
 	::: medium_angular_dense\
 	::: 3.0\
-	::: 2e-4\
+	::: 1e-4\
 	::: false\
 	:::  true false
  parallel --jobs 1\
