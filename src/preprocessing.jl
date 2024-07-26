@@ -47,8 +47,8 @@ end
 function aggregate(vec::AbstractVector{GlobalPreprocessed})::GlobalPreprocessed
 	(;points,inputs,d_reals) = vec |> StructVector
 	points = reduce(vcat,points)
-	inputs = MLNanoShaperRunner.stack_ConcatenatedBatch(inputs)
 	@info "inputs" typeof(inputs)
+	inputs = MLNanoShaperRunner.stack_ConcatenatedBatch(inputs)
 	d_reals = reduce(vcat,d_reals)
 	(;points,inputs,d_reals)
 end
