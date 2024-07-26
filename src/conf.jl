@@ -17,7 +17,7 @@ struct AuxiliaryParameters
     save_periode::Int
 end
 unpact_dict(T::Type, x::AbstractDict{Symbol}) = T(getindex.(Ref(x), fieldnames(T))...)
-
+abstract type LossType end
 """
 	TrainingParameters
 
@@ -33,7 +33,7 @@ struct TrainingParameters
     model::Partial
     data_ids::Vector{Int}
     ref_distance::Float32
-    categorical::Bool
+	loss_type::LossType
     learning_rate::Float64
 end
 

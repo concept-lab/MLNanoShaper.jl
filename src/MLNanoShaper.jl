@@ -7,6 +7,7 @@ include("conf.jl")
 @reexport using .Import
 include("logging.jl")
 include("preprocessing.jl")
+include("loss.jl")
 include("training.jl")
 include("generate_data.jl")
 include("cli.jl")
