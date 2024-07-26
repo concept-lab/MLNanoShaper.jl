@@ -171,7 +171,7 @@ function train(
                 generate_points,
                 model,
                 dataset,
-                training_parameters) |> aggregate::GlobalPreprocessed
+                training_parameters)
         end...)
     end
     @info "end pre computing"
