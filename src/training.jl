@@ -59,7 +59,7 @@ function batch_dataset((; points, inputs, d_reals)::GlobalPreprocessed)
             points = points[i],
             inputs = get_element(inputs, i),
             d_reals = d_reals[i]
-        )
+        )::GlobalPreprocessed
     end
 end
 function test_protein(
