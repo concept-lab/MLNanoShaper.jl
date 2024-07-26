@@ -56,7 +56,7 @@ function approximates_points(predicate, rng::AbstractRNG, atoms_tree::KDTree,
     points = first(
         shuffle(
             rng, point_grid(mins, maxes, scale)),
-        1000)
+        2000)
     Iterators.filter(points) do point
         distance(point, atoms_tree) < cutoff_radius &&
             predicate(point)
