@@ -146,7 +146,7 @@ end
 struct CategoricalLoss <:LossType end
 _metric_type(::Type{CategoricalLoss}) = CategoricalMetric
 get_loss_fn(::CategoricalLoss) = categorical_loss
-_get_loss_type(::StaticSymbol{:categorical}) = CategoricalLoss
+_get_loss_type(::StaticSymbol{:categorical}) = CategoricalLoss()
 
 ContinousMetric = @NamedTuple{
     stats::BayesianStats,
@@ -197,4 +197,4 @@ end
 struct ContinousLoss <:LossType end
 _metric_type(::Type{ContinousLoss}) = ContinousMetric
 get_loss_fn(::ContinousLoss) = continus_loss
-_get_loss_type(::StaticSymbol{:continuous}) = ContinousLoss
+_get_loss_type(::StaticSymbol{:continuous}) = ContinousLoss()
