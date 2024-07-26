@@ -54,11 +54,11 @@ function implicit_surface(atoms::AnnotedKDTree{Sphere{T}, :center, Point3{T}},
         SVector{3, Float32}, SVector{3, Int}, mins, maxes - mins)
 end
 function batch_dataset((; points, inputs, d_reals)::GlobalPreprocessed)
-	mapobs(1:(length(inputs.lengths) - 1)) do i
+    mapobs(1:(length(inputs.lengths) - 1)) do i
         (;
-            points = view(points, i),
+            points = points[i],
             inputs = get_element(inputs, i),
-            d_reals = view(d_reals, i)
+            d_reals = d_reals[i]
         )
     end
 end
@@ -68,8 +68,8 @@ function test_protein(
     loss_vec = Float32[]
     stats_vec = StructVector((metric_type(loss))[])
     loss_fn = get_loss_fn(loss)
-	data = batch_dataset(data)
-	for data_batch in BatchView(data;batchsize=2000)
+    data = batch_dataset(data)
+    for data_batch in BatchView(data; batchsize = 2000)
         loss, _, stats = loss_fn(training_states.model, training_states.parameters,
             training_states.states, data_batch)
         loss, stats = (loss, stats) .|> cpu_device()
@@ -85,8 +85,8 @@ function train_protein(
     loss_vec = Float32[]
     stats_vec = StructVector((metric_type(loss))[])
     loss_fn = get_loss_fn(loss)
-	data = batch_dataset(data)
-	for data_batch in BatchView(data;batchsize=2000)
+    data = batch_dataset(data)
+    for data_batch in BatchView(data; batchsize = 2000)
         grads, loss, stats, training_states = Lux.Experimental.compute_gradients(
             AutoZygote(),
             loss_fn,
