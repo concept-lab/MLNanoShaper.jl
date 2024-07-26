@@ -80,7 +80,7 @@ function test_protein(
 end
 
 function train_protein(
-        data::StructVector{GlobalPreprocessed},
+        data::GlobalPreprocessed,
         training_states::Lux.Experimental.TrainState, (; loss)::TrainingParameters)
     loss_vec = Float32[]
     stats_vec = StructVector((metric_type(loss))[])
