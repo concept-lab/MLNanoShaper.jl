@@ -71,11 +71,6 @@ function exact_points(
         distance(pt, atoms_tree) < cutoff_radius
     end
 end
-GlobalPreprocessed = @NamedTuple{
-    points::Vector{Point3f},
-    inputs::ConcatenatedBatch{<:StructArray{PreprocessData{Float32}}},
-    d_reals::Vector{Float32}
-}
 function aggregate((;points,inputs,d_reals)::GlobalPreprocessed...)::GlobalPreprocessed
 	(;
 		points = reduce(vcat,points),

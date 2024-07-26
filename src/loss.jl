@@ -1,4 +1,14 @@
 using Lux
+using StructArrays
+using Static
+using GeometryBasics
+using MLNanoShaperRunner
+
+GlobalPreprocessed = @NamedTuple{
+    points::Vector{Point3f},
+    inputs::ConcatenatedBatch{<:StructArray{PreprocessedData{Float32}}},
+    d_reals::Vector{Float32}
+}
 function loggit(x)
     log(x) - log(1 - x)
 end

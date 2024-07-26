@@ -125,7 +125,7 @@ end
 end
 
 # ╔═╡ e3d07bac-5999-44e5-b25f-c787ae8f1322
-function MLNanoShaperRunner.symetrise((; dot, r_1, r_2, d_1, d_2)::StructArray{PreprocessData{T}};
+function MLNanoShaperRunner.symetrise((; dot, r_1, r_2, d_1, d_2)::StructArray{PreprocessedData{T}};
     cutoff_radius::T) where {T<:Number}
 	dot,r_1,r_2,d_1,d_2 = (dot, r_1, r_2, d_1, d_2) .|> gpu_device()
     vcat(dot,
@@ -151,7 +151,7 @@ function MLNanoShaperRunner.preprocessing((; point,atoms)::ModelInput{T}) where 
 		dot = map(1:n_tot) do n 
 			(center[prod_1[n]] - point) ⋅ (center[prod_2[n]] - point) / (d_1[n]  * d_2[n] + 1.0f-8)
 		end
-		res = StructArray{PreprocessData{T}}((dot,r_1,r_2,d_1,d_2))
+		res = StructArray{PreprocessedData{T}}((dot,r_1,r_2,d_1,d_2))
 		reshape(res,1,: )
 	end
 end
