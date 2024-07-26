@@ -46,11 +46,11 @@ function exact_points(
 end
 function aggregate(vec::AbstractVector{GlobalPreprocessed})::GlobalPreprocessed
 	(;points,inputs,d_reals) = vec |> StructVector
-	(;
-		points = reduce(vcat,points),
-		inputs = MLNanoShaperRunner.stack_ConcatenatedBatch(inputs),
-		d_reals = reduce(vcat,d_reals)
-	)
+	points = reduce(vcat,points)
+	inputs = MLNanoShaperRunner.stack_ConcatenatedBatch(inputs)
+	@info "inputs" typeof(inputs)
+	d_reals = reduce(vcat,d_reals)
+	(;points,inputs,d_reals)
 end
 """
     generate_data_points(
