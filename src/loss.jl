@@ -1,8 +1,8 @@
 GlobalPreprocessed = @NamedTuple{
     points::Vector{Point3f},
-	inputs::ConcatenatedBatch{T},
-    d_reals::Vector{Float32},
-} where {T <:StructArray{PreprocessedData{Float32}}
+    inputs::ConcatenatedBatch{T},
+    d_reals::Vector{Float32}
+} where {T <: StructArray{PreprocessedData{Float32}}}
 
 function loggit(x)
     log(x) - log(1 - x)
@@ -86,12 +86,11 @@ _metric_type(x::Type{<:LossType}) = error("_metric_type not implemented for $x")
 get_loss_fn(x::LossType) = error("get_loss_fn not implemented for $x")
 _get_loss_type(x::StaticSymbol) = error("_get_loss_type not implemented for $x")
 
-metric_type(x::LossType)=_metric_type(typeof(x))
-metric_type(x::Type{<:LossType})=_metric_type(x)
+metric_type(x::LossType) = _metric_type(typeof(x))
+metric_type(x::Type{<:LossType}) = _metric_type(x)
 
-get_loss_type(x::Symbol)=_get_loss_type(static(x))
-get_loss_type(x::StaticSymbol)=_get_loss_type(x)
-
+get_loss_type(x::Symbol) = _get_loss_type(static(x))
+get_loss_type(x::StaticSymbol) = _get_loss_type(x)
 
 CategoricalMetric = @NamedTuple{
     stats::BayesianStats}
@@ -143,7 +142,7 @@ function categorical_loss(model,
         st, (; stats = BayesianStats(true_vec, pred_vec)))
 end
 
-struct CategoricalLoss <:LossType end
+struct CategoricalLoss <: LossType end
 _metric_type(::Type{CategoricalLoss}) = CategoricalMetric
 get_loss_fn(::CategoricalLoss) = categorical_loss
 _get_loss_type(::StaticSymbol{:categorical}) = CategoricalLoss()
@@ -194,7 +193,7 @@ function continus_loss(model,
             abs_distance = abs.(D_distance) |> mean))
 end
 
-struct ContinousLoss <:LossType end
+struct ContinousLoss <: LossType end
 _metric_type(::Type{ContinousLoss}) = ContinousMetric
 get_loss_fn(::ContinousLoss) = continus_loss
 _get_loss_type(::StaticSymbol{:continuous}) = ContinousLoss()
