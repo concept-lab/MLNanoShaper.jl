@@ -164,7 +164,7 @@ function train(
             end,
             1200),
         (; atoms)::TreeTrainingData -> first(
-            shuffle(MersenneTwister(42), atoms.data.center), 1000)
+            shuffle(MersenneTwister(42), atoms.data.center), 300)
     ]
     train_data, test_data = map([train_data, test_data]) do dataset
         DataSet(Folds.map(processing) do generate_points
