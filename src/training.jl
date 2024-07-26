@@ -361,6 +361,11 @@ function train(
     @progress name="training" for epoch in 1:nb_epoch
         # for epoch in 1:nb_epoch
         prop = propertynames(train_data)
+        #test
+        test_v = Dict(
+            prop .=>
+            test_protein.(getproperty.(Ref(test_data), prop),
+                Ref(training_states), Ref(training_parameters)))
         #train
         train_v = Dict{Symbol, StructVector}()
         for p::Symbol in prop
@@ -368,11 +373,6 @@ function train(
                 getproperty(train_data, p), training_states, training_parameters)
             train_v[p] = _train_v
         end
-        #test
-        test_v = Dict(
-            prop .=>
-            test_protein.(getproperty.(Ref(test_data), prop),
-                Ref(training_states), Ref(training_parameters)))
         #log
         @info "log" test=aggregate(test_v) train=aggregate(train_v)
 
