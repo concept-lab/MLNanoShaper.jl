@@ -1,5 +1,5 @@
 #!/bin/bash
-batch_name=smooth_1
+batch_name=smooth_2
 echo training $batch_name
 parallel --jobs 4\
 	~/.julia/bin/mlnanoshaper train\
@@ -11,7 +11,7 @@ parallel --jobs 4\
 		--loss {5}\
 	::: tiny_angular_dense light_angular_dense \
 	::: 2.0\
-	::: 1e-4\
+	::: 1e-5\
  	::: false\
 	::: categorical continuous
 
@@ -25,7 +25,7 @@ parallel --jobs 3\
 		--loss {5}\
 	::: tiny_angular_dense \
 	::: 3.0\
-	::: 1e-4\
+	::: 1e-5\
  	::: false\
 	::: categorical continuous
 
@@ -54,7 +54,7 @@ parallel --jobs 3\
 		 --loss {5}\
 	::: medium_angular_dense\
 	::: 3.0\
-	::: 1e-4\
+	::: 1e-5\
 	::: false\
 	::: categorical continuous
 
@@ -68,6 +68,6 @@ parallel --jobs 3\
 		 --loss {5}\
 	::: tiny_angular_dense light_angular_dense \
 	::: 4.0\
-	::: 1e-4\
+	::: 1e-5\
 	::: false\
 	::: categorical continuous
