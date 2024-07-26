@@ -54,7 +54,7 @@ function implicit_surface(atoms::AnnotedKDTree{Sphere{T}, :center, Point3{T}},
         SVector{3, Float32}, SVector{3, Int}, mins, maxes - mins)
 end
 function batch_dataset((; points, inputs, d_reals)::GlobalPreprocessed)
-    mapobs(1:(inputs.lengths - 1)) do i
+	mapobs(1:(length(inputs.lengths) - 1)) do i
         (;
             points = view(points, i),
             inputs = get_element(inputs, i),
