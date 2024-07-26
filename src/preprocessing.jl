@@ -44,7 +44,7 @@ function exact_points(
         distance(pt, atoms_tree) < cutoff_radius
     end
 end
-function aggregate(vec::AbstractVector{GlobalPreprocessed})::GlobalPreprocessed
+function aggregate(vec::AbstractVector{T})::T where T <: GlobalPreprocessed
 	(;points,inputs,d_reals) = vec |> StructVector
 	points = reduce(vcat,points)
 	@info "inputs" typeof(inputs)
