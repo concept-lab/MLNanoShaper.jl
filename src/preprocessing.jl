@@ -70,9 +70,8 @@ function generate_data_points(
 end
 function pre_compute_data_set(points_generator::Function,
         preprocessing,
-        dataset::AbstractVector{<:TreeTrainingData}, training_parameters::TrainingParameters)::Vector{GlobalPreprocessed}
+        dataset::AbstractVector{<:TreeTrainingData}, training_parameters::TrainingParameters)::GlobalPreprocessed
     map(dataset) do protein_data::TreeTrainingData
-		@info "input" protein_data
 		points::AbstractVector{<:Point3} = points_generator(protein_data)
         generate_data_points(
             preprocessing, points, protein_data, training_parameters)
