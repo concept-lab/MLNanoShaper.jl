@@ -49,7 +49,7 @@ function aggregate(vec::AbstractVector{GlobalPreprocessed})::GlobalPreprocessed
 	(;
 		points = reduce(vcat,points),
 		inputs = MLNanoShaperRunner.stack_ConcatenatedBatch(inputs),
-		d_reals = reduce(vcat,d_real)
+		d_reals = reduce(vcat,d_reals)
 	)
 end
 """
