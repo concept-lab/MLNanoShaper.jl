@@ -119,7 +119,7 @@ function categorical_loss(model,
         st,
         (; points,
             inputs,
-            d_reals)::GlobalPreprocessed)::Tuple{
+            d_reals))::Tuple{
         Float32, Any, CategoricalMetric}
     ret = Lux.apply(model, inputs, ps, st)
     v_pred, st = ret
@@ -167,7 +167,7 @@ function continus_loss(model,
         st,
         (; points,
             inputs,
-            d_reals)::GlobalPreprocessed)::Tuple{Float32, Any, ContinousMetric}
+            d_reals))::Tuple{Float32, Any, ContinousMetric}
     ret = Lux.apply(model, inputs, ps, st)
     v_pred, st = ret
     v_pred = cpu_device()(v_pred)
