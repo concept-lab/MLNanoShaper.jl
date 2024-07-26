@@ -59,7 +59,7 @@ CLK=2.27
 data_dir="datasets/pqr"
 model_dir="datasets/models"
 log_dir="datasets/logs"
-nb_epoch=150
+nb_epoch=20
 save_periode=10
 
 [TrainingParameters]
