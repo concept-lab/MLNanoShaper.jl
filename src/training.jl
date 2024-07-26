@@ -131,7 +131,7 @@ function train(
         auxiliary_parameters::AuxiliaryParameters)
     (; nb_epoch, save_periode, model_dir) = auxiliary_parameters
 
-    @info "nb threades" nthreads()
+    @info "nb threades" Threads.nthreads()
 
     @info "building KDtrees"
     train_data = Folds.map(TreeTrainingData, train_data)

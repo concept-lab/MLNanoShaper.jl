@@ -44,7 +44,8 @@ function exact_points(
         distance(pt, atoms_tree) < cutoff_radius
     end
 end
-function aggregate((;points,inputs,d_reals)::GlobalPreprocessed...)::GlobalPreprocessed
+function aggregate(vec::AbstractVector{GlobalPreprocessed})::GlobalPreprocessed
+	(;points,inputs,d_reals) = vec |> StructVector
 	(;
 		points = reduce(vcat,points),
 		inputs = ConcatenatedBatch(inputs...),
@@ -70,11 +71,11 @@ end
 function pre_compute_data_set(points_generator::Function,
         preprocessing,
         dataset::AbstractVector{<:TreeTrainingData}, training_parameters::TrainingParameters)::Vector{GlobalPreprocessed}
-    mapreduce(aggregate, dataset) do protein_data::TreeTrainingData
+    map(dataset) do protein_data::TreeTrainingData
         points = points_generator(protein_data)
         generate_data_points(
             preprocessing, points, protein_data, training_parameters)
-    end
+    end |> aggregate
 end
 """
 	load_data_pdb(T, name::String)
