@@ -3,11 +3,11 @@ export DeepSet, model, train, TrainingData, ModelInput, generate_data, ModelInpu
        load_data, train, evaluate_model
 
 using Reexport
+include("loss.jl")
 include("conf.jl")
 @reexport using .Import
 include("logging.jl")
 include("preprocessing.jl")
-include("loss.jl")
 include("training.jl")
 include("generate_data.jl")
 include("cli.jl")
