@@ -67,7 +67,7 @@ We have an example of code in MLNanoShaperRunner/example. Here is the commands t
 
 ## Compiling the C code
 ``` 
-    clang -I . -rpath . -L . -l MLNanoShaperRunner dummy_example.c -o test
+    clang -I . -rpath . -L . -l MLNanoShaperRunner MLNanoShaperRunner/examples/dummy_example.c -o MLNanoShaperRunner/examples/test
 ```
 
 ## Copy artifacts
