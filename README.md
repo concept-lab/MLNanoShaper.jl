@@ -32,7 +32,7 @@ Instead of having a probe (a virtual water molecule) that rolls over the surface
 # install dataset
 ```
     curl https://zenodo.org/records/12772809/files/shrec.tar.gz --output datasets/shrec.tar.gz 
-    tar -czvf shrec.tar.gz datasets/pqr
+    tar -xzf shrec.tar.gz datasets/pqr
 ```
 
 # To train 

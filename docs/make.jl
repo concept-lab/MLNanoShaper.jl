@@ -14,6 +14,7 @@ makedocs(;
         mathengine = MathJax3()),
     pages = [
         "Home" => "index.md",
+        "Custom Loss" => "loss.md",
     ],)
 
 deploydocs(;
