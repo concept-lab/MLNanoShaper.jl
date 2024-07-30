@@ -7,10 +7,9 @@ end
 
 Train a model.
 
-# Intro
 
 Parameters are specified in the `param/param.toml` file.
-The folowing parameters can be overided.
+The following parameters can be overided.
 
 # Options
 
