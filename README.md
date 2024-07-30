@@ -36,8 +36,8 @@ mkdir ~/datasets/pqr
 ```
 # install dataset
 ```
-curl https://zenodo.org/records/12772809/files/shrec.tar.gz --output datasets/shrec.tar.gz 
-tar -xzf shrec.tar.gz datasets/pqr
+curl https://zenodo.org/records/12772809/files/shrec.tar.gz --output ~/datasets/shrec.tar.gz 
+tar -xzf ~/datasets/shrec.tar.gz ~/datasets/pqr
 ```
 
 # To train 
@@ -73,12 +73,11 @@ cp -r MLNanoShaperRunner/build/lib/lib MLNanoShaperRunner/build/build/
 
 ## Compiling the C code
 ``` 
-clang -I MLNanoShaperRunner/build/build \
-    -rpath MLNanoShaperRunner/build/build \
-    -L MLNanoShaperRunner/build/build \
+clang MLNanoShaperRunner/examples/dummy_example.c \
+    -I MLNanoShaperRunner/build/lib/include \
+    -L MLNanoShaperRunner/build/lib/lib/ \
     -l MLNanoShaperRunner \
-    MLNanoShaperRunner/examples/dummy_example.c \
-    -o MLNanoShaperRunner/examples/test
+    -o MLNanoShaperRunner/build/build/test
 ```
 
 ## Copy artifacts
