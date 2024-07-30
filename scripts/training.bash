@@ -1,5 +1,5 @@
 #!/bin/bash
-batch_name=smooth_6
+batch_name=smooth_7
 echo training $batch_name
 
 parallel --jobs 3\
@@ -12,7 +12,7 @@ parallel --jobs 3\
 		--loss {5}\
 	::: tiny_angular_dense \
 	::: 3.0\
-	::: 5e-7\
+	::: 5e-6\
  	::: false\
 	::: categorical continuous
 
