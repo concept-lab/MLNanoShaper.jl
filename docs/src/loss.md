@@ -13,8 +13,7 @@ The loss function then return 2 values:
 function custom_loss(model,
         ps,
         st,
-        (; points,
-            inputs,
+        (;  inputs,
             d_reals))::Tuple{
         Float32, Any, CategoricalMetric}
     # model evaluation

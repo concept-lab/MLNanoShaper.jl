@@ -53,7 +53,7 @@ function implicit_surface(atoms::AnnotedKDTree{Sphere{T}, :center, Point3{T}},
     isosurface(volume, MarchingCubes(iso = iso_value),
         SVector{3, Float32}, SVector{3, Int}, mins, maxes - mins)
 end
-function batch_dataset((; points, inputs, d_reals)::GlobalPreprocessed)
+function batch_dataset((; inputs, d_reals)::GlobalPreprocessed)
     mapobs(1:(length(inputs.lengths) - 1)) do i
         let inputs = get_element(inputs, i),
             d_reals = d_reals[i]
