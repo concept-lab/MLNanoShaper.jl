@@ -7,12 +7,40 @@ parallel --jobs 3\
 		--model={1}\
 		--cutoff-radius={2}\
 		--learning-rate={3}\
-		--name={2}A_${batch_name}_{5}\
+		--name={2}A_${batch_name}_7_{5}\
 		--model-kargs.van_der_waals_channel {4}\
 		--loss {5}\
 	::: tiny_angular_dense \
 	::: 3.0\
 	::: 5e-7\
+ 	::: false\
+	::: categorical continuous
+
+parallel --jobs 3\
+	~/.julia/bin/mlnanoshaper train\
+		--model={1}\
+		--cutoff-radius={2}\
+		--learning-rate={3}\
+		--name={2}A_${batch_name}_6_{5}\
+		--model-kargs.van_der_waals_channel {4}\
+		--loss {5}\
+	::: tiny_angular_dense \
+	::: 3.0\
+	::: 5e-6\
+ 	::: false\
+	::: categorical continuous
+
+parallel --jobs 3\
+	~/.julia/bin/mlnanoshaper train\
+		--model={1}\
+		--cutoff-radius={2}\
+		--learning-rate={3}\
+		--name={2}A_${batch_name}_5_{5}\
+		--model-kargs.van_der_waals_channel {4}\
+		--loss {5}\
+	::: tiny_angular_dense \
+	::: 3.0\
+	::: 5e-5\
  	::: false\
 	::: categorical continuous
 
