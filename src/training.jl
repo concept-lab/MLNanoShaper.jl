@@ -65,7 +65,7 @@ function batch_dataset((; points, inputs, d_reals)::GlobalPreprocessed)
 end
 function test_protein(
         data::GlobalPreprocessed,
-        training_states::Lux.Experimental.TrainState, (; loss)::TrainingParameters)
+        training_states::Lux.Training.TrainState, (; loss)::TrainingParameters)
     loss_vec = Float32[]
     stats_vec = StructVector((metric_type(loss))[])
     loss_fn = get_loss_fn(loss)
@@ -82,19 +82,19 @@ end
 
 function train_protein(
         data::GlobalPreprocessed,
-        training_states::Lux.Experimental.TrainState, (; loss)::TrainingParameters)
+        training_states::Lux.Training.TrainState, (; loss)::TrainingParameters)
     loss_vec = Float32[]
     stats_vec = StructVector((metric_type(loss))[])
     loss_fn = get_loss_fn(loss)
     data = batch_dataset(data)
     for data_batch in BatchView(data; batchsize = 2000)
-        grads, loss, stats, training_states = Lux.Experimental.compute_gradients(
+        grads, loss, stats, training_states = Lux.Training.compute_gradients(
             AutoZygote(),
             loss_fn,
             data_batch,
             training_states)
         @assert !isnan(loss)
-        training_states = Lux.Experimental.apply_gradients(training_states, grads)
+        training_states = Lux.Training.apply_gradients(training_states, grads)
         loss, stats = (loss, stats) .|> cpu_device()
         push!(loss_vec, loss)
         push!(stats_vec, stats)
@@ -104,7 +104,7 @@ function train_protein(
 end
 
 function serialized_model_from_preprocessed_states(
-        (; parameters)::Lux.Experimental.TrainState, y::TrainingParameters)
+        (; parameters)::Lux.Training.TrainState, y::TrainingParameters)
     parameters = [Symbol("layer_$i") => if i == 1
                       (;)
                   else
@@ -128,7 +128,7 @@ train the model on the data with nb_epoch
 function train(
         (train_data,
             test_data)::Tuple{MLUtils.AbstractDataContainer, MLUtils.AbstractDataContainer},
-        training_states::Lux.Experimental.TrainState, training_parameters::TrainingParameters,
+        training_states::Lux.Training.TrainState, training_parameters::TrainingParameters,
         auxiliary_parameters::AuxiliaryParameters)
     (; nb_epoch, save_periode, model_dir) = auxiliary_parameters
 
@@ -228,7 +228,7 @@ function train(training_parameters::TrainingParameters, directories::AuxiliaryPa
     (; train_data, test_data) = get_dataset(training_parameters, directories)
     with_logger(get_logger("$(homedir())/$log_dir/$(generate_training_name(training_parameters))")) do
         train((train_data, test_data),
-            Lux.Experimental.TrainState(
+            Lux.Training.TrainState(
                 MersenneTwister(42), drop_preprocessing(model()), optim) |>
             gpu_device(),
             training_parameters, directories)
