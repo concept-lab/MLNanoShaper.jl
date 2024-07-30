@@ -1,5 +1,4 @@
 GlobalPreprocessed = @NamedTuple{
-    points::Vector{Point3f},
     inputs::ConcatenatedBatch{T},
     d_reals::Vector{Float32}
 } where {T <: StructArray{PreprocessedData{Float32}}}
@@ -116,7 +115,7 @@ Return the error with the espected distance as a metric.
 function categorical_loss(model,
         ps,
         st,
-        (; points,
+        (;
             inputs,
             d_reals))::Tuple{
         Float32, Any, CategoricalMetric}
@@ -164,7 +163,7 @@ Return the error with the espected distance as a metric.
 function continus_loss(model,
         ps,
         st,
-        (; points,
+        (;
             inputs,
             d_reals))::Tuple{Float32, Any, ContinousMetric}
     ret = Lux.apply(model, inputs, ps, st)

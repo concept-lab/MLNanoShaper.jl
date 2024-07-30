@@ -45,11 +45,10 @@ function exact_points(
     end
 end
 function aggregate(vec::AbstractVector{T})::T where T <: GlobalPreprocessed
-	(;points,inputs,d_reals) = vec |> StructVector
-	points = reduce(vcat,points)
+	(;inputs,d_reals) = vec |> StructVector
 	inputs = MLNanoShaperRunner.stack_ConcatenatedBatch(inputs)
 	d_reals = reduce(vcat,d_reals)
-	(;points,inputs,d_reals)
+	(;inputs,d_reals)
 end
 """
     generate_data_points(
@@ -62,7 +61,6 @@ function generate_data_points(
         preprocessing::Lux.AbstractExplicitLayer, points::AbstractVector{<:Point3},
         (; atoms, skin)::TreeTrainingData{Float32}, (; ref_distance)::TrainingParameters)::GlobalPreprocessed
     (;
-        points,
         inputs = preprocessing((Batch(points), atoms)),
         d_reals = signed_distance.(points, Ref(skin)) ./ ref_distance
     )
