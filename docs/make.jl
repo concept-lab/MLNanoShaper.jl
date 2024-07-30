@@ -15,6 +15,7 @@ makedocs(;
     pages = [
         "Home" => "index.md",
         "Custom Loss" => "loss.md",
+        "Building Custom Models" => "model.md",
     ],)
 
 deploydocs(;
