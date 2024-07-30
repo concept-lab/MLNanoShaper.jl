@@ -65,10 +65,9 @@ We have an example of code in MLNanoShaperRunner/example. Here is the commands t
 julia --project MLNanoShaperRunner/build/build.jl
 ```
 
-## Copy the code to examples
+## Make a dicectory for compilation
 ```
 mkdir MLNanoShaperRunner/build/build
-cp -r MLNanoShaperRunner/build/lib/lib MLNanoShaperRunner/build/build/
 ```
 
 ## Compiling the C code
@@ -83,10 +82,9 @@ clang MLNanoShaperRunner/examples/dummy_example.c \
 ## Copy artifacts
 The julia code needs access to some artifacts to load correcly
 ```
-cp -r ~/.julia/artifacts/d5b30ebced3f3de269a3489e10c85c81eae13b0d/ MLNanoShaperRunner/build/build/julia/artifacts
-cp -r ~/.julia/artifacts/abf4b5086b4eb867021118c85b2cc11a15b764a9/ MLNanoShaperRunner/build/build/julia/artifacts
-cp -r ~/.julia/artifacts/9cfa1f93276d8e380806650071f8447e8e38301f/ MLNanoShaperRunner/build/build/julia/artifacts
-cp -r ~/.julia/artifacts/69059e078be18d2f90e9876662a7672df0784b19/ MLNanoShaperRunner/build/build/julia/artifacts
+cp -r MLNanoShaperRunner/build/lib/share MLNanoShaperRunner/build/build/share
+cp -r MLNanoShaperRunner/build/lib/lib/* MLNanoShaperRunner/build/build
+
 ```
 
 ## Run the code
