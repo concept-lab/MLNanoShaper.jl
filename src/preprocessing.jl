@@ -58,7 +58,7 @@ end
 generate the data_points for a set of positions `points` on one protein.
 """
 function generate_data_points(
-        preprocessing::Lux.AbstractExplicitLayer, points::AbstractVector{<:Point3},
+        preprocessing::Lux.AbstractExplicitLayer, points::AbstractVector{Point3f},
         (; atoms, skin)::TreeTrainingData{Float32}, (; ref_distance)::TrainingParameters)::GlobalPreprocessed
     (;
         inputs = preprocessing((Batch(points), atoms)),
