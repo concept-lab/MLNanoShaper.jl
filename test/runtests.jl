@@ -15,7 +15,7 @@ using Test
         using Random, MLNanoShaper, Lux, GeometryBasics, Optimisers, Zygote
         cd("$(homedir())/datasets/proteins/") do
             train(load_data(Float32, "1ABO"),
-                Lux.Experimental.TrainState(MersenneTwister(42), MLNanoShaper.model,
+                Lux.Training.TrainState(MersenneTwister(42), MLNanoShaper.model,
                     Adam(0.01)));
         end
     end
