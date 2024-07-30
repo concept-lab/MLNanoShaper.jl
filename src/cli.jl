@@ -20,11 +20,12 @@ The folowing parameters can be overided.
 - `--name, -n <String>`: name of the training run
 - `--cutoff-radius, -c <Float32>`: the cutoff_radius used in training
 - `--ref-distance, -d <Float32>`: the reference distane (in A) used to rescale distance to surface in loss
+- `--learning-rate, <Float64>`: the learning rate use by the model in training.
+- `--loss, -l <String>`: the loss function, one of "categorical" or "continuous".
 
 # Flags
 
 - `--gpu, -g `: should we do the training on the gpu
-- `--categorical, -c `: should we use the categorical version of the model
 
 """
 @cast function train(; nb_epoch::Int = 0,
@@ -35,7 +36,7 @@ The folowing parameters can be overided.
         cutoff_radius::Float32 = 0.0f0,
         ref_distance::Float32 = 00.0f0,
         loss::String,
-        learning_rate::Float64 = 0.0,
+        learning_rate::Float64 = 1e-5,
         gpu::Bool = false)
     global_logger(TerminalLogger())
     conf = TOML.parsefile(params_file)

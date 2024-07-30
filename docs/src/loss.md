@@ -9,7 +9,7 @@ The loss function then return 2 values:
 - the loss : a scalar number
 - the state of the model
 - a nambed tuple containing evaluations metrics
-```
+```julia
 function custom_loss(model,
         ps,
         st,
@@ -30,18 +30,18 @@ end
 Once we have the loss function we need to register it in order to use in at the command line level.
 
 First we need a type to represent the loss function.
-```
+```julia
 struct CustomLoss <: LossType end
 ```
 Then we need to give the type of metric used by the model. In our case it is a empty `NamedTuple`.
-```
+```julia
 _metric_type(::Type{CustomLoss}) = @NamedTuple{}
 ```
 We need to associate the loss function to our new type.
-```
+```julia
 get_loss_fn(::CustomLoss) = custom_loss
 ```
 At the end we need to give the name that will be used at the command line level to select our loss.
-```
+```julia
 _get_loss_type(::StaticSymbol{:custom}) = CustomLoss()
 ```
