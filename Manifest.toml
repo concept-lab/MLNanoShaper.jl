@@ -1176,9 +1176,9 @@ version = "0.4.12"
 
 [[deps.Meshes]]
 deps = ["Bessels", "CircularArrays", "Colorfy", "CoordRefSystems", "DelaunayTriangulation", "Distances", "LinearAlgebra", "NearestNeighbors", "Random", "Rotations", "ScopedValues", "SparseArrays", "StaticArrays", "StatsBase", "TransformsBase", "Unitful"]
-git-tree-sha1 = "c1d7f35150e10426c820237749bbf44e4ddb2de2"
+git-tree-sha1 = "4936cfe53f1d1cb2e26d2e91b51bce0d23beba4e"
 uuid = "eacbb407-ea5a-433e-ab97-5258b1ca43fa"
-version = "0.47.4"
+version = "0.47.5"
 
     [deps.Meshes.extensions]
     MeshesMakieExt = "Makie"

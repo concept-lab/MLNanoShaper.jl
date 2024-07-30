@@ -11,6 +11,10 @@ In order to launch training with default values:
 ~/.julia/bin/mlnanoshaper train 
 ```
 
+There are 2 ways to modify parameters.
+- modifying default values in `param/param.toml`. 
+- modifying some values using flags in the command line interface 
+
 
 ```@index
 ```

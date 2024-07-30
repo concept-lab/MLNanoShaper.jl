@@ -30,7 +30,7 @@ The folowing parameters can be overided.
 """
 @cast function train(; nb_epoch::Int = 0,
         model::String = "",
-        model_kargs::ModelArgs,
+		model_kargs::ModelArgs=ModelArgs(),
         nb_data_points::Int = 0,
         name::String = "",
         cutoff_radius::Float32 = 0.0f0,
