@@ -2,3 +2,4 @@
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 LiveServer = "16fef848-5104-11e9-1b77-fb7a48bbb589"
 MLNanoShaper = "0ae43799-6878-4589-9bc9-cf11e8180012"
+MLNanoShaperRunner = "0d104b66-282b-4c8e-a741-e32dba8f77f1"

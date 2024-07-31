@@ -6,5 +6,4 @@
 /**/*.xyz
 /**/*.obj
 /**/*.stl
-/**/*.off
-/examples
+/build/lib
