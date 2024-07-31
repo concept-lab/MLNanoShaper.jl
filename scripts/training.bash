@@ -1,5 +1,5 @@
 #!/bin/bash
-batch_name=smooth_11
+batch_name=smooth_12
 echo training $batch_name
 
 parallel --jobs 1\
@@ -7,44 +7,14 @@ parallel --jobs 1\
 		--model={1}\
 		--cutoff-radius={2}\
 		--learning-rate={3}\
-		--name={2}A_${batch_name}_5_{5}\
+		--name={2}A_${batch_name}_{5}\
 		--model-kargs.van_der_waals_channel {4}\
 		--loss {5}\
 	::: tiny_angular_dense \
 	::: 3.0\
-	::: 5e-5\
+	::: 1e-4\
  	::: false\
 	::: categorical continuous
-
-parallel --jobs 1\
-	~/.julia/bin/mlnanoshaper train\
-		--model={1}\
-		--cutoff-radius={2}\
-		--learning-rate={3}\
-		--name={2}A_${batch_name}_6_{5}\
-		--model-kargs.van_der_waals_channel {4}\
-		--loss {5}\
-	::: tiny_angular_dense \
-	::: 3.0\
-	::: 5e-6\
- 	::: false\
-	::: categorical continuous
-
-parallel --jobs 1\
-	~/.julia/bin/mlnanoshaper train\
-		--model={1}\
-		--cutoff-radius={2}\
-		--learning-rate={3}\
-		--name={2}A_${batch_name}_7_{5}\
-		--model-kargs.van_der_waals_channel {4}\
-		--loss {5}\
-	::: tiny_angular_dense \
-	::: 3.0\
-	::: 5e-7\
- 	::: false\
-	::: categorical continuous
-
-
 
 parallel --jobs 3\
 	~/.julia/bin/mlnanoshaper train\
@@ -56,7 +26,7 @@ parallel --jobs 3\
 		--loss {5}\
 	::: tiny_angular_dense light_angular_dense \
 	::: 2.0\
-	::: 5e-7\
+	::: 1e-4\
  	::: false\
 	::: categorical continuous
 
@@ -85,7 +55,7 @@ parallel --jobs 3\
 		 --loss {5}\
 	::: medium_angular_dense\
 	::: 3.0\
-	::: 5e-7\
+	::: 1e-4\
 	::: false\
 	::: categorical continuous
 
@@ -99,6 +69,6 @@ parallel --jobs 3\
 		 --loss {5}\
 	::: tiny_angular_dense light_angular_dense \
 	::: 4.0\
-	::: 5e-7\
+	::: 1e-4\
 	::: false\
 	::: categorical continuous
