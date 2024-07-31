@@ -4,18 +4,11 @@ CurrentModule = MLNanoShaper
 
 # MLNanoShaper
 
-Documentation for [MLNanoShaper](https://github.com/hack-hard/MLNanoShaper.jl). The main way of interfacing with the training is through the cli.
-
-In order to launch training with default values:
-```
-~/.julia/bin/mlnanoshaper train 
-```
-
-There are 2 ways to modify parameters.
-- modifying default values in `param/param.toml`. 
-- modifying some values using flags in the command line interface 
-
-
+Documentation for [MLNanoShaper](https://github.com/hack-hard/MLNanoShaper.jl). MLNanoShaper is a machine learning algorithm that can compute the surface of proteins.  
+There are multiple ways to interface with the software.
+- As julia Modules `MLNanoShaper` and `MLNanoShaperRunner`
+- As a cli command mlnanoshaper in `~/.julia/bin`.
+- Running only: as a .so object.
 ```@index
 ```
 

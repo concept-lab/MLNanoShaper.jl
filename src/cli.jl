@@ -7,24 +7,26 @@ end
 
 Train a model.
 
+# Intro
 
-Parameters are specified in the `param/param.toml` file.
-The following parameters can be overided.
+Train a model that can reconstruct a protein surface using Machine Learning.
+Default value of parameters are specified in the `param/param.toml` file.
+In order to override the param, you can use the differents options. 
 
 # Options
 
-- `--nb-epoch, -e <Int>`: the number of epoch to compute.
+- `--nb-epoch <Int>`: the number of epoch to compute.
 - `--model, -m <String>`: the model name. Can be anakin.
-- `--nb-data-points, -d <Int>`: the number of proteins in the dataset to use
+- `--nb-data-points <Int>`: the number of proteins in the dataset to use
 - `--name, -n <String>`: name of the training run
 - `--cutoff-radius, -c <Float32>`: the cutoff_radius used in training
-- `--ref-distance, -d <Float32>`: the reference distane (in A) used to rescale distance to surface in loss
-- `--learning-rate, <Float64>`: the learning rate use by the model in training.
-- `--loss, -l <String>`: the loss function, one of "categorical" or "continuous".
+- `--ref-distance <Float32>`: the reference distane (in A) used to rescale distance to surface in loss
+- `--learning-rate, -l <Float64>`: the learning rate use by the model in training.
+- `--loss <String>`: the loss function, one of "categorical" or "continuous".
 
 # Flags
 
-- `--gpu, -g `: should we do the training on the gpu
+- `--gpu, -g `: should we do the training on the gpu, does nothing currently.
 
 """
 @cast function train(; nb_epoch::Int = 0,
@@ -69,7 +71,7 @@ The following parameters can be overided.
 
     training_parameters = read_from_TOML(TrainingParameters, conf)
     auxiliary_parameters = read_from_TOML(AuxiliaryParameters, conf)
-    train(training_parameters, auxiliary_parameters)
+    _train(training_parameters, auxiliary_parameters)
 end
 
 function extract_model(model_serilized::SerializedModel)::StatefulLuxLayer
@@ -96,4 +98,6 @@ function evaluate_model(names::AbstractArray{String})
     evaluate_model(names, read_from_TOML(TrainingParameters, conf),
         read_from_TOML(AuxiliaryParameters, conf))
 end
+
+
 @main

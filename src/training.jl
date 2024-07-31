@@ -95,7 +95,7 @@ end
 	train((train_data,test_data),training_states; nb_epoch)
 train the model on the data with nb_epoch
 """
-function train(
+function _train(
         (train_data,
             test_data)::Tuple{MLUtils.AbstractDataContainer, MLUtils.AbstractDataContainer},
         training_states::Lux.Training.TrainState, training_parameters::TrainingParameters,
@@ -187,17 +187,17 @@ function get_dataset((; data_ids, train_test_split)::TrainingParameters,
 end
 
 """
-    train(training_parameters::TrainingParameters, directories::AuxiliaryParameters)
+    _train(training_parameters::TrainingParameters, directories::AuxiliaryParameters)
 
 train the model given `TrainingParameters` and `AuxiliaryParameters`.
 """
-function train(training_parameters::TrainingParameters, directories::AuxiliaryParameters)
+function _train(training_parameters::TrainingParameters, directories::AuxiliaryParameters)
     (; model, learning_rate) = training_parameters
     (; log_dir) = directories
     optim = OptimiserChain(WeightDecay(), Adam(learning_rate))
     (; train_data, test_data) = get_dataset(training_parameters, directories)
     with_logger(get_logger("$(homedir())/$log_dir/$(generate_training_name(training_parameters))")) do
-        train((train_data, test_data),
+        _train((train_data, test_data),
             Lux.Training.TrainState(
                 MersenneTwister(42), drop_preprocessing(model()), optim) |>
             gpu_device(),
