@@ -4,7 +4,7 @@ using Test
 @testset "MLNanoShaper.jl" begin
     @test begin
 		using TOML
-        conf = TOML.parsefile(params_file)
+        conf = TOML.parsefile(MLNanoShaper.params_file)
         conf["AuxiliaryParameters"]["nb_epoch"] = 2 |> UInt
         training_parameters = read_from_TOML(TrainingParameters, conf)
         auxiliary_parameters = read_from_TOML(AuxiliaryParameters, conf)
