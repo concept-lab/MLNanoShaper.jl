@@ -3,20 +3,23 @@ using Test
 
 @testset "MLNanoShaper.jl" begin
     @test begin
-        using Random, MLNanoShaper, Lux, BioStructures, GeometryBasics
-        prot = read("../examples/1MH1.pdb", PDBFormat)
-        balls = extract_balls(Float32,prot)
-        ps = Lux.initialparameters(MersenneTwister(42), MLNanoShaper.model)
-        length(LuxCore.stateless_apply(MLNanoShaper.model,
-            MLNanoShaper.ModelInput(first(balls).center, balls),
-            ps)) == 1
-    end skip=true
-    @test begin
-        using Random, MLNanoShaper, Lux, GeometryBasics, Optimisers, Zygote
-        cd("$(homedir())/datasets/proteins/") do
-            train(load_data(Float32, "1ABO"),
-                Lux.Training.TrainState(MersenneTwister(42), MLNanoShaper.model,
-                    Adam(0.01)));
+        conf = TOML.parsefile(params_file)
+        conf["AuxiliaryParameters"]["nb_epoch"] = 2 |> UInt
+        training_parameters = read_from_TOML(TrainingParameters, conf)
+        auxiliary_parameters = read_from_TOML(AuxiliaryParameters, conf)
+        train_data, test_data = splitobs(
+            mapobs([1, 2]) do id
+                load_data_pqr(Float32, "$(homedir())/$data_dir/$id")
+            end; at = 0.5)
+        (; model, learning_rate) = training_parameters
+        log_dir = mktempdir()
+        optim = OptimiserChain(WeightDecay(), Adam(learning_rate))
+        with_logger(get_logger("$(homedir())/$log_dir/$(generate_training_name(training_parameters))")) do
+            _train((train_data, test_data),
+                Lux.Training.TrainState(
+                    MersenneTwister(42), drop_preprocessing(model()), optim) |>
+                gpu_device(),
+                training_parameters, directories)
         end
     end
 end
