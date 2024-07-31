@@ -17,6 +17,7 @@ makedocs(;
         "Custom Loss" => "loss.md",
         "Building Custom Models" => "model.md",
         "CLI Interface" => "cli.md",
+        "C Interface" => "so.md",
     ],)
 
 deploydocs(;
