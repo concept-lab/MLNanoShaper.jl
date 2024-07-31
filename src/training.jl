@@ -196,11 +196,15 @@ function _train(training_parameters::TrainingParameters, directories::AuxiliaryP
     (; log_dir) = directories
     optim = OptimiserChain(WeightDecay(), Adam(learning_rate))
     (; train_data, test_data) = get_dataset(training_parameters, directories)
+    ps = Lux.initialparameters(MersenneTwister(42), model())
+    st = Lux.initialstates(MersenneTwister(42), model())
     with_logger(get_logger("$(homedir())/$log_dir/$(generate_training_name(training_parameters))")) do
         _train((train_data, test_data),
             Lux.Training.TrainState(
-                MersenneTwister(42), drop_preprocessing(model()), optim) |>
-            gpu_device(),
+                drop_preprocessing(model()),
+                ps |> gpu_device(),
+                st |> gpu_device(),
+                optim),
             training_parameters, directories)
     end
 end
