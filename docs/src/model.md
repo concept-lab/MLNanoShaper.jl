@@ -9,7 +9,7 @@ function custom_angular_dense(; name::String,
     main_chain = Parallel(.*,
             Chain(Dense(6 => 10, elu),
                 Dense(10 => 5, elu)),
-            Lux.WrappedFunction(scale_factor)
+            Lux.WrappedFunction{:direct_call}(scale_factor)
     )
     main_chain = DeepSet(Chain(
         symetrise(; cutoff_radius, device = on_gpu ? gpu_device() : identity),

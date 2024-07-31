@@ -112,15 +112,14 @@ The loss function used by in training.
 Return the KL divergence between true probability and empirical probability
 Return the error with the espected distance as a metric.
 """
-function categorical_loss(model,
+function categorical_loss(model::Lux.AbstractExplicitLayer,
         ps,
         st,
         (;
             inputs,
             d_reals))::Tuple{
         Float32, Any, CategoricalMetric}
-    ret = Lux.apply(model, inputs, ps, st)
-    v_pred, st = ret
+    v_pred, st = model(inputs, ps, st)
     v_pred = vcat(v_pred, 1 .- v_pred)
     v_pred = cpu_device()(v_pred)
     probabilities = ignore_derivatives() do
@@ -166,8 +165,7 @@ function continus_loss(model,
         (;
             inputs,
             d_reals))::Tuple{Float32, Any, ContinousMetric}
-    ret = Lux.apply(model, inputs, ps, st)
-    v_pred, st = ret
+	v_pred, st = model(inputs,ps,st)
     v_pred = cpu_device()(v_pred)
     v_real = σ.(d_reals)
     error = v_pred .- v_real
