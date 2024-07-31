@@ -74,30 +74,4 @@ In order to override the param, you can use the differents options.
     _train(training_parameters, auxiliary_parameters)
 end
 
-function extract_model(model_serilized::SerializedModel)::StatefulLuxLayer
-    model = model_serilized.model()
-    StatefulLuxLayer(model,
-        model_serilized.weights,
-        Lux.initialstates(MersenneTwister(42), model))
-end
-
-function evaluate_model(name::String, data, training_parameters::TrainingParameters)
-    model = "$(homedir())/datasets/models/$name" |> deserialize |> extract_model
-    evaluate_model(model, data, training_parameters)
-end
-
-function evaluate_model(names::AbstractArray{String}, tr::TrainingParameters,
-        directories::AuxiliaryParameters)
-    (; test_data) = get_dataset(tr, directories)
-    test_data = test_data[1:10] .|> TreeTrainingData
-    evaluate_model.(names, Ref(test_data), Ref(tr)) |> StructArray
-end
-
-function evaluate_model(names::AbstractArray{String})
-    conf = TOML.parsefile(params_file)
-    evaluate_model(names, read_from_TOML(TrainingParameters, conf),
-        read_from_TOML(AuxiliaryParameters, conf))
-end
-
-
 @main

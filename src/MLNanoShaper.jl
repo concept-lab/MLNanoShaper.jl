@@ -45,8 +45,7 @@ using Reexport
 using MLNanoShaperRunner
 @reexport using MLNanoShaperRunner.Import
 
-export DeepSet, model, train, TrainingData, ModelInput, generate_data,
-       load_data, train, evaluate_model
+export train
 
 include("loss.jl")
 include("conf.jl")
