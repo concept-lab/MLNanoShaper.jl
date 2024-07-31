@@ -13,7 +13,7 @@ using Test
             MLNanoShaper.AuxiliaryParameters, conf)
         train_data, test_data = splitobs(
             mapobs([1, 2]) do id
-                MLNanoShaper.load_data_pqr(Float32, "../examples/$id")
+				MLNanoShaper.load_data_pqr(Float32, "$(@__FILE__)/../examples/$id")
             end; at = 0.5)
         (; model, learning_rate) = training_parameters
         log_dir = mktempdir()

@@ -421,9 +421,9 @@ version = "0.1.3"
 
 [[deps.CoordRefSystems]]
 deps = ["Random", "Rotations", "StaticArrays", "Unitful", "Zygote"]
-git-tree-sha1 = "51404c401449a93047c99670a4e2e612264de54c"
+git-tree-sha1 = "7fc824eff56f6df1cf457ae335fad7a0f96eb889"
 uuid = "b46f11dc-f210-4604-bfba-323c1ec968cb"
-version = "0.10.2"
+version = "0.10.4"
 
 [[deps.CpuId]]
 deps = ["Markdown"]
