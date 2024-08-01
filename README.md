@@ -24,7 +24,7 @@ git submodule update
 ```
 - download dependency:
 ```
-julia -e 'using Pkg; Pkg.activate(".");Pkg.instantiate()"
+julia -e 'using Pkg; Pkg.activate(".");Pkg.instantiate()'
 ```
 # make dirs
 ```
