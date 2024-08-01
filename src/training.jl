@@ -74,13 +74,8 @@ function train_protein(
 end
 
 function serialized_model_from_preprocessed_states(
-        (; parameters)::Lux.Training.TrainState, y::TrainingParameters)
-    parameters = [Symbol("layer_$i") => if i == 1
-                      (;)
-                  else
-                      parameters[keys(parameters)[i - 1]]
-                  end for i in 1:(1 + length(keys(parameters)))] |> NamedTuple
-    SerializedModel(y.model, parameters |> cpu_device())
+        (; parameters,states)::Lux.Training.TrainState, y::TrainingParameters)
+	MLNanoShaperRunner.SerializedModel(y.model, parameters |> cpu_device(),states |> cpu_device())
 end
 
 struct DataSet
