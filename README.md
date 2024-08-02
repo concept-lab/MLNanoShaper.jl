@@ -83,6 +83,7 @@ The julia code needs access to some artifacts to load correcly
 ```
 cp -r MLNanoShaperRunner/build/lib/share MLNanoShaperRunner/build/build/share
 cp -r MLNanoShaperRunner/build/lib/lib/* MLNanoShaperRunner/build/build
+cp MLNanoShaperRunner/examples/tiny* MLNanoShaperRunner/build/build
 
 ```
 
