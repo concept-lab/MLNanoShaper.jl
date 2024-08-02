@@ -1,5 +1,5 @@
 #!/bin/bash
-batch_name=smooth_13
+batch_name=smooth_14
 echo training $batch_name
 
 parallel --jobs 1\
