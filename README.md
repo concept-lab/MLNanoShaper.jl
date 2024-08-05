@@ -91,4 +91,5 @@ cp MLNanoShaperRunner/examples/tiny* MLNanoShaperRunner/build/build
 ```
     MLNanoShaperRunner/build/build/test
 ```
-
+## Weights
+weights are on `the https://zenodo.org/records/13222088`
