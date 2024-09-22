@@ -141,6 +141,18 @@ function _train(
         end...)
     end
     @info "end pre computing"
+	@info("train data size",
+		outside = length(train_data.outside),
+		surface = length(train_data.surface),
+		inside = length(train_data.inside),  
+		core = length(train_data.core)
+	)  
+	@info("test data size",
+		outside = length(test_data.outside),
+		surface = length(test_data.surface),
+		inside = length(test_data.inside),  
+		core = length(test_data.core)
+	)  
 
     @info "Starting training"
     @progress name="training" for epoch in 1:nb_epoch
