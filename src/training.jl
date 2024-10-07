@@ -1,4 +1,4 @@
-function get_cutoff_radius(x::Lux.AbstractExplicitLayer)
+function get_cutoff_radius(x::Lux.AbstractLuxLayer)
     get_preprocessing(x).fun.kargs[:cutoff_radius]
 end
 get_cutoff_radius(x::Lux.StatefulLuxLayer) = get_cutoff_radius(x.model)
@@ -40,9 +40,9 @@ function test_protein(
     stats_vec = StructVector((metric_type(loss))[])
     loss_fn = get_loss_fn(loss)
     data = batch_dataset(data)
-    for data_batch in BatchView(data; batchsize = 2000)
+    for data_batch in BatchView(data; batchsize = 1000)
         loss, _, stats = loss_fn(training_states.model, training_states.parameters,
-            training_states.states, data_batch)
+            Lux.testmode(training_states.states), data_batch)
         loss, stats = (loss, stats) .|> cpu_device()
         push!(loss_vec, loss)
         push!(stats_vec, stats)
@@ -57,7 +57,7 @@ function train_protein(
     stats_vec = StructVector((metric_type(loss))[])
     loss_fn = get_loss_fn(loss)
     data = batch_dataset(data)
-    for data_batch in BatchView(data; batchsize = 2000)
+    for data_batch in BatchView(data; batchsize = 1000)
         grads, loss, stats, training_states = Lux.Training.compute_gradients(
             AutoZygote(),
             loss_fn,
@@ -111,25 +111,25 @@ function _train(
                 MersenneTwister(42), atoms.tree, skin.tree, training_parameters) do point
                 -2training_parameters.cutoff_radius < signed_distance(point, skin) < 0
             end,
-            3000),
+            100),
         (; atoms, skin)::TreeTrainingData -> first(
             exact_points(
                 MersenneTwister(42), atoms.tree, skin.tree, training_parameters),
-            3000),
+            100),
         (; atoms, skin)::TreeTrainingData -> first(
             approximates_points(
                 MersenneTwister(42), atoms.tree, skin.tree, training_parameters) do point
                 0 < signed_distance(point, skin) < 2training_parameters.cutoff_radius
             end,
-            1500),
+            100),
         (; atoms, skin)::TreeTrainingData -> first(
             approximates_points(
                 MersenneTwister(42), atoms.tree, skin.tree, training_parameters) do point
                 distance(point, skin.tree) > 2 * training_parameters.cutoff_radius
             end,
-            1200),
+            100),
         (; atoms)::TreeTrainingData -> first(
-            shuffle(MersenneTwister(42), atoms.data.center), 300)
+            shuffle(MersenneTwister(42), atoms.data.center), 20)
     ]
     train_data, test_data = map([train_data, test_data]) do dataset
         DataSet(Folds.map(processing) do generate_points
@@ -142,16 +142,16 @@ function _train(
     end
     @info "end pre computing"
 	@info("train data size",
-		outside = length(train_data.outside),
-		surface = length(train_data.surface),
-		inside = length(train_data.inside),  
-		core = length(train_data.core)
+		outside = length(first(train_data.outside)),
+		surface = length(first(train_data.surface)),
+		inside = length(first(train_data.inside)),  
+		core = length(first(train_data.core))
 	)  
 	@info("test data size",
-		outside = length(test_data.outside),
-		surface = length(test_data.surface),
-		inside = length(test_data.inside),  
-		core = length(test_data.core)
+		outside = length(first(test_data.outside)),
+		surface = length(first(test_data.surface)),
+		inside = length(first(test_data.inside)),  
+		core = length(first(test_data.core))
 	)  
 
     @info "Starting training"

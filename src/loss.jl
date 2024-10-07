@@ -112,7 +112,7 @@ The loss function used by in training.
 Return the KL divergence between true probability and empirical probability
 Return the error with the espected distance as a metric.
 """
-function categorical_loss(model::Lux.AbstractExplicitLayer,
+function categorical_loss(model::Lux.AbstractLuxLayer,
         ps,
         st,
         (;
