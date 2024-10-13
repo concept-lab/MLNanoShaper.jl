@@ -1,5 +1,4 @@
 module MLNanoShaper
-using Comonicon
 using Configurations
 using TerminalLoggers: TerminalLogger
 using TerminalLoggers

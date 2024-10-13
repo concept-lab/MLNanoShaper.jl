@@ -1,7 +1,52 @@
-@option struct ModelArgs
-    van_der_waals_channel::Bool = false
-end
+using ArgParse
 
+function parse_cli_args(args::Vector{String})
+    s = ArgParseSettings()
+
+    @add_arg_table! s begin
+        "--nb-epoch"
+            help = "the number of epochs to compute"
+            arg_type = Int
+            default = 0
+        "--model", "-m"
+            help = "the model name"
+            arg_type = String
+            default = ""
+        "--is-van-der-waals-channel"
+            help = "whether to use van der Waals channel"
+            action = :store_true
+        "--nb-data-points"
+            help = "the number of proteins in the dataset to use"
+            arg_type = Int
+            default = 0
+        "--name", "-n"
+            help = "name of the training run"
+            arg_type = String
+            default = ""
+        "--cutoff-radius", "-c"
+            help = "the cutoff_radius used in training"
+            arg_type = Float32
+            default = 0.0f0
+        "--ref-distance"
+            help = "the reference distance (in A) used to rescale distance to surface in loss"
+            arg_type = Float32
+            default = 0.0f0
+        "--loss"
+            help = "the loss function"
+            arg_type = String
+            required = true
+        "--learning-rate", "-l"
+            help = "the learning rate used by the model in training"
+            arg_type = Float64
+            default = 1e-5
+        "--gpu", "-g"
+            help = "should we do the training on the gpu"
+            action = :store_true
+    end
+
+    parsed_args = parse_args(args, s)
+    return Dict{Symbol, Any}(Symbol(k) => v for (k, v) in parsed_args)
+end
 """
 	train [options] [flags]
 
@@ -29,9 +74,9 @@ In order to override the param, you can use the differents options.
 - `--gpu, -g `: should we do the training on the gpu, does nothing currently.
 
 """
-@cast function train(; nb_epoch::Int = 0,
+function main(; nb_epoch::Int = 0,
         model::String = "",
-		model_kargs::ModelArgs=ModelArgs(),
+        is_van_der_waals_channel::Bool=true,
         nb_data_points::Int = 0,
         name::String = "",
         cutoff_radius::Float32 = 0.0f0,
@@ -62,9 +107,7 @@ In order to override the param, you can use the differents options.
     if model != ""
         conf["TrainingParameters"]["model"] = model
     end
-    if model_kargs != ModelArgs()
-        conf["TrainingParameters"]["model_kargs"] = Configurations.to_dict(model_kargs)
-    end
+    conf["TrainingParameters"]["model_kargs"] = Dict(:is_van_der_waals_channel =>  is_van_der_waals_channel)
     if nb_data_points > 0
         conf["TrainingParameters"]["data_ids"] = conf["TrainingParameters"]["data_ids"][begin:(begin + nb_data_points)]
     end
@@ -74,4 +117,9 @@ In order to override the param, you can use the differents options.
     _train(training_parameters, auxiliary_parameters)
 end
 
+function main(args)
+    cli_args = parse_cli_args(ARGS)
+    # Call main function with parsed arguments
+    main(; cli_args...)
+end
 @main

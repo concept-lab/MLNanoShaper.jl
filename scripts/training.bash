@@ -3,7 +3,7 @@ batch_name=smooth_14
 echo training $batch_name
 
 parallel --jobs 1\
-	~/.julia/bin/mlnanoshaper train\
+	julia --project src/cli.jl\
 		--model={1}\
 		--cutoff-radius={2}\
 		--learning-rate={3}\
@@ -17,7 +17,7 @@ parallel --jobs 1\
 	::: categorical continuous
 
 parallel --jobs 3\
-	~/.julia/bin/mlnanoshaper train\
+	julia --project src/cli.jl\
 		--model={1}\
 		--cutoff-radius={2}\
 		--learning-rate={3}\
@@ -31,7 +31,7 @@ parallel --jobs 3\
 	::: categorical continuous
 
 # parallel --jobs 2\
-# 	~/.julia/bin/mlnanoshaper train\
+# 	julia --project src/cli.jl\
 # 		--model={1}\
 # 		--cutoff-radius={2}\
 # 		--learning-rate={3}\
@@ -46,7 +46,7 @@ parallel --jobs 3\
 
 
  parallel --jobs 1\
-	 ~/.julia/bin/mlnanoshaper train\
+	 julia --project src/cli.jl\
 		 --model={1}\
 		 --cutoff-radius={2}\
 		 --learning-rate={3}\
@@ -60,7 +60,7 @@ parallel --jobs 3\
 	::: categorical continuous
 
  parallel --jobs 1\
-	 ~/.julia/bin/mlnanoshaper train\
+	 julia --project src/cli.jl\
 		 --model={1}\
 		 --cutoff-radius={2}\
 		 --learning-rate={3}\
