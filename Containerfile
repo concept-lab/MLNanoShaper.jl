@@ -10,5 +10,4 @@ RUN julia --project -e 'using Pkg; pkg"instantiate"'
 RUN julia --project=MLNanoShaperRunner -e 'using Pkg; pkg"instantiate";pkg"resolve"'
 RUN julia --project=MLNanoShaperRunner -e 'using Pkg; pkg"resolve"'
 RUN julia --project -e 'using Pkg;pkg"resolve"'
-RUN julia --project build/build.jl install
 CMD scripts/training.bash
