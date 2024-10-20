@@ -1,4 +1,5 @@
 [deps]
+ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
@@ -20,7 +21,9 @@ ProfileSVG = "132c30aa-f267-4189-9183-c8a63c7e05e6"
 Serialization = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
 Static = "aedffcd0-7271-4cad-89d0-dc628f76c6d3"
 StaticTools = "86c06d3c-3f03-46de-9781-57580aa96d0a"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
+TerminalLoggers = "5d786b92-1e48-4d6f-9151-6b4477ca9bed"
 WGLMakie = "276b4fcb-3e11-5398-bf8b-a0c2d153d008"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 

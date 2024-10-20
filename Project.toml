@@ -6,8 +6,8 @@ version = "0.1.0"
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
-ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
 BioStructures = "de9282ab-8554-53be-b2d6-f6c222edabfc"
+CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 ConcreteStructs = "2569d6c7-a4a2-43d3-a901-331e8e4be471"
 Configurations = "5218b696-f38b-4ac9-8b61-a12ec717816d"
@@ -47,7 +47,7 @@ Transducers = "28d57a85-8fef-5791-bfe6-a80928e7c999"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
-ArgParse = "1.2.0"
+CUDA = "5.5.2"
 julia = "1"
 
 [extras]
