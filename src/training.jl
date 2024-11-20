@@ -40,7 +40,7 @@ function test_protein(
     stats_vec = StructVector((metric_type(loss))[])
     loss_fn = get_loss_fn(loss)
     data = batch_dataset(data)
-    for data_batch in BatchView(data; batchsize = 1000)
+    for data_batch in BatchView(data; batchsize = 200)
         loss, _, stats = loss_fn(training_states.model, training_states.parameters,
             Lux.testmode(training_states.states), data_batch)
         loss, stats = (loss, stats) .|> cpu_device()
@@ -57,7 +57,7 @@ function train_protein(
     stats_vec = StructVector((metric_type(loss))[])
     loss_fn = get_loss_fn(loss)
     data = batch_dataset(data)
-    for data_batch in BatchView(data; batchsize = 1000)
+    for data_batch in BatchView(data; batchsize = 200)
         grads, loss, stats, training_states = Lux.Training.compute_gradients(
             AutoZygote(),
             loss_fn,
