@@ -2,7 +2,7 @@
 batch_name=smooth_fixed_1
 echo training $batch_name
 
-parallel --jobs 1\
+parallel --dry-run --jobs 1\
   	julia --project=scripts -p 12 scripts/cli.jl\
 		--model {1}\
 		--cutoff_radius {2}\

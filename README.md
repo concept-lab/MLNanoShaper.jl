@@ -35,7 +35,7 @@ mkdir ~/datasets/pqr
 ```
 # install dataset
 ```
-curl https://zenodo.org/records/12772809/files/shrec.tar.gz --output ~/datasets/shrec.tar.gz 
+curl https://zenodo.org/records/14886938/files/shrec.tar.gz --output ~/datasets/shrec.tar.gz 
 tar -xzf ~/datasets/shrec.tar.gz -C ~/datasets/pqr
 ```
 
