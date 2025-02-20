@@ -1,0 +1,4 @@
+[deps]
+JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
+MLNanoShaper = "0ae43799-6878-4589-9bc9-cf11e8180012"
+MLNanoShaperRunner = "0d104b66-282b-4c8e-a741-e32dba8f77f1"
