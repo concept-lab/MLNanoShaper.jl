@@ -1,7 +1,7 @@
 GlobalPreprocessed = @NamedTuple{
     inputs::ConcatenatedBatch{T},
     d_reals::Vector{Float32}
-} where {T <: StructArray{PreprocessedData{Float32}}}
+} where {T <: AbstractArray}
 
 function loggit(x)
     log(x) - log(1 - x)
