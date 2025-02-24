@@ -165,7 +165,7 @@ function continus_loss(model,
         (;
             inputs,
             d_reals))::Tuple{Float32, Any, ContinousMetric}
-	v_pred, st = model(inputs,ps,st)
+    v_pred, st = model(inputs, ps, st)
     v_pred = cpu_device()(v_pred)
     v_real = σ.(d_reals)
     error = v_pred .- v_real

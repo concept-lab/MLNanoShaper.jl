@@ -7,7 +7,13 @@ using InteractiveUtils
 # This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
 macro bind(def, element)
     quote
-        local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
+        local iv = try
+            Base.loaded_modules[Base.PkgId(
+                Base.UUID("6e696c72-6542-2067-7265-42206c756150"),
+                "AbstractPlutoDingetjes")].Bonds.initial_value
+        catch
+            b -> missing
+        end
         local el = $(esc(element))
         global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
         el
@@ -27,10 +33,11 @@ using PlutoUI
 using GLMakie
 
 # ╔═╡ b4e78444-bc2f-4aef-b199-c4c2e9fdda09
-@bind log_name TextField((50,10);default="/home/tristan/datasets/models/tiny_angular_dense_v_3.0A_small_grid_4_2024-07-02_6969662012834908328")
+@bind log_name TextField((50, 10);
+    default = "/home/tristan/datasets/models/tiny_angular_dense_v_3.0A_small_grid_4_2024-07-02_6969662012834908328")
 
 # ╔═╡ 947c769b-e106-40f8-9077-c7f7f2652765
-logger =  TBLogger(log_name,tb_append)
+logger = TBLogger(log_name, tb_append)
 
 # ╔═╡ b4bc2bfb-ac03-4bd9-8b8a-24af446b1ca7
 stat(log_name)
@@ -43,32 +50,40 @@ length(history.storage)
 
 # ╔═╡ b2dce7d5-08e1-4fd9-80af-471462672215
 begin
-	f = Figure()
-	fax=Axis(f[1, 1],xlabel="epoch",ylabel="loss",yscale=log10)
-	lines!(f[1,1],get(history,Symbol("log/test/global/loss"))...,label="test")
-	lines!(f[1,1],get(history,Symbol("log/train/global/loss"))...,label="train")
-	Legend(f[1,2],fax)
-	f
+    f = Figure()
+    fax = Axis(f[1, 1], xlabel = "epoch", ylabel = "loss", yscale = log10)
+    lines!(f[1, 1], get(history, Symbol("log/test/global/loss"))..., label = "test")
+    lines!(f[1, 1], get(history, Symbol("log/train/global/loss"))..., label = "train")
+    Legend(f[1, 2], fax)
+    f
 end
 
 # ╔═╡ ccca1cbd-6135-4931-8d95-fbc790cceb80
 begin
-	g = Figure()
-	gaxis=Axis(g[1, 1],xlabel="epoch",ylabel="false_negative_rate",yscale=log10)
-	lines!(g[1,1],get(history,Symbol("log/test/global/stats/stats/false_negative_rate"))...,label="test")
-	lines!(g[1,1],get(history,Symbol("log/train/global/stats/stats/false_negative_rate"))...,label="train")
-	Legend(g[1,2],gaxis)
-	g
+    g = Figure()
+    gaxis = Axis(g[1, 1], xlabel = "epoch", ylabel = "false_negative_rate", yscale = log10)
+    lines!(
+        g[1, 1], get(history, Symbol("log/test/global/stats/stats/false_negative_rate"))...,
+        label = "test")
+    lines!(g[1, 1],
+        get(history, Symbol("log/train/global/stats/stats/false_negative_rate"))...,
+        label = "train")
+    Legend(g[1, 2], gaxis)
+    g
 end
 
 # ╔═╡ 37c3e3e3-e34a-4f2d-8238-20e7dd51a6ab
 begin
-	h = Figure()
-	haxis = Axis(h[1, 1],xlabel="epoch",ylabel="false_positive_rate",yscale=log10)
-	lines!(h[1,1],get(history,Symbol("log/test/global/stats/stats/false_positive_rate"))...,label="test")
-	lines!(h[1,1],get(history,Symbol("log/train/global/stats/stats/false_positive_rate"))...,label="train")
-	Legend(h[1,2],haxis)
-	h
+    h = Figure()
+    haxis = Axis(h[1, 1], xlabel = "epoch", ylabel = "false_positive_rate", yscale = log10)
+    lines!(
+        h[1, 1], get(history, Symbol("log/test/global/stats/stats/false_positive_rate"))...,
+        label = "test")
+    lines!(h[1, 1],
+        get(history, Symbol("log/train/global/stats/stats/false_positive_rate"))...,
+        label = "train")
+    Legend(h[1, 2], haxis)
+    h
 end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001

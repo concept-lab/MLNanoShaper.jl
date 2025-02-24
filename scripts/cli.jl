@@ -1,57 +1,58 @@
 using ArgParse
-using MLNanoShaper: params_file, _train, read_from_TOML,TrainingParameters, AuxiliaryParameters
+using MLNanoShaper: params_file, _train, read_from_TOML, TrainingParameters,
+                    AuxiliaryParameters
 using Logging
 using TerminalLoggers: TerminalLogger
 using TOML
 
-function parse_cli_args(args::Vector{String})
+function parse_cli_args()
     s = ArgParseSettings()
 
-    @add_arg_table! s begin
+    @add_arg_table s begin
         "--nb_epoch"
-            help = "the number of epochs to compute"
-            arg_type = Int
-            default = 0
+        help = "the number of epochs to compute"
+        arg_type = Int
+        default = 0
         "--model", "-m"
-            help = "the model name"
-            arg_type = String
-            default = ""
+        help = "the model name"
+        arg_type = String
+        default = ""
         "--van_der_waals_channel"
-            help = "whether to use van der Waals channel"
-            action = :store_true
-        "--smooth"
-            help = "whether to enforce smoothing"
-            action = :store_true
+        help = "whether to use van der Waals channel"
+        action = :store_true
+        "--smoothing"
+        help = "whether to enforce smoothing"
+        action = :store_true
         "--nb_data_points"
-            help = "the number of proteins in the dataset to use"
-            arg_type = Int
-            default = 0
+        help = "the number of proteins in the dataset to use"
+        arg_type = Int
+        default = 0
         "--name", "-n"
-            help = "name of the training run"
-            arg_type = String
-            default = ""
+        help = "name of the training run"
+        arg_type = String
+        default = ""
         "--cutoff_radius", "-c"
-            help = "the cutoff_radius used in training"
-            arg_type = Float32
-            default = 0.0f0
+        help = "the cutoff_radius used in training"
+        arg_type = Float32
+        default = 0.0f0
         "--ref_distance"
-            help = "the reference distance (in A) used to rescale distance to surface in loss"
-            arg_type = Float32
-            default = 0.0f0
+        help = "the reference distance (in A) used to rescale distance to surface in loss"
+        arg_type = Float32
+        default = 0.0f0
         "--loss"
-            help = "the loss function"
-            arg_type = String
-            default="categorical"
+        help = "the loss function"
+        arg_type = String
+        default = "categorical"
         "--learning_rate", "-l"
-            help = "the learning rate used by the model in training"
-            arg_type = Float64
-            default = 1e-5
+        help = "the learning rate used by the model in training"
+        arg_type = Float64
+        default = 1e-5
         "--gpu", "-g"
-            help = "should we do the training on the gpu"
-            action = :store_true
+        help = "should we do the training on the gpu"
+        action = :store_true
     end
 
-    parsed_args = parse_args(args, s)
+    parsed_args = parse_args(s)
     return Dict{Symbol, Any}(Symbol(k) => v for (k, v) in parsed_args)
 end
 """
@@ -81,9 +82,9 @@ In order to override the param, you can use the differents options.
 - `--gpu, -g `: should we do the training on the gpu, does nothing currently.
 
 """
-function main(; nb_epoch::Int = 0,
+function _main(; nb_epoch::Int = 0,
         model::String = "",
-        van_der_waals_channel::Bool=true,
+        van_der_waals_channel::Bool = true,
         smoothing::Bool = true,
         nb_data_points::Int = 0,
         name::String = "",
@@ -115,7 +116,8 @@ function main(; nb_epoch::Int = 0,
     if model != ""
         conf["TrainingParameters"]["model"] = model
     end
-    conf["TrainingParameters"]["model_kargs"] = Dict(:van_der_waals_channel =>  van_der_waals_channel,:smoothing => smoothing)
+    conf["TrainingParameters"]["model_kargs"] = Dict(
+        :van_der_waals_channel => van_der_waals_channel, :smoothing => smoothing)
     if nb_data_points > 0
         conf["TrainingParameters"]["data_ids"] = conf["TrainingParameters"]["data_ids"][begin:(begin + nb_data_points)]
     end
@@ -125,11 +127,7 @@ function main(; nb_epoch::Int = 0,
     _train(training_parameters, auxiliary_parameters)
 end
 
-function main(args)
-    @info "arguments unpacking" args
-    cli_args = parse_cli_args(args[1:6])
-    # Call main function with parsed arguments
-    @info "arguments unpacked"
-    main(; cli_args...)
-end
-@main
+cli_args = parse_cli_args()
+# Call main function with parsed arguments
+_main(; cli_args...)
+

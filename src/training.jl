@@ -74,8 +74,9 @@ function train_protein(
 end
 
 function serialized_model_from_preprocessed_states(
-        (; parameters,states)::Lux.Training.TrainState, y::TrainingParameters)
-	MLNanoShaperRunner.SerializedModel(y.model, parameters |> cpu_device(),states |> cpu_device())
+        (; parameters, states)::Lux.Training.TrainState, y::TrainingParameters)
+    MLNanoShaperRunner.SerializedModel(
+        y.model, parameters |> cpu_device(), states |> cpu_device())
 end
 
 struct DataSet
@@ -141,18 +142,16 @@ function _train(
         end...)
     end
     @info "end pre computing"
-	@info("train data size",
-		outside = length(first(train_data.outside)),
-		surface = length(first(train_data.surface)),
-		inside = length(first(train_data.inside)),  
-		core = length(first(train_data.core))
-	)  
-	@info("test data size",
-		outside = length(first(test_data.outside)),
-		surface = length(first(test_data.surface)),
-		inside = length(first(test_data.inside)),  
-		core = length(first(test_data.core))
-	)  
+    @info("train data size",
+        outside=length(first(train_data.outside)),
+        surface=length(first(train_data.surface)),
+        inside=length(first(train_data.inside)),
+        core=length(first(train_data.core)))
+    @info("test data size",
+        outside=length(first(test_data.outside)),
+        surface=length(first(test_data.surface)),
+        inside=length(first(test_data.inside)),
+        core=length(first(test_data.core)))
 
     @info "Starting training"
     @progress name="training" for epoch in 1:nb_epoch

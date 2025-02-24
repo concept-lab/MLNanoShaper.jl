@@ -3,7 +3,7 @@ using Configurations
 using TerminalLoggers: TerminalLogger
 using TerminalLoggers
 using Logging: global_logger
-using Logging 
+using Logging
 using LoggingExtras: shouldlog
 using LoggingExtras
 using Logging
@@ -39,7 +39,6 @@ import BioStructures: PDBFormat, downloadpdb
 using FileIO
 using Serialization
 using Reexport
-
 
 using MLNanoShaperRunner
 @reexport using MLNanoShaperRunner.Import

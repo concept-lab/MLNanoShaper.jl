@@ -44,11 +44,11 @@ function exact_points(
         distance(pt, atoms_tree) < cutoff_radius
     end
 end
-function aggregate(vec::AbstractVector{T})::T where T <: GlobalPreprocessed
-	(;inputs,d_reals) = vec |> StructVector
-	inputs = MLNanoShaperRunner.stack_ConcatenatedBatch(inputs)
-	d_reals = reduce(vcat,d_reals)
-	(;inputs,d_reals)
+function aggregate(vec::AbstractVector{T})::T where {T <: GlobalPreprocessed}
+    (; inputs, d_reals) = vec |> StructVector
+    inputs = MLNanoShaperRunner.stack_ConcatenatedBatch(inputs)
+    d_reals = reduce(vcat, d_reals)
+    (; inputs, d_reals)
 end
 """
     generate_data_points(
@@ -69,7 +69,7 @@ function pre_compute_data_set(points_generator::Function,
         preprocessing,
         dataset::AbstractVector{<:TreeTrainingData}, training_parameters::TrainingParameters)::GlobalPreprocessed
     map(dataset) do protein_data::TreeTrainingData
-		points::AbstractVector{<:Point3} = points_generator(protein_data)
+        points::AbstractVector{<:Point3} = points_generator(protein_data)
         generate_data_points(
             preprocessing, points, protein_data, training_parameters)
     end |> aggregate

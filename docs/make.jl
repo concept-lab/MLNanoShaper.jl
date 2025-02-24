@@ -17,9 +17,9 @@ makedocs(;
         "Custom Loss" => "loss.md",
         "Building Custom Models" => "model.md",
         "CLI Interface" => "cli.md",
-        "C Interface" => "so.md",
-    ],)
+        "C Interface" => "so.md"
+    ])
 
 deploydocs(;
     repo = "https://github.com/concept-lab/MLNanoShaper.jl.git",
-) 
+)

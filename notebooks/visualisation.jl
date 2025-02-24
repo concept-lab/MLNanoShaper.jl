@@ -11,7 +11,8 @@ using Pkg
 Pkg.activate(".")
 
 # ╔═╡ fc935a86-ceac-4d5a-8fcb-34d9c754a2f1
-using Revise,MLNanoShaper, MLNanoShaperRunner, Serialization, Static, StructArrays, FileIO, GeometryBasics, Folds, Lux
+using Revise, MLNanoShaper, MLNanoShaperRunner, Serialization, Static, StructArrays, FileIO,
+      GeometryBasics, Folds, Lux
 
 # ╔═╡ 5f801ac4-1f27-11ef-3246-afece906b714
 md"""
@@ -48,13 +49,18 @@ models = names.|> deserialize .|> MLNanoShaperRunner.production_instantiate .|> 
   ╠═╡ =#
 
 # ╔═╡ f7041ca8-97be-4998-9c10-2cbed79eb135
-atoms = MLNanoShaperRunner.AnnotedKDTree(getfield.(read("$dataset_dir/$prot_num/structure.pqr", PQR{Float32}), :pos) |> StructVector, static(:center))
+atoms = MLNanoShaperRunner.AnnotedKDTree(
+    getfield.(read("$dataset_dir/$prot_num/structure.pqr", PQR{Float32}), :pos) |>
+    StructVector,
+    static(:center))
 
 # ╔═╡ 58cf0ac8-d68d-47a7-b08f-098b65d19908
-surface= load("$dataset_dir/$prot_num/triangulatedSurf.off")
+surface = load("$dataset_dir/$prot_num/triangulatedSurf.off")
 
 # ╔═╡ a0a5f16f-0224-47b1-ae86-c4b5bd48fd07
-param = [(; cutoff_radius=3.0f0, default_value = -10f0,iso_value=0f0,step=10.0f0),(; cutoff_radius=2.0f0, default_value = 0f0,iso_value=.5f0,step=4.0f0)]
+param = [
+    (; cutoff_radius = 3.0f0, default_value = -10.0f0, iso_value = 0.0f0, step = 10.0f0),
+    (; cutoff_radius = 2.0f0, default_value = 0.0f0, iso_value = 0.5f0, step = 4.0f0)]
 
 # ╔═╡ 7f3602e9-028f-44fc-b7dd-052f76438dae
 # ╠═╡ skip_as_script = true
@@ -108,7 +114,8 @@ end
 _ref = load("$dataset_dir/$prot_num/triangulatedSurf.off")
 
 # ╔═╡ eec7338d-a319-478c-9cde-663e38b3e523
-ref = Ms.SimpleMesh(coordinates(_ref) .|> Tuple, GeometryBasics.faces(_ref) .|> Tuple .|> Ms.connect)
+ref = Ms.SimpleMesh(
+    coordinates(_ref) .|> Tuple, GeometryBasics.faces(_ref) .|> Tuple .|> Ms.connect)
 
 # ╔═╡ e7e6584b-5059-46f6-a614-76866f1b1df9
 #=╠═╡
@@ -130,17 +137,17 @@ end
   ╠═╡ =#
 
 # ╔═╡ e78e5812-1927-4f67-bd3a-9bd1b577f9ad
-function get_input_slice(atoms,step,z)
-	(; mins, maxes) = atoms.tree.hyper_rec
+function get_input_slice(atoms, step, z)
+    (; mins, maxes) = atoms.tree.hyper_rec
     ranges = range.(mins, maxes; step)
-    grid = Point3f.(reshape(ranges[1], :, 1), reshape(ranges[2], 1, :),z)
+    grid = Point3f.(reshape(ranges[1], :, 1), reshape(ranges[2], 1, :), z)
 end
 
 # ╔═╡ 2b0fc2fd-47c1-491c-b9a3-6ddff7b61850
-function get_slice(atoms,model,z,(;cutoff_radius,step,default_value))
-    grid = get_input_slice(atoms,step,z)
-	volume = Folds.map(grid) do x
-        MLNanoShaperRunner.evaluate_model(model, x, atoms; cutoff_radius,default_value)
+function get_slice(atoms, model, z, (; cutoff_radius, step, default_value))
+    grid = get_input_slice(atoms, step, z)
+    volume = Folds.map(grid) do x
+        MLNanoShaperRunner.evaluate_model(model, x, atoms; cutoff_radius, default_value)
     end
 end
 
@@ -172,13 +179,13 @@ end
 (; mins, maxes) = atoms.tree.hyper_rec
 
 # ╔═╡ 67cb1851-a1a3-458f-9c9d-b5061a57ed37
-ranges = range.(mins, maxes; step=.1)
+ranges = range.(mins, maxes; step = 0.1)
 
 # ╔═╡ 72e3bde9-6be8-46ac-899d-27afd99a7b3e
- grid = get_input_slice(atoms,.1,6)
+grid = get_input_slice(atoms, 0.1, 6)
 
 # ╔═╡ a98327b5-f8a4-46cc-a14c-8dd234ca9933
-dist = signed_distance.(grid,Ref(RegionMesh(surface)))
+dist = signed_distance.(grid, Ref(RegionMesh(surface)))
 
 # ╔═╡ 44e41f3b-69c5-47f5-bb2e-b1d668eb2889
 #=╠═╡
