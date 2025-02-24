@@ -19,6 +19,9 @@ function parse_cli_args(args::Vector{String})
         "--van_der_waals_channel"
             help = "whether to use van der Waals channel"
             action = :store_true
+        "--smooth"
+            help = "whether to enforce smoothing"
+            action = :store_true
         "--nb_data_points"
             help = "the number of proteins in the dataset to use"
             arg_type = Int
@@ -81,6 +84,7 @@ In order to override the param, you can use the differents options.
 function main(; nb_epoch::Int = 0,
         model::String = "",
         van_der_waals_channel::Bool=true,
+        smoothing::Bool = true,
         nb_data_points::Int = 0,
         name::String = "",
         cutoff_radius::Float32 = 0.0f0,
@@ -111,7 +115,7 @@ function main(; nb_epoch::Int = 0,
     if model != ""
         conf["TrainingParameters"]["model"] = model
     end
-    conf["TrainingParameters"]["model_kargs"] = Dict(:van_der_waals_channel =>  van_der_waals_channel)
+    conf["TrainingParameters"]["model_kargs"] = Dict(:van_der_waals_channel =>  van_der_waals_channel,:smoothing => smoothing)
     if nb_data_points > 0
         conf["TrainingParameters"]["data_ids"] = conf["TrainingParameters"]["data_ids"][begin:(begin + nb_data_points)]
     end
