@@ -112,11 +112,11 @@ function _train(
                 MersenneTwister(42), atoms.tree, skin.tree, training_parameters) do point
                 -2training_parameters.cutoff_radius < signed_distance(point, skin) < 0
             end,
-            250),
+            300),
         (; atoms, skin)::TreeTrainingData -> first(
             exact_points(
                 MersenneTwister(42), atoms.tree, skin.tree, training_parameters),
-            200),
+            100),
         (; atoms, skin)::TreeTrainingData -> first(
             approximates_points(
                 MersenneTwister(42), atoms.tree, skin.tree, training_parameters) do point
