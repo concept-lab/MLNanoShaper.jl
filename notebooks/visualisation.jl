@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.46
+# v0.20.4
 
 using Markdown
 using InteractiveUtils
@@ -11,7 +11,7 @@ using Pkg
 Pkg.activate(".")
 
 # ╔═╡ fc935a86-ceac-4d5a-8fcb-34d9c754a2f1
-using Revise, MLNanoShaper, MLNanoShaperRunner, Serialization, Static, StructArrays, FileIO,
+using MLNanoShaper, MLNanoShaperRunner, Serialization, Static, StructArrays, FileIO,
       GeometryBasics, Folds, Lux
 
 # ╔═╡ 5f801ac4-1f27-11ef-3246-afece906b714
@@ -39,14 +39,27 @@ import CairoMakie as Mk, Meshes as Ms
 # ╔═╡ ccbcea27-ea65-4b0c-8a56-c3a21fc976bb
 prot_num = 2
 
+# ╔═╡ d4e4284f-8555-4dd7-bfcc-0a3b28641d95
+# ╠═╡ disabled = true
+#=╠═╡
+names = [
+"$(homedir())/datasets/models/tiny_angular_dense__3.0A_small_grid_4_2024-07-02_epoch_50_5306041464843483272"
+"$(homedir())/datasets/models/tiny_angular_dense__2.0A_small_grid_4_2024-07-02_epoch_50_12263503258354202465"
+]
+  ╠═╡ =#
+
 # ╔═╡ ba125a1e-09ff-4c7f-a1d4-6da28810c0a8
 dataset_dir = "$(dirname(dirname(@__FILE__)))/examples"
 
+# ╔═╡ e272433e-cb31-46d3-a56e-7c6683afc151
+names = [
+"$(homedir())/datasets/models/tiny_angular_dense_s_jobs_1_8_2_c_2025-02-25_epoch_90_9904683113990176820"
+"$(homedir())/datasets/models/tiny_angular_dense_s_jobs_1_7_3_c_2025-02-25_epoch_90_5467308422902619215"
+]
+
 # ╔═╡ 69ee1b79-b99d-4e3a-9769-254b1939aba6
-#=╠═╡
 models = names.|> deserialize .|> MLNanoShaperRunner.production_instantiate .|> gpu_device()
 
-  ╠═╡ =#
 
 # ╔═╡ f7041ca8-97be-4998-9c10-2cbed79eb135
 atoms = MLNanoShaperRunner.AnnotedKDTree(
@@ -152,17 +165,12 @@ function get_slice(atoms, model, z, (; cutoff_radius, step, default_value))
 end
 
 # ╔═╡ ee6dc376-b884-4ecb-8c63-1830bd664597
-#=╠═╡
 slice1 = get_slice(atoms,models[1],6.0,(;cutoff_radius=3.0f0,step=.1f0,default_value=0f0))
-  ╠═╡ =#
 
 # ╔═╡ a8a43fdf-f69c-41ef-b309-ee8531e5df23
-#=╠═╡
 slice2 = get_slice(atoms,models[2],6.0,(;cutoff_radius=3.0f0,step=.1f0,default_value=0.0f0))
-  ╠═╡ =#
 
 # ╔═╡ d679ca88-615e-4675-9d0a-419cd18246f9
-#=╠═╡
 begin
     g = Mk.Figure(size = (1200,500))
     Mk.Axis(g[1, 1], title="tiny_angular_dense 3A")
@@ -173,7 +181,6 @@ begin
 	Mk.Colorbar(g[1, 4],plt2)
 	g
 end
-  ╠═╡ =#
 
 # ╔═╡ 399eb8e8-0109-4cdd-887e-d1456bf72729
 (; mins, maxes) = atoms.tree.hyper_rec
@@ -188,7 +195,6 @@ grid = get_input_slice(atoms, 0.1, 6)
 dist = signed_distance.(grid, Ref(RegionMesh(surface)))
 
 # ╔═╡ 44e41f3b-69c5-47f5-bb2e-b1d668eb2889
-#=╠═╡
 begin
 	h = Mk.Figure(size = (700,500))
 	Mk.Axis(h[1, 1], title="tiny_angular_dense 3A")
@@ -197,44 +203,18 @@ begin
 	Mk.Legend(h[1,2],[Mk.LineElement(color = :green),Mk.LineElement(color = :red)],["true value","predicted value"])
 	h
 end
-  ╠═╡ =#
 
 # ╔═╡ 42ac2eda-dfdc-4323-9185-098394477c1b
-#=╠═╡
 m = Chain(Lux.NoOpLayer(),Lux.NoOpLayer(),models[1].model[3],models[1].model[4],models[1].model[5];disable_optimizations=true)
-  ╠═╡ =#
 
 # ╔═╡ 1bec33cd-4db0-4aea-b7d1-35de8c07bbfd
-#=╠═╡
 ps = models[1].ps
-  ╠═╡ =#
 
 # ╔═╡ a3f888d6-66a5-4425-9fe3-6af5d2d3f7fb
-#=╠═╡
 st = models[1].st
-  ╠═╡ =#
 
 # ╔═╡ b6c96b28-7924-4421-a9e0-273e5ee0c174
-#=╠═╡
 m(zeros32(4,1),ps,st)
-  ╠═╡ =#
-
-# ╔═╡ e272433e-cb31-46d3-a56e-7c6683afc151
-#=╠═╡
-names = [
-"$(homedir())/datasets/models/tiny_angular_dense_3.0A_smooth_14_categorical_2024-08-02_epoch_200_18127875713564776610"
-"$(homedir())/datasets/models/tiny_angular_dense_3.0A_smooth_14_categorical_2024-08-02_epoch_200_18127875713564776610"
-]
-  ╠═╡ =#
-
-# ╔═╡ d4e4284f-8555-4dd7-bfcc-0a3b28641d95
-# ╠═╡ disabled = true
-#=╠═╡
-names = [
-"$(homedir())/datasets/models/tiny_angular_dense__3.0A_small_grid_4_2024-07-02_epoch_50_5306041464843483272"
-"$(homedir())/datasets/models/tiny_angular_dense__2.0A_small_grid_4_2024-07-02_epoch_50_12263503258354202465"
-]
-  ╠═╡ =#
 
 # ╔═╡ Cell order:
 # ╟─5f801ac4-1f27-11ef-3246-afece906b714
