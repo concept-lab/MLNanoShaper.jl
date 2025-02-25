@@ -112,25 +112,25 @@ function _train(
                 MersenneTwister(42), atoms.tree, skin.tree, training_parameters) do point
                 -2training_parameters.cutoff_radius < signed_distance(point, skin) < 0
             end,
-            300),
+            80),
         (; atoms, skin)::TreeTrainingData -> first(
             exact_points(
                 MersenneTwister(42), atoms.tree, skin.tree, training_parameters),
-            100),
+            80),
         (; atoms, skin)::TreeTrainingData -> first(
             approximates_points(
                 MersenneTwister(42), atoms.tree, skin.tree, training_parameters) do point
                 0 < signed_distance(point, skin) < 2training_parameters.cutoff_radius
             end,
-            80),
+            40),
         (; atoms, skin)::TreeTrainingData -> first(
             approximates_points(
                 MersenneTwister(42), atoms.tree, skin.tree, training_parameters) do point
                 distance(point, skin.tree) > 2 * training_parameters.cutoff_radius
             end,
-            100),
+            10),
         (; atoms)::TreeTrainingData -> first(
-            shuffle(MersenneTwister(42), atoms.data.center), 20)
+            shuffle(MersenneTwister(42), atoms.data.center), 10)
     ]
     train_data, test_data = map([train_data, test_data]) do dataset
         DataSet(Folds.map(processing) do generate_points
@@ -146,12 +146,14 @@ function _train(
         outside=length(first(train_data.outside)),
         surface=length(first(train_data.surface)),
         inside=length(first(train_data.inside)),
-        core=length(first(train_data.core)))
+        core=length(first(train_data.core)),
+        atoms_center=length(first(train_data.atoms_center)))
     @info("test data size",
         outside=length(first(test_data.outside)),
         surface=length(first(test_data.surface)),
         inside=length(first(test_data.inside)),
-        core=length(first(test_data.core)))
+        core=length(first(test_data.core)),
+        atoms_center=length(first(test_data.atoms_center)))
 
     @info "Starting training"
     @progress name="training" for epoch in 1:nb_epoch
