@@ -72,16 +72,20 @@ surface = load("$dataset_dir/$prot_num/triangulatedSurf.off")
 
 # ╔═╡ a0a5f16f-0224-47b1-ae86-c4b5bd48fd07
 param = [
-    (; cutoff_radius = 3.0f0, default_value = -10.0f0, iso_value = 0.0f0, step = 10.0f0),
+    (; cutoff_radius = 3.0f0, default_value = 0.0f0, iso_value = 0.5f0, step = 10.0f0),
     (; cutoff_radius = 2.0f0, default_value = 0.0f0, iso_value = 0.5f0, step = 4.0f0)]
 
 # ╔═╡ 7f3602e9-028f-44fc-b7dd-052f76438dae
+# ╠═╡ disabled = true
 # ╠═╡ skip_as_script = true
 #=╠═╡
 full_data = map(MLNanoShaper.implicit_surface.(Ref(atoms), models[1:1], param[1:1])) do (points, top)
     (; points, top)
 end |> StructVector
   ╠═╡ =#
+
+# ╔═╡ a28d6080-eb75-4c68-9339-c76d8be7d5e2
+models[1]((MLNanoShaper.Batch([Point3f(100000000,0,0)]),atoms))
 
 # ╔═╡ d38242b4-0bee-44c8-9885-42e8441faf25
 function select_in_domaine(predicate, (; points, top))
@@ -160,7 +164,7 @@ end
 function get_slice(atoms, model, z, (; cutoff_radius, step, default_value))
     grid = get_input_slice(atoms, step, z)
     volume = Folds.map(grid) do x
-        MLNanoShaperRunner.evaluate_model(model, x, atoms; cutoff_radius, default_value)
+        model((MLNanoShaper.Batch([x]), atoms)) |> only
     end
 end
 
@@ -232,6 +236,7 @@ m(zeros32(4,1),ps,st)
 # ╠═58cf0ac8-d68d-47a7-b08f-098b65d19908
 # ╠═a0a5f16f-0224-47b1-ae86-c4b5bd48fd07
 # ╠═7f3602e9-028f-44fc-b7dd-052f76438dae
+# ╠═a28d6080-eb75-4c68-9339-c76d8be7d5e2
 # ╠═2e208c01-0893-4ab0-a1db-51cada6a95b6
 # ╠═d38242b4-0bee-44c8-9885-42e8441faf25
 # ╠═4a1478c6-d200-4073-8d9d-1cbab26ff94d

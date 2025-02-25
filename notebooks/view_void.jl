@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.43
+# v0.20.4
 
 using Markdown
 using InteractiveUtils
@@ -11,7 +11,7 @@ using Pkg
 Pkg.activate(".")
 
 # ╔═╡ 0a309e3a-7e97-4a7a-ae6b-8d6aab584907
-using Revise, MLNanoShaper, MLNanoShaperRunner, Serialization, Static, StructArrays, FileIO,
+using MLNanoShaper, MLNanoShaperRunner, Serialization, Static, StructArrays, FileIO,
       GeometryBasics, Folds, Lux, CUDA
 
 # ╔═╡ e84880c5-9857-453e-88af-b9f49d084dae
@@ -45,7 +45,7 @@ end
   ╠═╡ =#
 
 # ╔═╡ 08e5ce55-f18f-459e-a6b4-0f06d3e14c58
-atoms = AnnotedKDTree(
+atoms = MLNanoShaper.AnnotedKDTree(
     read("fullerene.xyzr", MLNanoShaperRunner.Import.XYZR{Float32}) |> StructVector,
     static(:center))
 
@@ -55,8 +55,8 @@ param = [
     (; cutoff_radius = 2.0f0, default_value = 0.0f0, iso_value = 0.5f0, step = 4.0f0)]
 
 # ╔═╡ 24225374-d1a1-4b64-9bb3-3145cfab23ed
-names = ["$(homedir())/datasets/models/tiny_angular_dense_c_3.0A_small_grid_4_2024-07-02_epoch_100_17553062180675335126"
-         "$(homedir())/datasets/models/tiny_angular_dense_c_2.0A_small_grid_4_2024-07-02_epoch_100_14787466129594685029"]
+names = ["$(homedir())/datasets/models/tiny_angular_dense_s_jobs_1_8_2_c_2025-02-25_epoch_90_9904683113990176820"
+"$(homedir())/datasets/models/tiny_angular_dense_s_jobs_1_7_3_c_2025-02-25_epoch_90_5467308422902619215"]
 
 # ╔═╡ 9bb279e8-4bee-42b9-806f-b5d024df5fca
 models = names .|> deserialize .|> MLNanoShaper.extract_model .|> gpu_device()
