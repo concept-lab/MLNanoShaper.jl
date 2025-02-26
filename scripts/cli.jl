@@ -47,7 +47,7 @@ function parse_cli_args()
         help = "the learning rate used by the model in training"
         arg_type = Float64
         default = 1e-5
-        "--gpu", "-g"
+        "--on_gpu", "-g"
         help = "should we do the training on the gpu"
         action = :store_true
     end
@@ -92,7 +92,7 @@ function _main(; nb_epoch::Int = 0,
         ref_distance::Float32 = 00.0f0,
         loss::String = "categorical",
         learning_rate::Float64 = 1e-5,
-        gpu::Bool = false)
+        on_gpu::Bool = false)
     global_logger(TerminalLogger())
     conf = TOML.parsefile(params_file)
     if nb_epoch > 0
@@ -117,7 +117,7 @@ function _main(; nb_epoch::Int = 0,
         conf["TrainingParameters"]["model"] = model
     end
     conf["TrainingParameters"]["model_kargs"] = Dict(
-        :van_der_waals_channel => van_der_waals_channel, :smoothing => smoothing)
+        :van_der_waals_channel => van_der_waals_channel, :smoothing => smoothing,:on_gpu => on_gpu)
     if nb_data_points > 0
         conf["TrainingParameters"]["data_ids"] = conf["TrainingParameters"]["data_ids"][begin:(begin + nb_data_points)]
     end
