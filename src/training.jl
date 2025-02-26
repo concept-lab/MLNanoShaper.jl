@@ -201,7 +201,7 @@ train the model given `TrainingParameters` and `AuxiliaryParameters`.
 """
 function _train(training_parameters::TrainingParameters, directories::AuxiliaryParameters)
     (; model, learning_rate,on_gpu) = training_parameters
-    device = on_gpu ? gpu_device(): identity
+    device = on_gpu ? gpu_device() : identity
     (; log_dir) = directories
     optim = OptimiserChain(WeightDecay(), Adam(learning_rate))
     (; train_data, test_data) = get_dataset(training_parameters, directories)
