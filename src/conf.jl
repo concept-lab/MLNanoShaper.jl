@@ -29,6 +29,7 @@ struct TrainingParameters
     ref_distance::Float32
     loss::LossType
     learning_rate::Float64
+    on_gpu::Bool
 end
 
 function generate_training_name(x::TrainingParameters, epoch::Integer)

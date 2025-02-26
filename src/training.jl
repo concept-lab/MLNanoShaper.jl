@@ -200,7 +200,8 @@ end
 train the model given `TrainingParameters` and `AuxiliaryParameters`.
 """
 function _train(training_parameters::TrainingParameters, directories::AuxiliaryParameters)
-    (; model, learning_rate) = training_parameters
+    (; model, learning_rate,on_gpu) = training_parameters
+    device = on_gpu ? gpu_device(): identity
     (; log_dir) = directories
     optim = OptimiserChain(WeightDecay(), Adam(learning_rate))
     (; train_data, test_data) = get_dataset(training_parameters, directories)
@@ -210,8 +211,8 @@ function _train(training_parameters::TrainingParameters, directories::AuxiliaryP
         _train((train_data, test_data),
             Lux.Training.TrainState(
                 drop_preprocessing(model()),
-                ps |> gpu_device(),
-                st |> gpu_device(),
+                ps |> device,
+                st |> device,
                 optim),
             training_parameters, directories)
     end
