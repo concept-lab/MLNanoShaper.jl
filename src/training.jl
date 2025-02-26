@@ -116,7 +116,7 @@ function _train(
         (; atoms, skin)::TreeTrainingData -> first(
             exact_points(
                 MersenneTwister(42), atoms.tree, skin.tree, training_parameters),
-            80),
+            300),
         (; atoms, skin)::TreeTrainingData -> first(
             approximates_points(
                 MersenneTwister(42), atoms.tree, skin.tree, training_parameters) do point
