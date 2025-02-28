@@ -12,7 +12,7 @@ Pkg.activate(".")
 
 # ╔═╡ fc935a86-ceac-4d5a-8fcb-34d9c754a2f1
 using MLNanoShaper, MLNanoShaperRunner, Serialization, Static, StructArrays, FileIO,
-      GeometryBasics, Folds, Lux
+      GeometryBasics, Folds, Lux, Random,Accessors
 
 # ╔═╡ 5f801ac4-1f27-11ef-3246-afece906b714
 md"""
@@ -43,7 +43,7 @@ prot_num = 2
 # ╠═╡ disabled = true
 #=╠═╡
 names = [
-"$(homedir())/datasets/models/tiny_angular_dense__3.0A_small_grid_4_2024-07-02_epoch_50_5306041464843483272"
+"$(homedir())/datasets/models/   tiny_angular_dense_s_jobs_8_6_2_2025-02-27_9683040390313041903"
 "$(homedir())/datasets/models/tiny_angular_dense__2.0A_small_grid_4_2024-07-02_epoch_50_12263503258354202465"
 ]
   ╠═╡ =#
@@ -53,8 +53,8 @@ dataset_dir = "$(dirname(dirname(@__FILE__)))/examples"
 
 # ╔═╡ e272433e-cb31-46d3-a56e-7c6683afc151
 names = [
-"$(homedir())/datasets/models/tiny_angular_dense_s_jobs_1_8_2_c_2025-02-25_epoch_90_9904683113990176820"
-"$(homedir())/datasets/models/tiny_angular_dense_s_jobs_1_7_3_c_2025-02-25_epoch_90_5467308422902619215"
+"$(homedir())/datasets/models/tiny_angular_dense_s_jobs_8_6_3_c_2025-02-27_epoch_800_6954217599379016384"
+"$(homedir())/datasets/models/tiny_angular_dense_s_jobs_8_6_2_c_2025-02-27_epoch_800_751939651545134739"
 ]
 
 # ╔═╡ 69ee1b79-b99d-4e3a-9769-254b1939aba6
@@ -84,8 +84,13 @@ full_data = map(MLNanoShaper.implicit_surface.(Ref(atoms), models[1:1], param[1:
 end |> StructVector
   ╠═╡ =#
 
-# ╔═╡ a28d6080-eb75-4c68-9339-c76d8be7d5e2
-models[1]((MLNanoShaper.Batch([Point3f(100000000,0,0)]),atoms))
+# ╔═╡ ff9a463c-7742-4a6a-85b8-d9b71a7e83cd
+m = models[1]
+
+# ╔═╡ 2e208c01-0893-4ab0-a1db-51cada6a95b6
+#=╠═╡
+data = select_in_domaine.(((x, _, z),) -> -5 <= x <= 5, full_data)
+  ╠═╡ =#
 
 # ╔═╡ d38242b4-0bee-44c8-9885-42e8441faf25
 function select_in_domaine(predicate, (; points, top))
@@ -97,11 +102,6 @@ function select_in_domaine(predicate, (; points, top))
     #point = filter(predicate,point)
     (; points, top)
 end
-
-# ╔═╡ 2e208c01-0893-4ab0-a1db-51cada6a95b6
-#=╠═╡
-data = select_in_domaine.(((x, _, z),) -> -5 <= x <= 5, full_data)
-  ╠═╡ =#
 
 # ╔═╡ 4a1478c6-d200-4073-8d9d-1cbab26ff94d
 invert((a, b, c)::NgonFace) = NgonFace(a, c, b)
@@ -177,11 +177,11 @@ slice2 = get_slice(atoms,models[2],6.0,(;cutoff_radius=3.0f0,step=.1f0,default_v
 # ╔═╡ d679ca88-615e-4675-9d0a-419cd18246f9
 begin
     g = Mk.Figure(size = (1200,500))
-    Mk.Axis(g[1, 1], title="tiny_angular_dense 3A")
+    Mk.Axis(g[1, 1], title="tiny_angular_dense 3A",limits = (90, 140, 250, 300))
     plt1 = Mk.plot!(g[1, 1], slice1;colormap = :rainbow,colorrange = [0,1])
 	Mk.Colorbar(g[1, 2],plt1)
     Mk.Axis(g[1, 3], title="tiny_angular_dense 2A")
-    plt2 = Mk.plot!(g[1, 3], slice2;colormap = :rainbow,colorrange = [0,1])
+    plt2 = Mk.plot!(g[1, 3],slice2;colormap = :rainbow,colorrange = [0,1])
 	Mk.Colorbar(g[1, 4],plt2)
 	g
 end
@@ -201,15 +201,24 @@ dist = signed_distance.(grid, Ref(RegionMesh(surface)))
 # ╔═╡ 44e41f3b-69c5-47f5-bb2e-b1d668eb2889
 begin
 	h = Mk.Figure(size = (700,500))
-	Mk.Axis(h[1, 1], title="tiny_angular_dense 3A")
+	Mk.Axis(h[1, 1], title="tiny_angular_dense 3A",limits = (9, 14, 20, 25))
 	Mk.contour!(h[1,1],ranges[1],ranges[2],slice1,levels=[.5],color=:red)
 	Mk.contour!(h[1,1],ranges[1],ranges[2],dist,levels=[0],color = :green)
 	Mk.Legend(h[1,2],[Mk.LineElement(color = :green),Mk.LineElement(color = :red)],["true value","predicted value"])
 	h
 end
 
+# ╔═╡ d8dc5f29-347f-451f-897b-176c85460069
+Mk.plot(map(21.45:.00001:21.46) do y m((Batch([Point3f(10,y,0)]),atoms)) |> only end)
+
+# ╔═╡ 31803972-9bf4-462c-920d-22aa1e76f7eb
+map(21.45:.00001:21.46) do y minimum(m.model.layers.layer_1.fun((Batch([Point3f(10,y,0)]),atoms)).field[5,:]) end
+
 # ╔═╡ 42ac2eda-dfdc-4323-9185-098394477c1b
+# ╠═╡ disabled = true
+#=╠═╡
 m = Chain(Lux.NoOpLayer(),Lux.NoOpLayer(),models[1].model[3],models[1].model[4],models[1].model[5];disable_optimizations=true)
+  ╠═╡ =#
 
 # ╔═╡ 1bec33cd-4db0-4aea-b7d1-35de8c07bbfd
 ps = models[1].ps
@@ -236,7 +245,7 @@ m(zeros32(4,1),ps,st)
 # ╠═58cf0ac8-d68d-47a7-b08f-098b65d19908
 # ╠═a0a5f16f-0224-47b1-ae86-c4b5bd48fd07
 # ╠═7f3602e9-028f-44fc-b7dd-052f76438dae
-# ╠═a28d6080-eb75-4c68-9339-c76d8be7d5e2
+# ╠═ff9a463c-7742-4a6a-85b8-d9b71a7e83cd
 # ╠═2e208c01-0893-4ab0-a1db-51cada6a95b6
 # ╠═d38242b4-0bee-44c8-9885-42e8441faf25
 # ╠═4a1478c6-d200-4073-8d9d-1cbab26ff94d
@@ -256,6 +265,8 @@ m(zeros32(4,1),ps,st)
 # ╠═72e3bde9-6be8-46ac-899d-27afd99a7b3e
 # ╠═a98327b5-f8a4-46cc-a14c-8dd234ca9933
 # ╠═44e41f3b-69c5-47f5-bb2e-b1d668eb2889
+# ╠═d8dc5f29-347f-451f-897b-176c85460069
+# ╠═31803972-9bf4-462c-920d-22aa1e76f7eb
 # ╠═42ac2eda-dfdc-4323-9185-098394477c1b
 # ╠═1bec33cd-4db0-4aea-b7d1-35de8c07bbfd
 # ╠═a3f888d6-66a5-4425-9fe3-6af5d2d3f7fb
