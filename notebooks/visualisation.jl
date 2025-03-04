@@ -39,22 +39,13 @@ import CairoMakie as Mk, Meshes as Ms
 # ╔═╡ ccbcea27-ea65-4b0c-8a56-c3a21fc976bb
 prot_num = 2
 
-# ╔═╡ d4e4284f-8555-4dd7-bfcc-0a3b28641d95
-# ╠═╡ disabled = true
-#=╠═╡
-names = [
-"$(homedir())/datasets/models/   tiny_angular_dense_s_jobs_8_6_2_2025-02-27_9683040390313041903"
-"$(homedir())/datasets/models/tiny_angular_dense__2.0A_small_grid_4_2024-07-02_epoch_50_12263503258354202465"
-]
-  ╠═╡ =#
-
 # ╔═╡ ba125a1e-09ff-4c7f-a1d4-6da28810c0a8
 dataset_dir = "$(dirname(dirname(@__FILE__)))/examples"
 
 # ╔═╡ e272433e-cb31-46d3-a56e-7c6683afc151
 names = [
-"$(homedir())/datasets/models/tiny_angular_dense_s_jobs_8_6_3_c_2025-02-27_epoch_800_6954217599379016384"
-"$(homedir())/datasets/models/tiny_angular_dense_s_jobs_8_6_2_c_2025-02-27_epoch_800_751939651545134739"
+"$(homedir())/datasets/models/tiny_angular_dense_s_jobs_9_6_4_c_2025-03-03_epoch_600_6035756983224424501"
+"$(homedir())/datasets/models/tiny_angular_dense_jobs_9_6_3_c_2025-02-28_epoch_800_10691892781092726360"
 ]
 
 # ╔═╡ 69ee1b79-b99d-4e3a-9769-254b1939aba6
@@ -73,7 +64,7 @@ surface = load("$dataset_dir/$prot_num/triangulatedSurf.off")
 # ╔═╡ a0a5f16f-0224-47b1-ae86-c4b5bd48fd07
 param = [
     (; cutoff_radius = 3.0f0, default_value = 0.0f0, iso_value = 0.5f0, step = 10.0f0),
-    (; cutoff_radius = 2.0f0, default_value = 0.0f0, iso_value = 0.5f0, step = 4.0f0)]
+    (; cutoff_radius = 3.0f0, default_value = 0.0f0, iso_value = 0.5f0, step = 4.0f0)]
 
 # ╔═╡ 7f3602e9-028f-44fc-b7dd-052f76438dae
 # ╠═╡ disabled = true
@@ -177,7 +168,7 @@ slice2 = get_slice(atoms,models[2],6.0,(;cutoff_radius=3.0f0,step=.1f0,default_v
 # ╔═╡ d679ca88-615e-4675-9d0a-419cd18246f9
 begin
     g = Mk.Figure(size = (1200,500))
-    Mk.Axis(g[1, 1], title="tiny_angular_dense 3A",limits = (90, 140, 250, 300))
+    Mk.Axis(g[1, 1], title="tiny_angular_dense 3A")
     plt1 = Mk.plot!(g[1, 1], slice1;colormap = :rainbow,colorrange = [0,1])
 	Mk.Colorbar(g[1, 2],plt1)
     Mk.Axis(g[1, 3], title="tiny_angular_dense 2A")
@@ -198,10 +189,13 @@ grid = get_input_slice(atoms, 0.1, 6)
 # ╔═╡ a98327b5-f8a4-46cc-a14c-8dd234ca9933
 dist = signed_distance.(grid, Ref(RegionMesh(surface)))
 
+# ╔═╡ 96a915f1-08b1-4e59-bf5b-ab8f77cb39fa
+Mk.plot(σ.(dist))
+
 # ╔═╡ 44e41f3b-69c5-47f5-bb2e-b1d668eb2889
 begin
 	h = Mk.Figure(size = (700,500))
-	Mk.Axis(h[1, 1], title="tiny_angular_dense 3A",limits = (9, 14, 20, 25))
+	Mk.Axis(h[1, 1], title="tiny_angular_dense 3A")
 	Mk.contour!(h[1,1],ranges[1],ranges[2],slice1,levels=[.5],color=:red)
 	Mk.contour!(h[1,1],ranges[1],ranges[2],dist,levels=[0],color = :green)
 	Mk.Legend(h[1,2],[Mk.LineElement(color = :green),Mk.LineElement(color = :red)],["true value","predicted value"])
@@ -209,7 +203,7 @@ begin
 end
 
 # ╔═╡ d8dc5f29-347f-451f-897b-176c85460069
-Mk.plot(map(21.45:.00001:21.46) do y m((Batch([Point3f(10,y,0)]),atoms)) |> only end)
+Mk.plot(map(21:.001:24) do y m((Batch([Point3f(10,y,0)]),atoms)) |> only end)
 
 # ╔═╡ 31803972-9bf4-462c-920d-22aa1e76f7eb
 map(21.45:.00001:21.46) do y minimum(m.model.layers.layer_1.fun((Batch([Point3f(10,y,0)]),atoms)).field[5,:]) end
@@ -237,7 +231,6 @@ m(zeros32(4,1),ps,st)
 # ╠═fc935a86-ceac-4d5a-8fcb-34d9c754a2f1
 # ╠═e8a48b40-28b8-41a7-a67d-cbac2b361f84
 # ╠═ccbcea27-ea65-4b0c-8a56-c3a21fc976bb
-# ╠═d4e4284f-8555-4dd7-bfcc-0a3b28641d95
 # ╠═ba125a1e-09ff-4c7f-a1d4-6da28810c0a8
 # ╠═e272433e-cb31-46d3-a56e-7c6683afc151
 # ╠═69ee1b79-b99d-4e3a-9769-254b1939aba6
@@ -264,6 +257,7 @@ m(zeros32(4,1),ps,st)
 # ╠═67cb1851-a1a3-458f-9c9d-b5061a57ed37
 # ╠═72e3bde9-6be8-46ac-899d-27afd99a7b3e
 # ╠═a98327b5-f8a4-46cc-a14c-8dd234ca9933
+# ╠═96a915f1-08b1-4e59-bf5b-ab8f77cb39fa
 # ╠═44e41f3b-69c5-47f5-bb2e-b1d668eb2889
 # ╠═d8dc5f29-347f-451f-897b-176c85460069
 # ╠═31803972-9bf4-462c-920d-22aa1e76f7eb
