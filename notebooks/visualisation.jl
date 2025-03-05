@@ -190,7 +190,7 @@ grid = get_input_slice(atoms, 0.1, 6)
 dist = signed_distance.(grid, Ref(RegionMesh(surface)))
 
 # ╔═╡ 96a915f1-08b1-4e59-bf5b-ab8f77cb39fa
-Mk.plot(σ.(dist))
+Mk.plot(σ.(dist);colormap = :rainbow,colorrange = [0,1])
 
 # ╔═╡ 44e41f3b-69c5-47f5-bb2e-b1d668eb2889
 begin

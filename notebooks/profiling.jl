@@ -10,11 +10,14 @@ using Pkg
 # ╔═╡ de53cb27-dbef-4e3d-9d12-0f3d1b5acbc4
 Pkg.activate(".")
 
+# ╔═╡ 9eb8f413-4a83-4058-bf72-1c9e78a0fdaf
+Pkg.add("NearestNeighbors")
+
 # ╔═╡ e9f0f433-0fe9-4096-b484-b432ec54afc8
 using MLNanoShaper, MLNanoShaperRunner, FileIO, StructArrays, Static, Serialization,
       GeometryBasics, LuxCUDA, Lux, Profile, ProfileSVG, ChainRulesCore, Folds,
       BenchmarkTools, Zygote, Distances, LinearAlgebra, LoopVectorization, Folds,
-      StaticTools, PProf
+      StaticTools, PProf, CUDA, Adapt, NearestNeighbors 
 
 # ╔═╡ e4a81477-34da-4891-9d0e-34a30ada4ac3
 using Base.Threads
@@ -38,7 +41,8 @@ import CairoMakie as Mk
 function evaluate_model(model,atoms)
 	(; mins, maxes) = atoms.tree.hyper_rec
     ranges = range.(mins, maxes; step=1)
-    grid = Point3f.(reshape(ranges[1], :, 1,1), reshape(ranges[2], 1, :,1), reshape(ranges[3], 1,1,:))
+    grid = Point3f.(reshape(ranges[1], :, 1,1), reshape(ranges[2], 1, :,1), reshape(ranges[3], 1,1,:)) |> cu
+	atoms = cu(atoms)
 	map(grid) do x
         model((MLNanoShaper.Batch([x]), atoms)) |> only
     end
@@ -46,6 +50,9 @@ end
 
 # ╔═╡ 47641b85-0596-4ce4-992b-6811ff89574b
 nthreads()
+
+# ╔═╡ e13f0087-07cd-4288-ab47-ccc2c40daae0
+Adapt.@adapt_structure NearestNeighbors.KDTree
 
 # ╔═╡ 5765cbc5-ec12-406e-b43f-9291c99b9d1d
 prot_num = 1
@@ -59,6 +66,9 @@ atoms = MLNanoShaperRunner.AnnotedKDTree(
         read("$(homedir())/datasets/pqr/$prot_num/structure.pqr", PQR{Float32}), :pos) |>
     StructVector,
     static(:center))
+
+# ╔═╡ 6196a805-73d4-48e4-97ec-a413eae5c60e
+atoms.tree |> cu
 
 # ╔═╡ 0adf29e7-a6e4-48ae-bfe0-e5340d1d1a70
 model = "$(homedir())/datasets/models/tiny_angular_dense_s_jobs_9_6_3_c_2025-02-28_epoch_320_4191980001620211604" |>
@@ -122,6 +132,9 @@ using malloc in preprocessing : 78 ms
 # ╔═╡ c613a4d0-59de-4726-81cc-6a073602cbf9
 CUDA.@profile model.model((MLNanoShaperRunner.Batch(x), atoms), model.ps, model.st) |> first
 
+# ╔═╡ ce87cd4e-cbc4-4925-8ef8-0d818ac83f23
+evaluate_model(model,atoms)
+
 # ╔═╡ 5273eaf5-2762-41ba-b634-17e170adc65e
 begin
     Profile.clear()
@@ -146,14 +159,17 @@ evaluate_model(model,atoms)
 # ╠═e4fc0299-2b72-4b8f-940d-9f55a76f83ca
 # ╠═28210014-39eb-11ef-24eb-110acb81da08
 # ╠═de53cb27-dbef-4e3d-9d12-0f3d1b5acbc4
+# ╠═9eb8f413-4a83-4058-bf72-1c9e78a0fdaf
 # ╠═1c0a8115-da6e-4b09-a9ac-17672c8b73d2
 # ╠═e9f0f433-0fe9-4096-b484-b432ec54afc8
 # ╠═e4a81477-34da-4891-9d0e-34a30ada4ac3
 # ╠═9e4b837a-d031-41c9-b3f8-f079b0a6d16b
 # ╠═47641b85-0596-4ce4-992b-6811ff89574b
+# ╠═e13f0087-07cd-4288-ab47-ccc2c40daae0
 # ╠═5765cbc5-ec12-406e-b43f-9291c99b9d1d
 # ╠═2cce8a1a-97fe-45ae-bca7-584b843739d6
 # ╠═d9898910-1b29-400c-bcea-457017723c70
+# ╠═6196a805-73d4-48e4-97ec-a413eae5c60e
 # ╠═0adf29e7-a6e4-48ae-bfe0-e5340d1d1a70
 # ╠═0d81f6cb-c6d4-4748-b23c-46ab1b0f9a8e
 # ╠═2ff3238a-2205-405a-9075-553f27db84d6
@@ -170,6 +186,7 @@ evaluate_model(model,atoms)
 # ╠═565892fa-df36-4fad-8872-a9e2f7de684f
 # ╠═34d53b3e-0f9e-4088-aa7d-b1acf8516e4b
 # ╠═c613a4d0-59de-4726-81cc-6a073602cbf9
+# ╠═ce87cd4e-cbc4-4925-8ef8-0d818ac83f23
 # ╠═5273eaf5-2762-41ba-b634-17e170adc65e
 # ╠═47699d26-179c-4fba-8e0c-f1f172083668
 # ╠═245d01e0-73da-4cb0-8d36-b1695d17a456
