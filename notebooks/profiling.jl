@@ -96,7 +96,7 @@ atoms = MLNanoShaperRunner.AnnotedKDTree(
 atoms.tree
 
 # ╔═╡ 0adf29e7-a6e4-48ae-bfe0-e5340d1d1a70
-model = "$(homedir())/datasets/models/tiny_angular_dense_s_jobs_9_6_3_c_2025-02-28_epoch_320_4191980001620211604" |>
+model = "$(homedir())/datasets/models/tiny_angular_dense_s_jobs_10_6_3_c_2025-03-10_epoch_250_403865207473739713" |>
         deserialize |>
         MLNanoShaperRunner.production_instantiate 
 
@@ -160,31 +160,13 @@ using malloc in preprocessing : 78 ms
 # ╔═╡ 34d53b3e-0f9e-4088-aa7d-b1acf8516e4b
 330 / 89
 
-# ╔═╡ c613a4d0-59de-4726-81cc-6a073602cbf9
-CUDA.@profile model.model((MLNanoShaperRunner.Batch(x), atoms), model.ps, model.st) |> first
-
-# ╔═╡ ce87cd4e-cbc4-4925-8ef8-0d818ac83f23
-evaluate_model(model,atoms)
-
 # ╔═╡ 5273eaf5-2762-41ba-b634-17e170adc65e
 begin
     Profile.clear()
     Profile.init(n = 10^7, delay = 0.01)
-    @profile evaluate_model(model,atoms)
+    @profile evaluate_model(model,atoms) 
+	pprof()
 end
-
-# ╔═╡ 47699d26-179c-4fba-8e0c-f1f172083668
-pprof()
-
-# ╔═╡ 245d01e0-73da-4cb0-8d36-b1695d17a456
-evaluate_model(model,atoms)
-
-# ╔═╡ 00021b73-1463-4383-a3bc-978c875eab5c
-76*63*67
-
-# ╔═╡ 80834009-05d3-4e6b-b752-a59e91358f50
-@profview_allocs model.model(
-        (MLNanoShaperRunner.Batch(x), atoms), model.ps, model.st) |> first
 
 # ╔═╡ Cell order:
 # ╠═e4fc0299-2b72-4b8f-940d-9f55a76f83ca
@@ -217,10 +199,4 @@ evaluate_model(model,atoms)
 # ╠═988caa2b-a9cf-4226-beb2-52efa750beca
 # ╠═565892fa-df36-4fad-8872-a9e2f7de684f
 # ╠═34d53b3e-0f9e-4088-aa7d-b1acf8516e4b
-# ╠═c613a4d0-59de-4726-81cc-6a073602cbf9
-# ╠═ce87cd4e-cbc4-4925-8ef8-0d818ac83f23
 # ╠═5273eaf5-2762-41ba-b634-17e170adc65e
-# ╠═47699d26-179c-4fba-8e0c-f1f172083668
-# ╠═245d01e0-73da-4cb0-8d36-b1695d17a456
-# ╠═00021b73-1463-4383-a3bc-978c875eab5c
-# ╠═80834009-05d3-4e6b-b752-a59e91358f50

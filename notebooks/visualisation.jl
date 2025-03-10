@@ -12,7 +12,7 @@ Pkg.activate(".")
 
 # ╔═╡ fc935a86-ceac-4d5a-8fcb-34d9c754a2f1
 using MLNanoShaper, MLNanoShaperRunner, Serialization, Static, StructArrays, FileIO,
-      GeometryBasics, Folds, Lux, Random,Accessors
+      GeometryBasics, Folds, Lux, Random,Accessors,NearestNeighbors, Statistics
 
 # ╔═╡ 5f801ac4-1f27-11ef-3246-afece906b714
 md"""
@@ -44,19 +44,13 @@ dataset_dir = "$(dirname(dirname(@__FILE__)))/examples"
 
 # ╔═╡ e272433e-cb31-46d3-a56e-7c6683afc151
 names = [
-"$(homedir())/datasets/models/tiny_angular_dense_s_jobs_9_6_4_c_2025-03-03_epoch_600_6035756983224424501"
-"$(homedir())/datasets/models/tiny_angular_dense_jobs_9_6_3_c_2025-02-28_epoch_800_10691892781092726360"
+"$(homedir())/datasets/models/tiny_angular_dense_s_jobs_10_6_3_c_2025-03-10_epoch_250_403865207473739713"
+"$(homedir())/datasets/models/tiny_angular_dense_s_jobs_10_6_3_c_2025-03-10_epoch_200_403865207473739713"
 ]
 
 # ╔═╡ 69ee1b79-b99d-4e3a-9769-254b1939aba6
 models = names.|> deserialize .|> MLNanoShaperRunner.production_instantiate
 
-
-# ╔═╡ 5451e25f-daf5-4648-b249-f1ff74c4cf21
-a = deserialize(names[1]).model
-
-# ╔═╡ 7287dae9-50f6-465a-b938-3b42644aa35e
-a.kargs
 
 # ╔═╡ f7041ca8-97be-4998-9c10-2cbed79eb135
 atoms = MLNanoShaperRunner.AnnotedKDTree(
@@ -66,6 +60,9 @@ atoms = MLNanoShaperRunner.AnnotedKDTree(
 
 # ╔═╡ 58cf0ac8-d68d-47a7-b08f-098b65d19908
 surface = load("$dataset_dir/$prot_num/triangulatedSurf.off")
+
+# ╔═╡ f7c42c52-224c-4e93-b9df-b95aca05b26b
+nn.(Ref(atoms.tree), surface.position) .|> last |> std
 
 # ╔═╡ a0a5f16f-0224-47b1-ae86-c4b5bd48fd07
 param = [
@@ -81,14 +78,6 @@ full_data = map(MLNanoShaper.implicit_surface.(Ref(atoms), models[1:1], param[1:
 end |> StructVector
   ╠═╡ =#
 
-# ╔═╡ ff9a463c-7742-4a6a-85b8-d9b71a7e83cd
-m = models[2]
-
-# ╔═╡ 2e208c01-0893-4ab0-a1db-51cada6a95b6
-#=╠═╡
-data = select_in_domaine.(((x, _, z),) -> -5 <= x <= 5, full_data)
-  ╠═╡ =#
-
 # ╔═╡ d38242b4-0bee-44c8-9885-42e8441faf25
 function select_in_domaine(predicate, (; points, top))
     top = filter(top) do top
@@ -99,6 +88,11 @@ function select_in_domaine(predicate, (; points, top))
     #point = filter(predicate,point)
     (; points, top)
 end
+
+# ╔═╡ 2e208c01-0893-4ab0-a1db-51cada6a95b6
+#=╠═╡
+data = select_in_domaine.(((x, _, z),) -> -5 <= x <= 5, full_data)
+  ╠═╡ =#
 
 # ╔═╡ 4a1478c6-d200-4073-8d9d-1cbab26ff94d
 invert((a, b, c)::NgonFace) = NgonFace(a, c, b)
@@ -131,23 +125,9 @@ _ref = load("$dataset_dir/$prot_num/triangulatedSurf.off")
 ref = Ms.SimpleMesh(
     coordinates(_ref) .|> Tuple, GeometryBasics.faces(_ref) .|> Tuple .|> Ms.connect)
 
-# ╔═╡ e7e6584b-5059-46f6-a614-76866f1b1df9
+# ╔═╡ 7287dae9-50f6-465a-b938-3b42644aa35e
 #=╠═╡
-begin
-    f = Mk.Figure(size = (1000,700))
-    Mk.Axis3(f[1, 1], title="tiny_angular_dense_cv 3A")
-    Ms.viz!(f[1, 1], meshes[1]; color=:red)
-    Mk.Axis3(f[1, 2], title="tiny_angular_dense_cv 2A")
-    Ms.viz!(f[1, 2], meshes[2]; color=:red)
-    Mk.Axis3(f[2, 1], title="tiny_angular_dense_cv 3A")
-    Ms.viz!(f[2, 1], full_meshes[1]; color=:red)
-    Ms.viz!(f[2, 1], ref; color=:green)
-    a = Mk.Axis3(f[2, 2], title="tiny_angular_dense_cv 2A")
-    l = Ms.viz!(f[2, 2], ref; color=:green)
-    Ms.viz!(f[2, 2], full_meshes[2]; color=:red)
-	Mk.Legend(f[1:2,3],[Mk.LineElement(color = :green),Mk.LineElement(color = :red)],["true value","predicted value"])
-	f
-end
+a.kargs
   ╠═╡ =#
 
 # ╔═╡ e78e5812-1927-4f67-bd3a-9bd1b577f9ad
@@ -183,6 +163,9 @@ begin
 	g
 end
 
+# ╔═╡ 0aba8461-83f7-4ce7-9b8b-f90a47001cea
+Mk.plot(MLNanoShaperRunner.cut.(1.,0:.001:1))
+
 # ╔═╡ 399eb8e8-0109-4cdd-887e-d1456bf72729
 (; mins, maxes) = atoms.tree.hyper_rec
 
@@ -209,15 +192,13 @@ begin
 end
 
 # ╔═╡ d8dc5f29-347f-451f-897b-176c85460069
-Mk.plot(map(21:.001:24) do y m((Batch([Point3f(10,y,0)]),atoms)) |> only end)
+#=╠═╡
+Mk.plot(map(22.65:.00001:22.75) do y m((Batch([Point3f(10,y,0)]),atoms)) |> only end)
+  ╠═╡ =#
 
 # ╔═╡ 31803972-9bf4-462c-920d-22aa1e76f7eb
-map(21.45:.00001:21.46) do y minimum(m.model.layers.layer_1.fun((Batch([Point3f(10,y,0)]),atoms)).field[5,:]) end
-
-# ╔═╡ 42ac2eda-dfdc-4323-9185-098394477c1b
-# ╠═╡ disabled = true
 #=╠═╡
-m = Chain(Lux.NoOpLayer(),Lux.NoOpLayer(),models[1].model[3],models[1].model[4],models[1].model[5];disable_optimizations=true)
+map(21.45:.00001:21.46) do y minimum(m.model.layers.layer_1.fun((Batch([Point3f(10,y,0)]),atoms)).field[5,:]) end
   ╠═╡ =#
 
 # ╔═╡ 1bec33cd-4db0-4aea-b7d1-35de8c07bbfd
@@ -227,7 +208,44 @@ ps = models[1].ps
 st = models[1].st
 
 # ╔═╡ b6c96b28-7924-4421-a9e0-273e5ee0c174
+#=╠═╡
 m(zeros32(4,1),ps,st)
+  ╠═╡ =#
+
+# ╔═╡ 42ac2eda-dfdc-4323-9185-098394477c1b
+# ╠═╡ disabled = true
+#=╠═╡
+m = Chain(Lux.NoOpLayer(),Lux.NoOpLayer(),models[1].model[3],models[1].model[4],models[1].model[5];disable_optimizations=true)
+  ╠═╡ =#
+
+# ╔═╡ 5451e25f-daf5-4648-b249-f1ff74c4cf21
+#=╠═╡
+a = deserialize(names[1]).model
+  ╠═╡ =#
+
+# ╔═╡ e7e6584b-5059-46f6-a614-76866f1b1df9
+#=╠═╡
+begin
+    f = Mk.Figure(size = (1000,700))
+    Mk.Axis3(f[1, 1], title="tiny_angular_dense_cv 3A")
+    Ms.viz!(f[1, 1], meshes[1]; color=:red)
+    Mk.Axis3(f[1, 2], title="tiny_angular_dense_cv 2A")
+    Ms.viz!(f[1, 2], meshes[2]; color=:red)
+    Mk.Axis3(f[2, 1], title="tiny_angular_dense_cv 3A")
+    Ms.viz!(f[2, 1], full_meshes[1]; color=:red)
+    Ms.viz!(f[2, 1], ref; color=:green)
+    a = Mk.Axis3(f[2, 2], title="tiny_angular_dense_cv 2A")
+    l = Ms.viz!(f[2, 2], ref; color=:green)
+    Ms.viz!(f[2, 2], full_meshes[2]; color=:red)
+	Mk.Legend(f[1:2,3],[Mk.LineElement(color = :green),Mk.LineElement(color = :red)],["true value","predicted value"])
+	f
+end
+  ╠═╡ =#
+
+# ╔═╡ ff9a463c-7742-4a6a-85b8-d9b71a7e83cd
+#=╠═╡
+m = models[2]
+  ╠═╡ =#
 
 # ╔═╡ Cell order:
 # ╟─5f801ac4-1f27-11ef-3246-afece906b714
@@ -240,6 +258,7 @@ m(zeros32(4,1),ps,st)
 # ╠═ba125a1e-09ff-4c7f-a1d4-6da28810c0a8
 # ╠═e272433e-cb31-46d3-a56e-7c6683afc151
 # ╠═69ee1b79-b99d-4e3a-9769-254b1939aba6
+# ╠═f7c42c52-224c-4e93-b9df-b95aca05b26b
 # ╠═5451e25f-daf5-4648-b249-f1ff74c4cf21
 # ╠═7287dae9-50f6-465a-b938-3b42644aa35e
 # ╠═f7041ca8-97be-4998-9c10-2cbed79eb135
@@ -261,6 +280,7 @@ m(zeros32(4,1),ps,st)
 # ╠═ee6dc376-b884-4ecb-8c63-1830bd664597
 # ╠═a8a43fdf-f69c-41ef-b309-ee8531e5df23
 # ╠═d679ca88-615e-4675-9d0a-419cd18246f9
+# ╠═0aba8461-83f7-4ce7-9b8b-f90a47001cea
 # ╠═399eb8e8-0109-4cdd-887e-d1456bf72729
 # ╠═67cb1851-a1a3-458f-9c9d-b5061a57ed37
 # ╠═72e3bde9-6be8-46ac-899d-27afd99a7b3e
