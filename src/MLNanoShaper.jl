@@ -20,6 +20,7 @@ using ChainRulesCore
 
 using Statistics
 using Random
+using StaticArrays
 
 using StaticArrays: reorder
 using LinearAlgebra: NumberArray

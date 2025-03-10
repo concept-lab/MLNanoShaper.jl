@@ -10,17 +10,19 @@ get_cutoff_radius(x::Lux.StatefulLuxLayer) = get_cutoff_radius(x.model)
 
 	Create a mesh form the isosurface of function `pos -> model(atoms,pos)` using marching cubes algorithm and using step size `step`.  
 """
-function implicit_surface(atoms::AnnotedKDTree{Sphere{T}, :center, Point3{T}},
-        model::Lux.StatefulLuxLayer, (;
-            cutoff_radius, default_value, iso_value, step)) where {T}
+function implicit_surface(model::Lux.StatefulLuxLayer,
+    atoms::AnnotedKDTree{Sphere{T}, :center, Point3{T}};
+            iso_value=.5, step=.5)::ConcatenatedBatch where {T}
     (; mins, maxes) = atoms.tree.hyper_rec
     ranges = range.(mins, maxes; step)
     grid = Point3f.(reshape(ranges[1], :, 1, 1), reshape(ranges[2], 1, :, 1),
         reshape(ranges[3], 1, 1, :))
+    @info "computing volume" nb_points=length(grid)
     volume = Folds.map(grid) do x
-        evaluate_model(model, x, atoms; cutoff_radius, default_value)
+        model((x, atoms))
     end
 
+    @info "computing isosurface"
     isosurface(volume, MarchingCubes(iso = iso_value),
         SVector{3, Float32}, SVector{3, Int}, mins, maxes - mins)
 end

@@ -49,8 +49,14 @@ names = [
 ]
 
 # ╔═╡ 69ee1b79-b99d-4e3a-9769-254b1939aba6
-models = names.|> deserialize .|> MLNanoShaperRunner.production_instantiate .|> gpu_device()
+models = names.|> deserialize .|> MLNanoShaperRunner.production_instantiate
 
+
+# ╔═╡ 5451e25f-daf5-4648-b249-f1ff74c4cf21
+a = deserialize(names[1]).model
+
+# ╔═╡ 7287dae9-50f6-465a-b938-3b42644aa35e
+a.kargs
 
 # ╔═╡ f7041ca8-97be-4998-9c10-2cbed79eb135
 atoms = MLNanoShaperRunner.AnnotedKDTree(
@@ -76,7 +82,7 @@ end |> StructVector
   ╠═╡ =#
 
 # ╔═╡ ff9a463c-7742-4a6a-85b8-d9b71a7e83cd
-m = models[1]
+m = models[2]
 
 # ╔═╡ 2e208c01-0893-4ab0-a1db-51cada6a95b6
 #=╠═╡
@@ -234,6 +240,8 @@ m(zeros32(4,1),ps,st)
 # ╠═ba125a1e-09ff-4c7f-a1d4-6da28810c0a8
 # ╠═e272433e-cb31-46d3-a56e-7c6683afc151
 # ╠═69ee1b79-b99d-4e3a-9769-254b1939aba6
+# ╠═5451e25f-daf5-4648-b249-f1ff74c4cf21
+# ╠═7287dae9-50f6-465a-b938-3b42644aa35e
 # ╠═f7041ca8-97be-4998-9c10-2cbed79eb135
 # ╠═58cf0ac8-d68d-47a7-b08f-098b65d19908
 # ╠═a0a5f16f-0224-47b1-ae86-c4b5bd48fd07
