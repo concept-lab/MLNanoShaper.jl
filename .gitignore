@@ -5,5 +5,9 @@
 /**/*.xyzr
 /**/*.xyz
 /**/*.obj
+/**/*.off
+/**/*.svg
 /**/*.stl
 /build/lib
+/scripts/jobs.bash
+/scripts/jobs.txt
