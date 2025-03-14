@@ -63,33 +63,18 @@ We have an example of code in MLNanoShaperRunner/example. Here is the commands t
 ```
 julia --project MLNanoShaperRunner/build/build.jl
 ```
-
-## Make a dicectory for compilation
-```
-mkdir MLNanoShaperRunner/build/build
-```
-
 ## Compiling the C code
 ``` 
 clang MLNanoShaperRunner/examples/dummy_example.c \
     -I MLNanoShaperRunner/build/lib/include \
     -L MLNanoShaperRunner/build/lib/lib/ \
     -l MLNanoShaperRunner \
-    -o MLNanoShaperRunner/build/build/test
+    -o MLNanoShaperRunner/examples/test
 ```
-
-## Copy artifacts
-The julia code needs access to some artifacts to load correcly
-```
-cp -r MLNanoShaperRunner/build/lib/share MLNanoShaperRunner/build/build/share
-cp -r MLNanoShaperRunner/build/lib/lib/* MLNanoShaperRunner/build/build
-cp MLNanoShaperRunner/examples/tiny* MLNanoShaperRunner/build/build
-
-```
-
 ## Run the code
+in the `MLNanoShaperRunner/examples/`` directory
 ```
-    MLNanoShaperRunner/build/build/test
+    LD_LIBRARY_PATH=$(pwd)/../build/lib/lib  ./test
 ```
 ## Weights
 weights are on `the https://zenodo.org/records/13222088`
