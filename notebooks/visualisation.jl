@@ -44,8 +44,8 @@ dataset_dir = "$(dirname(dirname(@__FILE__)))/examples"
 
 # ╔═╡ e272433e-cb31-46d3-a56e-7c6683afc151
 names = [
-"$(homedir())/datasets/models/tiny_angular_dense_s_jobs_10_6_3_c_2025-03-10_epoch_250_403865207473739713"
-"$(homedir())/datasets/models/tiny_angular_dense_s_jobs_10_6_3_c_2025-03-10_epoch_200_403865207473739713"
+"$(homedir())/datasets/models/tiny_angular_dense_s_jobs_11_6_3_c_2025-03-10_epoch_800_10631177997949843226"
+"$(homedir())/datasets/models/tiny_angular_dense_s_jobs_11_6_3_2025-03-10_epoch_800_13576775182586316392"
 ]
 
 # ╔═╡ 69ee1b79-b99d-4e3a-9769-254b1939aba6
@@ -145,6 +145,9 @@ function get_slice(atoms, model, z, (; cutoff_radius, step, default_value))
     end
 end
 
+# ╔═╡ 2efd35b8-dfe0-43b4-a131-baaa32f84f20
+MLNanoShaperRunner.get_batch_lengths([[1,1,1],[],[1]])
+
 # ╔═╡ ee6dc376-b884-4ecb-8c63-1830bd664597
 slice1 = get_slice(atoms,models[1],6.0,(;cutoff_radius=3.0f0,step=.1f0,default_value=0f0))
 
@@ -212,10 +215,9 @@ st = models[1].st
 m(zeros32(4,1),ps,st)
   ╠═╡ =#
 
-# ╔═╡ 42ac2eda-dfdc-4323-9185-098394477c1b
-# ╠═╡ disabled = true
+# ╔═╡ ff9a463c-7742-4a6a-85b8-d9b71a7e83cd
 #=╠═╡
-m = Chain(Lux.NoOpLayer(),Lux.NoOpLayer(),models[1].model[3],models[1].model[4],models[1].model[5];disable_optimizations=true)
+m = models[2]
   ╠═╡ =#
 
 # ╔═╡ 5451e25f-daf5-4648-b249-f1ff74c4cf21
@@ -242,9 +244,10 @@ begin
 end
   ╠═╡ =#
 
-# ╔═╡ ff9a463c-7742-4a6a-85b8-d9b71a7e83cd
+# ╔═╡ 42ac2eda-dfdc-4323-9185-098394477c1b
+# ╠═╡ disabled = true
 #=╠═╡
-m = models[2]
+m = Chain(Lux.NoOpLayer(),Lux.NoOpLayer(),models[1].model[3],models[1].model[4],models[1].model[5];disable_optimizations=true)
   ╠═╡ =#
 
 # ╔═╡ Cell order:
@@ -277,6 +280,7 @@ m = models[2]
 # ╠═e7e6584b-5059-46f6-a614-76866f1b1df9
 # ╠═e78e5812-1927-4f67-bd3a-9bd1b577f9ad
 # ╠═2b0fc2fd-47c1-491c-b9a3-6ddff7b61850
+# ╠═2efd35b8-dfe0-43b4-a131-baaa32f84f20
 # ╠═ee6dc376-b884-4ecb-8c63-1830bd664597
 # ╠═a8a43fdf-f69c-41ef-b309-ee8531e5df23
 # ╠═d679ca88-615e-4675-9d0a-419cd18246f9

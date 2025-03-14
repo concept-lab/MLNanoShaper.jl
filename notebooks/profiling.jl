@@ -14,7 +14,7 @@ Pkg.activate(".")
 using MLNanoShaper, MLNanoShaperRunner, FileIO, StructArrays, Static, Serialization,
       GeometryBasics, LuxCUDA, Lux, Profile, ProfileSVG, ChainRulesCore, Folds,
       BenchmarkTools, Zygote, Distances, LinearAlgebra, LoopVectorization, Folds,
-      StaticTools, PProf, CUDA, Adapt, NearestNeighbors, MarchingCubes, FileIO
+      StaticTools, PProf, CUDA, Adapt, NearestNeighbors, MarchingCubes, FileIO, Transducers 
 
 # ╔═╡ e4a81477-34da-4891-9d0e-34a30ada4ac3
 using Base.Threads
@@ -40,13 +40,13 @@ function evaluate_model(model,atoms;step=1)
     ranges = range.(mins, maxes; step)
     grid = Point3f.(reshape(ranges[1], :, 1,1), reshape(ranges[2], 1, :,1), reshape(ranges[3], 1,1,:))
 	atoms = atoms
-	map(grid) do x
+	Folds.map(grid) do x
         model((MLNanoShaper.Batch([x]), atoms)) |> only
     end
 end
 
 # ╔═╡ c6e28039-0412-4327-a4a0-b4df80b5ef78
-step = .5
+step = 1
 
 # ╔═╡ e6b81054-46b2-4854-be41-ca522bead47a
 function write_off(filename::String, mesh::GeometryBasics.Mesh)
@@ -73,11 +73,29 @@ function write_off(filename::String, mesh::GeometryBasics.Mesh)
     end
 end
 
+# ╔═╡ f7942c8f-8e0e-4e88-9514-80aac9b7cfa9
+# ╠═╡ skip_as_script = true
+#=╠═╡
+begin
+	#vol = evaluate_model(model,atoms;step)
+	#(; mins, maxes) = atoms.tree.hyper_rec
+	#x,y,z = range.(mins,maxes;step) .|> collect .|> Vector{Float32}
+	#mc = MC(vol;x,y,z)
+	#march(mc,.5)
+	#msh = MarchingCubes.makemesh(GeometryBasics, mc)
+	#msh
+	#Mk.mesh(msh; color = :red)
+end
+  ╠═╡ =#
+
+# ╔═╡ 87ebe306-cda2-49f3-980d-e303fd1244b7
+# ╠═╡ skip_as_script = true
+#=╠═╡
+#write_off("predicted.off",msh)
+  ╠═╡ =#
+
 # ╔═╡ 47641b85-0596-4ce4-992b-6811ff89574b
 nthreads()
-
-# ╔═╡ e13f0087-07cd-4288-ab47-ccc2c40daae0
-Adapt.@adapt_structure NearestNeighbors.KDTree
 
 # ╔═╡ 5765cbc5-ec12-406e-b43f-9291c99b9d1d
 prot_num = 1
@@ -92,30 +110,31 @@ atoms = MLNanoShaperRunner.AnnotedKDTree(
     StructVector,
     static(:center))
 
+# ╔═╡ 9b8e675a-52ed-4176-bfd8-f11ff0650ca2
+grid = MLNanoShaperRunner.RegularGrid(getfield.(read("$(homedir())/datasets/pqr/$prot_num/structure.pqr", PQR{Float32}),:pos) |> StructVector,3f0)
+
+# ╔═╡ 08abee3c-49ee-42a1-adae-7b5a7d09a8f5
+@benchmark MLNanoShaperRunner._inrange(grid,Point3f(10,22,0)) 
+
+# ╔═╡ c4b2cbd7-3be0-40d3-9ddf-d8ef7c4f81ca
+@benchmark inrange(atoms.tree,Point3f(10,22,0),3) 
+
+# ╔═╡ 376569b8-1225-4b44-9eae-62bdba87eed1
+@benchmark MLNanoShaperRunner.select_neighboord(Point3f(10,22,0),atoms;cutoff_radius=3f0)
+
 # ╔═╡ 6196a805-73d4-48e4-97ec-a413eae5c60e
 atoms.tree
 
 # ╔═╡ 0adf29e7-a6e4-48ae-bfe0-e5340d1d1a70
-model = "$(homedir())/datasets/models/tiny_angular_dense_s_jobs_10_6_3_c_2025-03-10_epoch_250_403865207473739713" |>
+model = "$(homedir())/datasets/models/tiny_angular_dense_s_jobs_11_6_3_c_2025-03-10_epoch_800_10631177997949843226" |>
         deserialize |>
         MLNanoShaperRunner.production_instantiate 
 
-# ╔═╡ 0efbaaa6-5d63-40cc-afaf-e0ee3915b83c
-vol = evaluate_model(model,atoms;step)
+# ╔═╡ f2343acb-23c2-4155-b393-c0bcea4d9760
+@benchmark model((MLNanoShaperRunner.Batch([Point3f(10,22,0)]),atoms))
 
-# ╔═╡ f7942c8f-8e0e-4e88-9514-80aac9b7cfa9
-begin
-	(; mins, maxes) = atoms.tree.hyper_rec
-	x,y,z = range.(mins,maxes;step) .|> collect .|> Vector{Float32}
-	mc = MC(vol;x,y,z)
-	march(mc,.5)
-	msh = MarchingCubes.makemesh(GeometryBasics, mc)
-	msh
-	Mk.mesh(msh; color = :red)
-end
-
-# ╔═╡ 87ebe306-cda2-49f3-980d-e303fd1244b7
-write_off("predicted.off",msh)
+# ╔═╡ fac62889-166c-43dc-8bb9-210f217ebcb0
+@benchmark model.model.layers[1].fun((MLNanoShaperRunner.Batch([Point3f(10,22,0)]),atoms))
 
 # ╔═╡ 0d81f6cb-c6d4-4748-b23c-46ab1b0f9a8e
 cutoff_radius = 3.0f0
@@ -126,17 +145,11 @@ default_value = -8.0f0
 # ╔═╡ 3ed5f526-99fd-4e91-b7f0-6bc7d8c67afa
 atoms.tree.hyper_rec
 
-# ╔═╡ 7400db55-4dba-4163-ab10-70f2984cbe41
-model((MLNanoShaperRunner.Batch([Point3f(0,0,0)]),atoms))
-
 # ╔═╡ f44f276c-7de9-49dc-b584-5a64a04006a0
 51 * 56 * 48 / 4000 * 0.03
 
 # ╔═╡ 70663eda-5bd3-4f08-8792-5f848edccaff
 40 * 89 / 1000
-
-# ╔═╡ f2343acb-23c2-4155-b393-c0bcea4d9760
-@benchmark model((MLNanoShaperRunner.Batch([Point3f(1,0,0)]),atoms))
 
 # ╔═╡ 1b16179f-8da8-4c34-9455-5554a3151f40
 89 * 4
@@ -161,12 +174,15 @@ using malloc in preprocessing : 78 ms
 330 / 89
 
 # ╔═╡ 5273eaf5-2762-41ba-b634-17e170adc65e
+# ╠═╡ skip_as_script = true
+#=╠═╡
 begin
     Profile.clear()
-    Profile.init(n = 10^7, delay = 0.01)
-    @profile evaluate_model(model,atoms) 
+    Profile.init(n = 10^6, delay = 10^-5)
+    @profile  [model((MLNanoShaperRunner.Batch([Point3f(10,22,0)]),atoms)) for _ in 1:10^4]
 	pprof()
 end
+  ╠═╡ =#
 
 # ╔═╡ Cell order:
 # ╠═e4fc0299-2b72-4b8f-940d-9f55a76f83ca
@@ -177,24 +193,26 @@ end
 # ╠═e4a81477-34da-4891-9d0e-34a30ada4ac3
 # ╠═9e4b837a-d031-41c9-b3f8-f079b0a6d16b
 # ╠═c6e28039-0412-4327-a4a0-b4df80b5ef78
-# ╠═0efbaaa6-5d63-40cc-afaf-e0ee3915b83c
 # ╠═e6b81054-46b2-4854-be41-ca522bead47a
 # ╠═f7942c8f-8e0e-4e88-9514-80aac9b7cfa9
 # ╠═87ebe306-cda2-49f3-980d-e303fd1244b7
 # ╠═47641b85-0596-4ce4-992b-6811ff89574b
-# ╠═e13f0087-07cd-4288-ab47-ccc2c40daae0
 # ╠═5765cbc5-ec12-406e-b43f-9291c99b9d1d
 # ╠═2cce8a1a-97fe-45ae-bca7-584b843739d6
 # ╠═d9898910-1b29-400c-bcea-457017723c70
+# ╠═9b8e675a-52ed-4176-bfd8-f11ff0650ca2
+# ╠═08abee3c-49ee-42a1-adae-7b5a7d09a8f5
+# ╠═c4b2cbd7-3be0-40d3-9ddf-d8ef7c4f81ca
+# ╠═f2343acb-23c2-4155-b393-c0bcea4d9760
+# ╠═fac62889-166c-43dc-8bb9-210f217ebcb0
+# ╠═376569b8-1225-4b44-9eae-62bdba87eed1
 # ╠═6196a805-73d4-48e4-97ec-a413eae5c60e
 # ╠═0adf29e7-a6e4-48ae-bfe0-e5340d1d1a70
 # ╠═0d81f6cb-c6d4-4748-b23c-46ab1b0f9a8e
 # ╠═2ff3238a-2205-405a-9075-553f27db84d6
 # ╠═3ed5f526-99fd-4e91-b7f0-6bc7d8c67afa
-# ╠═7400db55-4dba-4163-ab10-70f2984cbe41
 # ╠═f44f276c-7de9-49dc-b584-5a64a04006a0
 # ╠═70663eda-5bd3-4f08-8792-5f848edccaff
-# ╠═f2343acb-23c2-4155-b393-c0bcea4d9760
 # ╠═1b16179f-8da8-4c34-9455-5554a3151f40
 # ╠═988caa2b-a9cf-4226-beb2-52efa750beca
 # ╠═565892fa-df36-4fad-8872-a9e2f7de684f
