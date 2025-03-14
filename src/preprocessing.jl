@@ -36,7 +36,7 @@ end
 function exact_points(
         rng::AbstractRNG, atoms_tree::KDTree, skin_tree::KDTree, (;
             cutoff_radius)::TrainingParameters)
-    points = first(shuffle(rng, skin_tree.data), 200)
+    points = shuffle(rng, skin_tree.data)
     Iterators.filter(points) do pt
         distance(pt, atoms_tree) < cutoff_radius
     end
