@@ -44,8 +44,8 @@ dataset_dir = "$(dirname(dirname(@__FILE__)))/examples"
 
 # ╔═╡ b91501dd-f66f-4a60-afa9-c4c9d0fc3504
 names = [
-"$(homedir())/datasets/models/tiny_angular_dense_s_jobs_12_6_3.5_c_2025-03-17_epoch_400_9111813742813960193"
-"$(homedir())/datasets/models/tiny_angular_dense_s_jobs_12_6_3_c_2025-03-14_epoch_400_8096301807116231974"
+"$(homedir())/datasets/models/tiny_angular_dense_s_jobs_13_6_3_2025-03-18_epoch_180_9861078521691509352"
+"$(homedir())/datasets/models/tiny_angular_dense_s_jobs_13_6_3_c_2025-03-18_epoch_200_8304319030386398629"
 ]
 
 # ╔═╡ 69ee1b79-b99d-4e3a-9769-254b1939aba6
@@ -59,16 +59,13 @@ a = deserialize(names[1]).model
 a.kargs
 
 # ╔═╡ f7041ca8-97be-4998-9c10-2cbed79eb135
-atoms = MLNanoShaperRunner.AnnotedKDTree(
+atoms = RegularGrid(
     getfield.(read("$dataset_dir/$prot_num/structure.pqr", PQR{Float32}), :pos) |>
     StructVector,
-    static(:center))
+    3f0)
 
 # ╔═╡ 58cf0ac8-d68d-47a7-b08f-098b65d19908
 surface = load("$dataset_dir/$prot_num/triangulatedSurf.off")
-
-# ╔═╡ f7c42c52-224c-4e93-b9df-b95aca05b26b
-nn.(Ref(atoms.tree), surface.position) .|> last |> std
 
 # ╔═╡ a0a5f16f-0224-47b1-ae86-c4b5bd48fd07
 param = [
@@ -154,8 +151,9 @@ end
   ╠═╡ =#
 
 # ╔═╡ e78e5812-1927-4f67-bd3a-9bd1b577f9ad
-function get_input_slice(atoms, step, z)
-    (; mins, maxes) = atoms.tree.hyper_rec
+function get_input_slice(atoms::RegularGrid, step, z)
+    mins = atoms.start
+	maxes = mins .+ size(atoms.grid) .* atoms.radius
     ranges = range.(mins, maxes; step)
     grid = Point3f.(reshape(ranges[1], :, 1), reshape(ranges[2], 1, :), z)
 end
@@ -192,8 +190,11 @@ end
 # ╔═╡ 0aba8461-83f7-4ce7-9b8b-f90a47001cea
 Mk.plot(MLNanoShaperRunner.cut.(1.,0:.001:1))
 
-# ╔═╡ 399eb8e8-0109-4cdd-887e-d1456bf72729
-(; mins, maxes) = atoms.tree.hyper_rec
+# ╔═╡ 55e62c2f-6797-4075-b8cc-d7d11e05317e
+mins = atoms.start
+
+# ╔═╡ 3c300122-c050-4ed0-9e9c-181a0698803c
+maxes = mins .+ size(atoms.grid) .* atoms.radius
 
 # ╔═╡ 67cb1851-a1a3-458f-9c9d-b5061a57ed37
 ranges = range.(mins, maxes; step = 0.1)
@@ -235,9 +236,6 @@ ps = models[1].ps
 # ╔═╡ a3f888d6-66a5-4425-9fe3-6af5d2d3f7fb
 st = models[1].st
 
-# ╔═╡ b6c96b28-7924-4421-a9e0-273e5ee0c174
-m(zeros32(4,1),ps,st)
-
 # ╔═╡ Cell order:
 # ╟─5f801ac4-1f27-11ef-3246-afece906b714
 # ╠═8cbe5092-8af4-4a2c-a574-e33cb9632058
@@ -249,7 +247,6 @@ m(zeros32(4,1),ps,st)
 # ╠═ba125a1e-09ff-4c7f-a1d4-6da28810c0a8
 # ╠═b91501dd-f66f-4a60-afa9-c4c9d0fc3504
 # ╠═69ee1b79-b99d-4e3a-9769-254b1939aba6
-# ╠═f7c42c52-224c-4e93-b9df-b95aca05b26b
 # ╠═5451e25f-daf5-4648-b249-f1ff74c4cf21
 # ╠═7287dae9-50f6-465a-b938-3b42644aa35e
 # ╠═f7041ca8-97be-4998-9c10-2cbed79eb135
@@ -273,7 +270,8 @@ m(zeros32(4,1),ps,st)
 # ╠═a8a43fdf-f69c-41ef-b309-ee8531e5df23
 # ╠═d679ca88-615e-4675-9d0a-419cd18246f9
 # ╠═0aba8461-83f7-4ce7-9b8b-f90a47001cea
-# ╠═399eb8e8-0109-4cdd-887e-d1456bf72729
+# ╠═55e62c2f-6797-4075-b8cc-d7d11e05317e
+# ╠═3c300122-c050-4ed0-9e9c-181a0698803c
 # ╠═67cb1851-a1a3-458f-9c9d-b5061a57ed37
 # ╠═72e3bde9-6be8-46ac-899d-27afd99a7b3e
 # ╠═a98327b5-f8a4-46cc-a14c-8dd234ca9933
@@ -284,4 +282,3 @@ m(zeros32(4,1),ps,st)
 # ╠═42ac2eda-dfdc-4323-9185-098394477c1b
 # ╠═1bec33cd-4db0-4aea-b7d1-35de8c07bbfd
 # ╠═a3f888d6-66a5-4425-9fe3-6af5d2d3f7fb
-# ╠═b6c96b28-7924-4421-a9e0-273e5ee0c174

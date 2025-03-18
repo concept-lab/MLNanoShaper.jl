@@ -4,14 +4,14 @@ end
 get_cutoff_radius(x::Lux.StatefulLuxLayer) = get_cutoff_radius(x.model)
 
 """
-    implicit_surface(atoms::AnnotedKDTree{Sphere{T}, :center, Point3{T}},
+    implicit_surface(atoms::RegularGrid{T},
         model::Lux.StatefulLuxLayer, (;
             cutoff_radius, step)) where {T}
 
 	Create a mesh form the isosurface of function `pos -> model(atoms,pos)` using marching cubes algorithm and using step size `step`.  
 """
 function implicit_surface(model::Lux.StatefulLuxLayer,
-    atoms::AnnotedKDTree{Sphere{T}, :center, Point3{T}};
+    atoms::RegularGrid{T};
             iso_value=.5, step=.5)::ConcatenatedBatch where {T}
     (; mins, maxes) = atoms.tree.hyper_rec
     ranges = range.(mins, maxes; step)
@@ -103,36 +103,37 @@ function _train(
     @info "nb threades" Threads.nthreads()
 
     @info "building KDtrees"
-    train_data = Folds.map(TreeTrainingData, train_data)
-    test_data = Folds.map(TreeTrainingData, test_data)
+    cutoff_radius = training_parameters.cutoff_radius
+    train_data = Folds.map(x -> TreeTrainingData(x,cutoff_radius), train_data)
+    test_data  = Folds.map(x -> TreeTrainingData(x,cutoff_radius), test_data )
 
     @info "pre computing"
     model = get_preprocessing(training_parameters.model())
     processing = Function[
-        (; atoms, skin)::TreeTrainingData -> first(
+        (; atoms_tree, skin)::TreeTrainingData -> first(
             approximates_points(
-                MersenneTwister(42), atoms.tree, skin.tree, training_parameters) do point
+                MersenneTwister(42), atoms_tree.tree, skin.tree, training_parameters) do point
                 -2training_parameters.cutoff_radius < signed_distance(point, skin) < 0
             end,
             800),
-        (; atoms, skin)::TreeTrainingData -> first(
+        (; atoms_tree, skin)::TreeTrainingData -> first(
             exact_points(
-                MersenneTwister(42), atoms.tree, skin.tree, training_parameters),
+                MersenneTwister(42), atoms_tree.tree, skin.tree, training_parameters),
             800),
-        (; atoms, skin)::TreeTrainingData -> first(
+        (; atoms_tree, skin)::TreeTrainingData -> first(
             approximates_points(
-                MersenneTwister(42), atoms.tree, skin.tree, training_parameters) do point
+                MersenneTwister(42), atoms_tree.tree, skin.tree, training_parameters) do point
                 0 < signed_distance(point, skin) < 2training_parameters.cutoff_radius
             end,
             500),
-        (; atoms, skin)::TreeTrainingData -> first(
+        (; atoms_tree, skin)::TreeTrainingData -> first(
             approximates_points(
-                MersenneTwister(42), atoms.tree, skin.tree, training_parameters) do point
+                MersenneTwister(42), atoms_tree.tree, skin.tree, training_parameters) do point
                 signed_distance(point, skin) > 2 * training_parameters.cutoff_radius
             end,
             280),
-        (; atoms)::TreeTrainingData -> first(
-            shuffle(MersenneTwister(42), atoms.data.center), 20)
+        (; atoms_tree)::TreeTrainingData -> first(
+            shuffle(MersenneTwister(42), atoms_tree.data.center), 20)
     ]
     train_data, test_data = map([train_data, test_data]) do dataset
         DataSet(map(processing) do generate_points

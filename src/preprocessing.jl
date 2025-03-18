@@ -10,11 +10,12 @@ struct TrainingData{T <: Number}
 end
 
 struct TreeTrainingData{T <: Number}
-    atoms::AnnotedKDTree{Sphere{T}, :center, Point3{T}}
+    atoms_grid::RegularGrid{T}
+    atoms_tree::AnnotedKDTree{Sphere{T},:center,Point3{T}}
     skin::RegionMesh
 end
-function TreeTrainingData((; atoms, skin)::TrainingData)
-    TreeTrainingData(AnnotedKDTree(atoms, static(:center)), RegionMesh(skin))
+function TreeTrainingData((; atoms, skin)::TrainingData{T},radius::T) where T
+    TreeTrainingData(RegularGrid(atoms,radius),AnnotedKDTree(atoms,static(:center)), RegionMesh(skin))
 end
 function point_grid(mins::AbstractVector, maxes, scale::Number)
     Iterators.product(range.(mins,
@@ -56,9 +57,9 @@ generate the data_points for a set of positions `points` on one protein.
 """
 function generate_data_points(
         preprocessing::Lux.AbstractLuxLayer, points::AbstractVector{Point3f},
-        (; atoms, skin)::TreeTrainingData{Float32}, (; ref_distance)::TrainingParameters)::GlobalPreprocessed
+        (;atoms_grid, atoms_tree, skin)::TreeTrainingData{Float32}, (; ref_distance)::TrainingParameters)::GlobalPreprocessed
     (;
-        inputs = preprocessing((Batch(points), atoms)),
+        inputs = preprocessing((Batch(points), atoms_grid)),
         d_reals = signed_distance.(points, Ref(skin)) ./ ref_distance
     )
 end
