@@ -14,7 +14,7 @@ Pkg.activate(".")
 using MLNanoShaper, MLNanoShaperRunner, FileIO, StructArrays, Static, Serialization,
       GeometryBasics, LuxCUDA, Lux, Profile, ProfileSVG, ChainRulesCore, Folds,
       BenchmarkTools, Zygote, Distances, LinearAlgebra, LoopVectorization, Folds,
-      StaticTools, PProf, CUDA, Adapt, NearestNeighbors, MarchingCubes, FileIO, Transducers 
+      StaticTools, PProf, CUDA, Adapt, NearestNeighbors, MarchingCubes, FileIO, Transducers,Accessors
 
 # ╔═╡ e4a81477-34da-4891-9d0e-34a30ada4ac3
 using Base.Threads
@@ -119,28 +119,83 @@ grid = MLNanoShaperRunner.RegularGrid(getfield.(read("$(homedir())/datasets/pqr/
 # ╔═╡ c4b2cbd7-3be0-40d3-9ddf-d8ef7c4f81ca
 @benchmark inrange(atoms.tree,Point3f(10,22,0),3) 
 
+# ╔═╡ 600caaed-2767-4235-97a5-ff55bd19ec8f
+4/3*π *3^3
+
+# ╔═╡ 3817b4a9-18ea-490f-9bf0-2b9593478bdd
+14.3 - 11.6
+
+# ╔═╡ c89ef485-4986-4c9e-adc4-1e8019a872cb
+11.6 - 8.3
+
+# ╔═╡ d634d86e-3db5-4d25-8177-0fcb7ff18643
+77/20
+
 # ╔═╡ 376569b8-1225-4b44-9eae-62bdba87eed1
 @benchmark MLNanoShaperRunner.select_neighboord(Point3f(10,22,0),atoms;cutoff_radius=3f0)
 
 # ╔═╡ 6196a805-73d4-48e4-97ec-a413eae5c60e
 atoms.tree
 
+# ╔═╡ 387b3778-a710-4bba-9942-b6119d1561da
+length(grid.grid) * 2e-6 * 3*3*3 / 12
+
+# ╔═╡ b4cb025a-e473-4feb-aace-a533503c3672
+model_weights = deserialize("$(homedir())/datasets/models/tiny_angular_dense_s_jobs_11_6_3_c_2025-03-10_epoch_800_10631177997949843226")
+
+# ╔═╡ 9975941c-1735-4cee-9397-8237edf5c737
+p = pairs((;cutoff_radius = 3.0,smoothing = true,on_gpu = true,van_der_waal_channel = false))
+
+# ╔═╡ c3d799d7-db54-44c6-bf05-3f257b2f3d7a
+(@set model_weights.model.kargs = p).model.kargs
+
+# ╔═╡ a820838f-7105-4770-8a26-b4cb4af3bec1
+model_gpu = Lux.StatefulLuxLayer{true}(model_weights.model(on_gpu=true),model_weights.parameters |> gpu_device(),model_weights.states)
+
+# ╔═╡ cb7a84e8-d5ae-4f43-a1ca-bd047f39dd2b
+@benchmark model_gpu((MLNanoShaperRunner.Batch([Point3f(10,22,0) for _ in 1:1000]),atoms))
+
+# ╔═╡ c97eb631-f5fa-4f13-a7bf-2bc874c527d2
+CUDA.@profile model_gpu((MLNanoShaperRunner.Batch([Point3f(10,22,0) for _ in 1:1000]),atoms))
+
+# ╔═╡ 5e6d15a4-c551-40bd-97ed-57c787734217
+gpu_device()
+
 # ╔═╡ 0adf29e7-a6e4-48ae-bfe0-e5340d1d1a70
-model = "$(homedir())/datasets/models/tiny_angular_dense_s_jobs_11_6_3_c_2025-03-10_epoch_800_10631177997949843226" |>
-        deserialize |>
-        MLNanoShaperRunner.production_instantiate 
+model = MLNanoShaperRunner.production_instantiate(model_weights)
+
+# ╔═╡ e85dacd5-2edf-40f9-8a9c-ddd0ef1eb06e
+@benchmark model((MLNanoShaperRunner.Batch(Point3f[]),atoms))
 
 # ╔═╡ f2343acb-23c2-4155-b393-c0bcea4d9760
 @benchmark model((MLNanoShaperRunner.Batch([Point3f(10,22,0)]),atoms))
 
+# ╔═╡ 187ca178-6b4c-406b-b312-81e12026b720
+@benchmark model((MLNanoShaperRunner.Batch([Point3f(10,22,0),Point3f(10,22,0)]),atoms))
+
+# ╔═╡ f49f8d87-540b-4767-bbb2-794cab2da54a
+@benchmark model((MLNanoShaperRunner.Batch([Point3f(10,22,0) for _ in 1:1000]),atoms))
+
 # ╔═╡ fac62889-166c-43dc-8bb9-210f217ebcb0
-@benchmark model.model.layers[1].fun((MLNanoShaperRunner.Batch([Point3f(10,22,0)]),atoms))
+@benchmark model.model.layers[1].fun((MLNanoShaperRunner.Batch([Point3f(10,22,0) for _ in 1:400]),atoms))
+
+# ╔═╡ bb374966-08bf-420b-a486-eba42ad359ce
+@benchmark model.model.layers[1].fun((MLNanoShaperRunner.Batch([Point3f(10,22,0) for _ in 1:10]),atoms))
 
 # ╔═╡ 0d81f6cb-c6d4-4748-b23c-46ab1b0f9a8e
 cutoff_radius = 3.0f0
 
 # ╔═╡ 2ff3238a-2205-405a-9075-553f27db84d6
 default_value = -8.0f0
+
+# ╔═╡ cfea79c8-b72f-462c-ac17-6ab259677430
+@benchmark cu([1,2])
+
+# ╔═╡ c5c809cc-e2e8-45f7-a5a1-3a1599957e28
+@benchmark $(cu([1,2])) |> collect
+
+# ╔═╡ 43996f76-4bef-4297-b9d6-6abe7669ccb8
+@benchmark cu([1,2]) |> collect
 
 # ╔═╡ 3ed5f526-99fd-4e91-b7f0-6bc7d8c67afa
 atoms.tree.hyper_rec
@@ -178,8 +233,8 @@ using malloc in preprocessing : 78 ms
 #=╠═╡
 begin
     Profile.clear()
-    Profile.init(n = 10^6, delay = 10^-5)
-    @profile  [model((MLNanoShaperRunner.Batch([Point3f(10,22,0)]),atoms)) for _ in 1:10^4]
+    Profile.init(n = 10^6, delay = .05*10^-6)
+    @profile  [model((MLNanoShaperRunner.Batch([Point3f(10,22,0) for _ in 1:1000]),atoms)) for _ in 1:100] 
 	pprof()
 end
   ╠═╡ =#
@@ -203,13 +258,32 @@ end
 # ╠═9b8e675a-52ed-4176-bfd8-f11ff0650ca2
 # ╠═08abee3c-49ee-42a1-adae-7b5a7d09a8f5
 # ╠═c4b2cbd7-3be0-40d3-9ddf-d8ef7c4f81ca
+# ╠═e85dacd5-2edf-40f9-8a9c-ddd0ef1eb06e
 # ╠═f2343acb-23c2-4155-b393-c0bcea4d9760
+# ╠═187ca178-6b4c-406b-b312-81e12026b720
+# ╠═f49f8d87-540b-4767-bbb2-794cab2da54a
+# ╠═cb7a84e8-d5ae-4f43-a1ca-bd047f39dd2b
+# ╠═600caaed-2767-4235-97a5-ff55bd19ec8f
+# ╠═c97eb631-f5fa-4f13-a7bf-2bc874c527d2
+# ╠═3817b4a9-18ea-490f-9bf0-2b9593478bdd
+# ╠═c89ef485-4986-4c9e-adc4-1e8019a872cb
+# ╠═d634d86e-3db5-4d25-8177-0fcb7ff18643
 # ╠═fac62889-166c-43dc-8bb9-210f217ebcb0
+# ╠═bb374966-08bf-420b-a486-eba42ad359ce
 # ╠═376569b8-1225-4b44-9eae-62bdba87eed1
 # ╠═6196a805-73d4-48e4-97ec-a413eae5c60e
+# ╠═387b3778-a710-4bba-9942-b6119d1561da
+# ╠═b4cb025a-e473-4feb-aace-a533503c3672
+# ╠═9975941c-1735-4cee-9397-8237edf5c737
+# ╠═c3d799d7-db54-44c6-bf05-3f257b2f3d7a
+# ╠═a820838f-7105-4770-8a26-b4cb4af3bec1
+# ╠═5e6d15a4-c551-40bd-97ed-57c787734217
 # ╠═0adf29e7-a6e4-48ae-bfe0-e5340d1d1a70
 # ╠═0d81f6cb-c6d4-4748-b23c-46ab1b0f9a8e
 # ╠═2ff3238a-2205-405a-9075-553f27db84d6
+# ╠═cfea79c8-b72f-462c-ac17-6ab259677430
+# ╠═c5c809cc-e2e8-45f7-a5a1-3a1599957e28
+# ╠═43996f76-4bef-4297-b9d6-6abe7669ccb8
 # ╠═3ed5f526-99fd-4e91-b7f0-6bc7d8c67afa
 # ╠═f44f276c-7de9-49dc-b584-5a64a04006a0
 # ╠═70663eda-5bd3-4f08-8792-5f848edccaff

@@ -128,14 +128,14 @@ function _train(
         (; atoms, skin)::TreeTrainingData -> first(
             approximates_points(
                 MersenneTwister(42), atoms.tree, skin.tree, training_parameters) do point
-                distance(point, skin.tree) > 2 * training_parameters.cutoff_radius
+                signed_distance(point, skin) > 2 * training_parameters.cutoff_radius
             end,
             280),
         (; atoms)::TreeTrainingData -> first(
             shuffle(MersenneTwister(42), atoms.data.center), 20)
     ]
     train_data, test_data = map([train_data, test_data]) do dataset
-        DataSet(Folds.map(processing) do generate_points
+        DataSet(map(processing) do generate_points
             pre_compute_data_set(
                 generate_points,
                 model,
