@@ -1239,7 +1239,7 @@ version = "1.9.1"
     oneAPI = "8f75cd03-7ff8-4ecb-9b8f-daf728133b1b"
 
 [[deps.MLNanoShaper]]
-deps = ["ADTypes", "Adapt", "BioStructures", "CUDA", "ChainRulesCore", "ConcreteStructs", "Configurations", "Curry", "Dates", "Distances", "Distributed", "FileIO", "Folds", "GeometryBasics", "LazyArrays", "LinearAlgebra", "Logging", "LoggingExtras", "Lux", "LuxCUDA", "MLNanoShaperRunner", "MLUtils", "MeshIO", "Meshes", "Meshing", "NearestNeighbors", "Optimisers", "ProgressLogging", "Random", "Reexport", "Serialization", "SimpleChains", "Static", "StaticArrays", "Statistics", "StructArrays", "TOML", "TensorBoardLogger", "TerminalLoggers", "Transducers", "Zygote"]
+deps = ["ADTypes", "Adapt", "BioStructures", "CUDA", "ChainRulesCore", "ConcreteStructs", "Configurations", "Curry", "Dates", "Distances", "Distributed", "FileIO", "Folds", "GeometryBasics", "LazyArrays", "LinearAlgebra", "Logging", "LoggingExtras", "LoopVectorization", "Lux", "LuxCUDA", "MLNanoShaperRunner", "MLUtils", "MeshIO", "Meshes", "Meshing", "NearestNeighbors", "Octavian", "Optimisers", "ProgressLogging", "Random", "Reexport", "Serialization", "SimpleChains", "Static", "StaticArrays", "Statistics", "StructArrays", "TOML", "TensorBoardLogger", "TerminalLoggers", "Transducers", "Zygote"]
 path = ".."
 uuid = "0ae43799-6878-4589-9bc9-cf11e8180012"
 version = "0.1.0"
@@ -1396,6 +1396,20 @@ version = "0.4.21"
 [[deps.NetworkOptions]]
 uuid = "ca575930-c2e3-43a9-ace4-1e988b2c1908"
 version = "1.2.0"
+
+[[deps.Octavian]]
+deps = ["CPUSummary", "IfElse", "LoopVectorization", "ManualMemory", "PolyesterWeave", "PrecompileTools", "Static", "StaticArrayInterface", "ThreadingUtilities", "VectorizationBase"]
+git-tree-sha1 = "92410e147bdcaf9e2f982a7cc9b1341fc5dd1a77"
+uuid = "6fd5a793-0b7e-452c-907f-f8bfe9c57db4"
+version = "0.3.28"
+
+    [deps.Octavian.extensions]
+    ForwardDiffExt = "ForwardDiff"
+    HyperDualNumbersExt = "HyperDualNumbers"
+
+    [deps.Octavian.weakdeps]
+    ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
+    HyperDualNumbers = "50ceba7f-c3ee-5a84-a6e8-3ad40456ec97"
 
 [[deps.OffsetArrays]]
 git-tree-sha1 = "5e1897147d1ff8d98883cda2be2187dcf57d8f0c"

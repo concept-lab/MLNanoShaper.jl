@@ -41,6 +41,8 @@ using FileIO
 using Serialization
 using Reexport
 
+using LoopVectorization
+using Octavian
 using MLNanoShaperRunner
 @reexport using MLNanoShaperRunner.Import
 
