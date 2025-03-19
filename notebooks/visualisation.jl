@@ -44,8 +44,8 @@ dataset_dir = "$(dirname(dirname(@__FILE__)))/examples"
 
 # ╔═╡ b91501dd-f66f-4a60-afa9-c4c9d0fc3504
 names = [
-"$(homedir())/datasets/models/tiny_angular_dense_s_jobs_13_6_3_2025-03-18_epoch_180_9861078521691509352"
-"$(homedir())/datasets/models/tiny_angular_dense_s_jobs_13_6_3_c_2025-03-18_epoch_200_8304319030386398629"
+"$(homedir())/datasets/models/tiny_angular_dense_s_jobs_13_6_3_2025-03-18_epoch_650_9861078521691509352"
+"$(homedir())/datasets/models/tiny_angular_dense_s_jobs_13_6_3_c_2025-03-18_epoch_650_8304319030386398629"
 ]
 
 # ╔═╡ 69ee1b79-b99d-4e3a-9769-254b1939aba6
@@ -212,7 +212,7 @@ Mk.plot(σ.(dist);colormap = :rainbow,colorrange = [0,1])
 begin
 	h = Mk.Figure(size = (700,500))
 	Mk.Axis(h[1, 1], title="tiny_angular_dense 3A")
-	Mk.contour!(h[1,1],ranges[1],ranges[2],slice1,levels=[.5],color=:red)
+	Mk.contour!(h[1,1],ranges[1],ranges[2],slice2,levels=[.5],color=:red)
 	Mk.contour!(h[1,1],ranges[1],ranges[2],dist,levels=[0],color = :green)
 	Mk.Legend(h[1,2],[Mk.LineElement(color = :green),Mk.LineElement(color = :red)],["true value","predicted value"])
 	h
