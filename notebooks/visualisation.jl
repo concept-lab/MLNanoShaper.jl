@@ -44,19 +44,16 @@ dataset_dir = "$(dirname(dirname(@__FILE__)))/examples"
 
 # ╔═╡ b91501dd-f66f-4a60-afa9-c4c9d0fc3504
 names = [
-"$(homedir())/datasets/models/tiny_angular_dense_s_jobs_13_6_3_2025-03-18_epoch_650_9861078521691509352"
-"$(homedir())/datasets/models/tiny_angular_dense_s_jobs_13_6_3_c_2025-03-18_epoch_650_8304319030386398629"
+"$(homedir())/datasets/models/tiny_angular_dense_s_jobs_14_6_3.5_c_2025-03-19_epoch_400_16958016431430762951"
+"$(homedir())/datasets/models/tiny_angular_dense_s_jobs_14_6_3_c_2025-03-19_epoch_400_9592899277305186470"
 ]
 
 # ╔═╡ 69ee1b79-b99d-4e3a-9769-254b1939aba6
 models = names.|> deserialize .|> MLNanoShaperRunner.production_instantiate
 
 
-# ╔═╡ 5451e25f-daf5-4648-b249-f1ff74c4cf21
-a = deserialize(names[1]).model
-
 # ╔═╡ 7287dae9-50f6-465a-b938-3b42644aa35e
-a.kargs
+
 
 # ╔═╡ f7041ca8-97be-4998-9c10-2cbed79eb135
 atoms = RegularGrid(
@@ -132,14 +129,13 @@ ref = Ms.SimpleMesh(
     coordinates(_ref) .|> Tuple, GeometryBasics.faces(_ref) .|> Tuple .|> Ms.connect)
 
 # ╔═╡ e7e6584b-5059-46f6-a614-76866f1b1df9
-#=╠═╡
 begin
     f = Mk.Figure(size = (1000,700))
     Mk.Axis3(f[1, 1], title="tiny_angular_dense_cv 3A")
     Ms.viz!(f[1, 1], meshes[1]; color=:red)
     Mk.Axis3(f[1, 2], title="tiny_angular_dense_cv 2A")
     Ms.viz!(f[1, 2], meshes[2]; color=:red)
-    Mk.Axis3(f[2, 1], title="tiny_angular_dense_cv 3A")
+    Mk.Axis3(f[2, 1], title="tiny_angular_dense_cv 3A")loss
     Ms.viz!(f[2, 1], full_meshes[1]; color=:red)
     Ms.viz!(f[2, 1], ref; color=:green)
     a = Mk.Axis3(f[2, 2], title="tiny_angular_dense_cv 2A")
@@ -148,7 +144,6 @@ begin
 	Mk.Legend(f[1:2,3],[Mk.LineElement(color = :green),Mk.LineElement(color = :red)],["true value","predicted value"])
 	f
 end
-  ╠═╡ =#
 
 # ╔═╡ e78e5812-1927-4f67-bd3a-9bd1b577f9ad
 function get_input_slice(atoms::RegularGrid, step, z)
@@ -247,7 +242,6 @@ st = models[1].st
 # ╠═ba125a1e-09ff-4c7f-a1d4-6da28810c0a8
 # ╠═b91501dd-f66f-4a60-afa9-c4c9d0fc3504
 # ╠═69ee1b79-b99d-4e3a-9769-254b1939aba6
-# ╠═5451e25f-daf5-4648-b249-f1ff74c4cf21
 # ╠═7287dae9-50f6-465a-b938-3b42644aa35e
 # ╠═f7041ca8-97be-4998-9c10-2cbed79eb135
 # ╠═58cf0ac8-d68d-47a7-b08f-098b65d19908

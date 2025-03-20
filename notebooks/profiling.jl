@@ -5,16 +5,13 @@ using Markdown
 using InteractiveUtils
 
 # ╔═╡ 28210014-39eb-11ef-24eb-110acb81da08
-using Pkg
-
-# ╔═╡ de53cb27-dbef-4e3d-9d12-0f3d1b5acbc4
-Pkg.activate(".")
+using Pkg;Pkg.activate(".")
 
 # ╔═╡ e9f0f433-0fe9-4096-b484-b432ec54afc8
 using MLNanoShaper, MLNanoShaperRunner, FileIO, StructArrays, Static, Serialization,
       GeometryBasics, LuxCUDA, Lux, Profile, ProfileSVG, ChainRulesCore, Folds,
       BenchmarkTools, Zygote, Distances, LinearAlgebra, LoopVectorization, Folds,
-      StaticTools, PProf, CUDA, Adapt, NearestNeighbors, MarchingCubes, FileIO, Transducers,Accessors
+      StaticTools, PProf, CUDA, Adapt, NearestNeighbors, MarchingCubes, FileIO, Transducers,Accessors, Revise, Reactant
 
 # ╔═╡ e4a81477-34da-4891-9d0e-34a30ada4ac3
 using Base.Threads
@@ -33,6 +30,9 @@ html"""
 
 # ╔═╡ 1c0a8115-da6e-4b09-a9ac-17672c8b73d2
 import CairoMakie as Mk
+
+# ╔═╡ 4a056fad-28f2-4519-a0b7-e9a34dbddf00
+Reactant.set_default_backend("cpu")
 
 # ╔═╡ 9e4b837a-d031-41c9-b3f8-f079b0a6d16b
 function evaluate_model(model,atoms;step=1)
@@ -102,16 +102,13 @@ atoms = RegularGrid(
 77/20
 
 # ╔═╡ 376569b8-1225-4b44-9eae-62bdba87eed1
-@benchmark MLNanoShaperRunner.select_neighboord(Point3f(10,22,0),atoms;cutoff_radius=3f0)
+@benchmark MLNanoShaperRunner.select_neighboord(Point3f(10,22,0),atoms)
 
 # ╔═╡ 387b3778-a710-4bba-9942-b6119d1561da
 length(atoms.grid) * 2e-6 * 3*3*3 / 12
 
 # ╔═╡ b4cb025a-e473-4feb-aace-a533503c3672
-model_weights = deserialize("$(homedir())/datasets/models/tiny_angular_dense_s_jobs_13_6_3_c_2025-03-18_epoch_650_8304319030386398629")
-
-# ╔═╡ 9975941c-1735-4cee-9397-8237edf5c737
-p = pairs((;cutoff_radius = 3.0,smoothing = true,on_gpu = true,van_der_waal_channel = false))
+model_weights = deserialize("$(homedir())/datasets/models/tiny_angular_dense_s_jobs_14_6_3_c_2025-03-19_epoch_400_9592899277305186470")
 
 # ╔═╡ a820838f-7105-4770-8a26-b4cb4af3bec1
 model_gpu = Lux.StatefulLuxLayer{true}(model_weights.model(on_gpu=true),model_weights.parameters |> gpu_device(),model_weights.states)
@@ -122,6 +119,9 @@ model_gpu = Lux.StatefulLuxLayer{true}(model_weights.model(on_gpu=true),model_we
 # ╔═╡ c97eb631-f5fa-4f13-a7bf-2bc874c527d2
 CUDA.@profile model_gpu((MLNanoShaperRunner.Batch([Point3f(10,22,0) for _ in 1:1000]),atoms))
 
+# ╔═╡ e6f8e419-2fb4-4c8a-afd3-05e500553cfc
+model_fixed_size = Lux.StatefulLuxLayer{true}(model_weights.model(max_nb_atoms = 10),model_weights.parameters,model_weights.states)
+
 # ╔═╡ 5e6d15a4-c551-40bd-97ed-57c787734217
 gpu_device()
 
@@ -130,9 +130,6 @@ model = MLNanoShaperRunner.production_instantiate(model_weights)
 
 # ╔═╡ c114a7fc-12bd-4a4c-99c9-c665145eaf92
 model((Batch([Point3f(10,22.65,0),Point3f(0,0,0),Point3f(0,0,0)]),atoms))
-
-# ╔═╡ 87500e80-b58c-4f59-aaec-85348f8e615b
-evaluate_model(model,atoms;step) |> maximum
 
 # ╔═╡ a29d5a40-6c4b-4a48-98c3-176f1a3a0591
 begin
@@ -225,15 +222,14 @@ end
 # ╔═╡ Cell order:
 # ╠═e4fc0299-2b72-4b8f-940d-9f55a76f83ca
 # ╠═28210014-39eb-11ef-24eb-110acb81da08
-# ╠═de53cb27-dbef-4e3d-9d12-0f3d1b5acbc4
 # ╠═1c0a8115-da6e-4b09-a9ac-17672c8b73d2
 # ╠═e9f0f433-0fe9-4096-b484-b432ec54afc8
+# ╠═4a056fad-28f2-4519-a0b7-e9a34dbddf00
 # ╠═e4a81477-34da-4891-9d0e-34a30ada4ac3
 # ╠═9e4b837a-d031-41c9-b3f8-f079b0a6d16b
 # ╠═c114a7fc-12bd-4a4c-99c9-c665145eaf92
 # ╠═c6e28039-0412-4327-a4a0-b4df80b5ef78
 # ╠═e6b81054-46b2-4854-be41-ca522bead47a
-# ╠═87500e80-b58c-4f59-aaec-85348f8e615b
 # ╠═a29d5a40-6c4b-4a48-98c3-176f1a3a0591
 # ╠═f7bd50f3-607f-419f-bd64-c7c6e938bf14
 # ╠═87ebe306-cda2-49f3-980d-e303fd1244b7
@@ -256,8 +252,8 @@ end
 # ╠═376569b8-1225-4b44-9eae-62bdba87eed1
 # ╠═387b3778-a710-4bba-9942-b6119d1561da
 # ╠═b4cb025a-e473-4feb-aace-a533503c3672
-# ╠═9975941c-1735-4cee-9397-8237edf5c737
 # ╠═a820838f-7105-4770-8a26-b4cb4af3bec1
+# ╠═e6f8e419-2fb4-4c8a-afd3-05e500553cfc
 # ╠═5e6d15a4-c551-40bd-97ed-57c787734217
 # ╠═0adf29e7-a6e4-48ae-bfe0-e5340d1d1a70
 # ╠═0d81f6cb-c6d4-4748-b23c-46ab1b0f9a8e
