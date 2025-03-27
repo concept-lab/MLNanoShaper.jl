@@ -8,6 +8,7 @@
 /**/*.off
 /**/*.svg
 /**/*.stl
+/**/.venv
 /build/lib
 /scripts/jobs.bash
 /scripts/jobs.txt
