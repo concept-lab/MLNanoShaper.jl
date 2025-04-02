@@ -44,8 +44,8 @@ dataset_dir = "$(dirname(dirname(@__FILE__)))/examples"
 
 # ╔═╡ b91501dd-f66f-4a60-afa9-c4c9d0fc3504
 names = [
-"$(homedir())/datasets/models/tiny_angular_dense_s_jobs_14_6_3.5_c_2025-03-19_epoch_400_16958016431430762951"
-"$(homedir())/datasets/models/tiny_angular_dense_s_jobs_14_6_3_c_2025-03-19_epoch_400_9592899277305186470"
+"$(homedir())/datasets/models/tiny_angular_dense_s_jobs_14_6_5_c_2025-04-01_epoch_380_16218087812758961024"
+"$(homedir())/datasets/models/tiny_angular_dense_s_jobs_14_6_4_c_2025-04-01_epoch_380_3348615347101481220"
 ]
 
 # ╔═╡ 69ee1b79-b99d-4e3a-9769-254b1939aba6
@@ -129,6 +129,7 @@ ref = Ms.SimpleMesh(
     coordinates(_ref) .|> Tuple, GeometryBasics.faces(_ref) .|> Tuple .|> Ms.connect)
 
 # ╔═╡ e7e6584b-5059-46f6-a614-76866f1b1df9
+#=╠═╡
 begin
     f = Mk.Figure(size = (1000,700))
     Mk.Axis3(f[1, 1], title="tiny_angular_dense_cv 3A")
@@ -144,6 +145,7 @@ begin
 	Mk.Legend(f[1:2,3],[Mk.LineElement(color = :green),Mk.LineElement(color = :red)],["true value","predicted value"])
 	f
 end
+  ╠═╡ =#
 
 # ╔═╡ e78e5812-1927-4f67-bd3a-9bd1b577f9ad
 function get_input_slice(atoms::RegularGrid, step, z)

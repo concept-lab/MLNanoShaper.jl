@@ -116,7 +116,7 @@ function _main(; nb_epoch::Int = 0,
     if model != ""
         conf["TrainingParameters"]["model"] = model
     end
-    conf["TrainingParameters"]["on_gpu"] = on_gpu
+    conf["AuxiliaryParameters"]["on_gpu"] = on_gpu
     conf["TrainingParameters"]["model_kargs"] = Dict(
         :van_der_waals_channel => van_der_waals_channel, :smoothing => smoothing,:on_gpu => on_gpu)
     if nb_data_points > 0

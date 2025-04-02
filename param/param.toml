@@ -61,6 +61,7 @@ model_dir="datasets/models"
 log_dir="datasets/logs"
 nb_epoch=800
 save_periode=10
+on_gpu = false
 
 [TrainingParameters]
 name="A"

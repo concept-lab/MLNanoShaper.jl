@@ -105,6 +105,19 @@ function generate_true_probabilities(d_real::AbstractArray)
                            epsilon * is_inside
     probabilities
 end
+
+function get_regularisation_loss(model::AbstractLuxLayer,ps,st,input)
+    intermediary_model = ignore_derivatives() do
+         get_last_chain(model)
+     end
+    input = ignore_derivatives() do
+        similar(input.field,get_last_chain_dim(model),1)
+    end
+    output,_ = intermediary_model(input,ps,st)
+    sum(output .^2)
+end
+
+
 """
     categorical_loss(model, ps, st, (; point, atoms, d_real))
 
@@ -124,7 +137,7 @@ function categorical_loss(model::Lux.AbstractLuxLayer,
     v_pred = cpu_device()(v_pred)
     probabilities = ignore_derivatives() do
         generate_true_probabilities(d_reals)
-    end
+    end 
     epsilon = 1.0f-5
     true_vec = Iterators.filter(vec(d_reals)) do dist
         abs(dist) > epsilon
@@ -135,8 +148,9 @@ function categorical_loss(model::Lux.AbstractLuxLayer,
     end) do (_, pred)
         pred > 0.5f0
     end
+    loss = mean(KL(probabilities, v_pred)) + .15 * get_regularisation_loss(model,ps,st,inputs)
 
-    (KL(probabilities, v_pred) |> mean,
+    (loss,
         st, (; stats = BayesianStats(true_vec, pred_vec)))
 end
 

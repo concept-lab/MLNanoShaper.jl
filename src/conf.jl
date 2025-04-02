@@ -10,6 +10,7 @@ struct AuxiliaryParameters
     model_dir::String
     nb_epoch::UInt
     save_periode::Int
+    on_gpu::Bool
 end
 unpact_dict(T::Type, x::AbstractDict{Symbol}) = T(getindex.(Ref(x), fieldnames(T))...)
 """
@@ -29,7 +30,6 @@ struct TrainingParameters
     ref_distance::Float32
     loss::LossType
     learning_rate::Float64
-    on_gpu::Bool
 end
 
 function generate_training_name(x::TrainingParameters, epoch::Integer)

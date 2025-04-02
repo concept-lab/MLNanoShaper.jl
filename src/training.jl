@@ -202,12 +202,12 @@ end
 
 train the model given `TrainingParameters` and `AuxiliaryParameters`.
 """
-function _train(training_parameters::TrainingParameters, directories::AuxiliaryParameters)
-    (; model, learning_rate,on_gpu) = training_parameters
+function _train(training_parameters::TrainingParameters, auxiliary_parameters::AuxiliaryParameters)
+    (; model, learning_rate) = training_parameters
+    (; log_dir, on_gpu) = auxiliary_parameters
     device = on_gpu ? gpu_device() : identity
-    (; log_dir) = directories
-    optim = OptimiserChain(WeightDecay(), Adam(learning_rate))
-    (; train_data, test_data) = get_dataset(training_parameters, directories)
+    optim = OptimiserChain(ClipGrad(),WeightDecay(), Adam(learning_rate))
+    (; train_data, test_data) = get_dataset(training_parameters, auxiliary_parameters)
     ps = Lux.initialparameters(MersenneTwister(42), model())
     st = Lux.initialstates(MersenneTwister(42), model())
     with_logger(get_logger("$(homedir())/$log_dir/$(generate_training_name(training_parameters))")) do
@@ -217,6 +217,6 @@ function _train(training_parameters::TrainingParameters, directories::AuxiliaryP
                 ps |> device,
                 st |> device,
                 optim),
-            training_parameters, directories)
+            training_parameters, auxiliary_parameters)
     end
 end

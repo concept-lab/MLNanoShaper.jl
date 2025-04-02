@@ -1,4 +1,13 @@
 [deps]
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
+Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
+Lux = "b2108857-7c20-44ae-9111-449ecde12c47"
 MLNanoShaper = "0ae43799-6878-4589-9bc9-cf11e8180012"
 MLNanoShaperRunner = "0d104b66-282b-4c8e-a741-e32dba8f77f1"
+MLUtils = "f1d291b0-491e-4a28-83b9-f70985020b54"
+Optimisers = "3bd65402-5787-11e9-1adc-39752487f4e2"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
+TensorBoardLogger = "899adc3e-224a-11e9-021f-63837185c80f"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
