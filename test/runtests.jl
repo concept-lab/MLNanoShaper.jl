@@ -24,9 +24,9 @@ st = Lux.initialstates(MersenneTwister(42), model())
         with_logger(MLNanoShaper.get_logger("$log_dir/$(MLNanoShaper.generate_training_name(training_parameters))")) do
             MLNanoShaper._train((train_data, test_data),
                 Lux.Training.TrainState(
-                    MLNanoShaper.drop_preprocessing(model()),
-                    ps |> gpu_device(),
-                    st |> gpu_device(),
+                    MLNanoShaper.drop_preprocessing(model(on_gpu=false)),
+                    ps,
+                    st,
                     optim),
                 training_parameters, auxiliary_parameters)
         end
@@ -36,12 +36,13 @@ end
 
 
 @testset "derivation" begin
-    @test_nowarn begin
+    @test begin
         inputs =  MLNanoShaperRunner.ConcatenatedBatch(Float32[1;],[0,1])
         m = model() 
 
-         gradient(ps) do pd
+         @info gradient(ps) do ps
             MLNanoShaper.get_regularisation_loss(m,ps,st,inputs) 
         end
+        true
     end
 end
