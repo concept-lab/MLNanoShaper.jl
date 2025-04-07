@@ -269,9 +269,9 @@ version = "1.0.1+0"
 
 [[deps.CUDA]]
 deps = ["AbstractFFTs", "Adapt", "BFloat16s", "CEnum", "CUDA_Driver_jll", "CUDA_Runtime_Discovery", "CUDA_Runtime_jll", "Crayons", "DataFrames", "ExprTools", "GPUArrays", "GPUCompiler", "GPUToolbox", "KernelAbstractions", "LLVM", "LLVMLoopInfo", "LazyArtifacts", "Libdl", "LinearAlgebra", "Logging", "NVTX", "Preferences", "PrettyTables", "Printf", "Random", "Random123", "RandomNumbers", "Reexport", "Requires", "SparseArrays", "StaticArrays", "Statistics", "demumble_jll"]
-git-tree-sha1 = "049d804a037ed39300722bcad4b7a538eabe1e47"
+git-tree-sha1 = "acfe6dc14594afba70c002e3b4bfc2f1f8273347"
 uuid = "052768ef-5323-5732-b1bb-66c8b64840ba"
-version = "5.7.1"
+version = "5.7.2"
 weakdeps = ["ChainRulesCore", "EnzymeCore", "SpecialFunctions"]
 
     [deps.CUDA.extensions]
@@ -333,9 +333,9 @@ version = "0.1.13"
 
 [[deps.CodeTracking]]
 deps = ["InteractiveUtils", "UUIDs"]
-git-tree-sha1 = "7eee164f122511d3e4e1ebadb7956939ea7e1c77"
+git-tree-sha1 = "062c5e1a5bf6ada13db96a4ae4749a4c2234f521"
 uuid = "da1fd8a2-8d9e-5ec2-8556-3022fb5608a2"
-version = "1.3.6"
+version = "1.3.9"
 
 [[deps.CodecZlib]]
 deps = ["TranscodingStreams", "Zlib_jll"]
@@ -808,9 +808,9 @@ version = "1.11.0"
 
 [[deps.IntervalArithmetic]]
 deps = ["CRlibm_jll", "LinearAlgebra", "MacroTools", "OpenBLASConsistentFPCSR_jll", "RoundingEmulator"]
-git-tree-sha1 = "8387caef6e4dfdd452b2a46dc0ad001ff6866403"
+git-tree-sha1 = "5aad168b75fc3b6b25e99feb1e6e3168d41e4c08"
 uuid = "d1acc4aa-44c8-5952-acd4-ba5d80a2a253"
-version = "0.22.27"
+version = "0.22.28"
 
     [deps.IntervalArithmetic.extensions]
     IntervalArithmeticDiffRulesExt = "DiffRules"
@@ -1049,9 +1049,9 @@ version = "3.1.0"
 
 [[deps.Lux]]
 deps = ["ADTypes", "Adapt", "ArgCheck", "ArrayInterface", "ChainRulesCore", "Compat", "ConcreteStructs", "DiffResults", "DispatchDoctor", "EnzymeCore", "FastClosures", "ForwardDiff", "Functors", "GPUArraysCore", "LinearAlgebra", "LuxCore", "LuxLib", "MLDataDevices", "MacroTools", "Markdown", "NNlib", "Optimisers", "Preferences", "Random", "Reexport", "SIMDTypes", "Setfield", "Static", "StaticArraysCore", "Statistics", "WeightInitializers"]
-git-tree-sha1 = "3deec22c26539dc2838faff445104fd9755202fe"
+git-tree-sha1 = "ae83c84e8f6cae3b51d7847b75077c5102ef246d"
 uuid = "b2108857-7c20-44ae-9111-449ecde12c47"
-version = "1.12.0"
+version = "1.12.1"
 
     [deps.Lux.extensions]
     LuxComponentArraysExt = "ComponentArrays"
@@ -1211,7 +1211,7 @@ uuid = "0ae43799-6878-4589-9bc9-cf11e8180012"
 version = "0.1.0"
 
 [[deps.MLNanoShaperRunner]]
-deps = ["Adapt", "BioStructures", "ChainRulesCore", "ConcreteStructs", "Distances", "Folds", "GeometryBasics", "LinearAlgebra", "Lux", "LuxCore", "NearestNeighbors", "Random", "Reexport", "Serialization", "SimpleChains", "Static", "StaticTools", "Statistics", "StructArrays", "TOML", "Transducers"]
+deps = ["Adapt", "BioStructures", "ChainRulesCore", "ConcreteStructs", "Distances", "Folds", "GeometryBasics", "LinearAlgebra", "Lux", "LuxCore", "NearestNeighbors", "Random", "Reexport", "Serialization", "SimpleChains", "Static", "StaticArrays", "StaticTools", "Statistics", "StructArrays", "TOML", "Transducers"]
 path = "../MLNanoShaperRunner"
 uuid = "0d104b66-282b-4c8e-a741-e32dba8f77f1"
 version = "0.1.0"
@@ -1343,9 +1343,9 @@ version = "3.1.1+0"
 
 [[deps.NaNMath]]
 deps = ["OpenLibm_jll"]
-git-tree-sha1 = "cc0a5deefdb12ab3a096f00a6d42133af4560d71"
+git-tree-sha1 = "9b8215b1ee9e78a293f99797cd31375471b2bcae"
 uuid = "77ba4419-2d1f-58cd-9bb1-8ffee604a2e3"
-version = "1.1.2"
+version = "1.1.3"
 
 [[deps.NameResolution]]
 deps = ["PrettyPrint"]
@@ -1500,9 +1500,9 @@ version = "0.1.4"
 
 [[deps.ProtoBuf]]
 deps = ["BufferedStreams", "Dates", "EnumX", "TOML"]
-git-tree-sha1 = "0d9c5c0cfb47f0588ed49081427c64d5bc090d6e"
+git-tree-sha1 = "fc4db306152dbc89035d5c6d9319a69cf5d4f4b9"
 uuid = "3349acd9-ac6a-5e09-bcdb-63829b23a429"
-version = "1.1.0"
+version = "1.1.1"
 
 [[deps.PtrArrays]]
 git-tree-sha1 = "1d36ef11a9aaf1e8b74dacc6a731dd1de8fd493d"
@@ -1754,9 +1754,9 @@ version = "0.4.1"
 
 [[deps.StructArrays]]
 deps = ["ConstructionBase", "DataAPI", "Tables"]
-git-tree-sha1 = "5a3a31c41e15a1e042d60f2f4942adccba05d3c9"
+git-tree-sha1 = "8ad2e38cbb812e29348719cc63580ec1dfeb9de4"
 uuid = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
-version = "0.7.0"
+version = "0.7.1"
 weakdeps = ["Adapt", "GPUArraysCore", "KernelAbstractions", "LinearAlgebra", "SparseArrays", "StaticArrays"]
 
     [deps.StructArrays.extensions]

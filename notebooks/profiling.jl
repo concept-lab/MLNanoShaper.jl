@@ -11,7 +11,7 @@ using Pkg;Pkg.activate(".")
 using MLNanoShaper, MLNanoShaperRunner, FileIO, StructArrays, Static, Serialization,
       GeometryBasics, LuxCUDA, Lux, Profile, ProfileSVG, ChainRulesCore, Folds,
       BenchmarkTools, Zygote, Distances, LinearAlgebra, LoopVectorization, Folds,
-      StaticTools, PProf, CUDA, Adapt, NearestNeighbors, MarchingCubes, FileIO, Transducers,Accessors, Revise
+      StaticTools, PProf, CUDA, Adapt, NearestNeighbors, MarchingCubes, FileIO, Transducers,Accessors, Revise, GeometryBasics, StaticArrays
 
 # ╔═╡ e4a81477-34da-4891-9d0e-34a30ada4ac3
 using Base.Threads
@@ -31,45 +31,8 @@ html"""
 # ╔═╡ 1c0a8115-da6e-4b09-a9ac-17672c8b73d2
 import CairoMakie as Mk
 
-# ╔═╡ 9e4b837a-d031-41c9-b3f8-f079b0a6d16b
-function evaluate_model(model,atoms;step=1)
-	mins = atoms.start .-2
-	maxes = mins .+ size(atoms.grid) .* atoms.radius .+2
-    ranges = range.(mins, maxes; step)
-    grid = Point3f.(reshape(ranges[1], :, 1,1), reshape(ranges[2], 1, :,1), reshape(ranges[3], 1,1,:))
-	volume = Folds.map(grid) do x
-        model((Batch([x]), atoms)) |> only
-    end
-	volume
-end
-
 # ╔═╡ c6e28039-0412-4327-a4a0-b4df80b5ef78
 step = 1
-
-# ╔═╡ e6b81054-46b2-4854-be41-ca522bead47a
-function write_off(filename::String, mesh::GeometryBasics.Mesh)
-    open(filename, "w") do io
-        # Write OFF header
-        println(io, "OFF")
-        # Write number of vertices, faces, and edges (0 for edges as it's typically not used)
-        vertices = mesh.position
-        faces = mesh.faces
-        println(io, "$(length(vertices)) $(length(faces)) 0")
-        
-        # Write vertex coordinates
-        for vertex in vertices
-            println(io, "$(vertex[1]) $(vertex[2]) $(vertex[3])")
-        end
-        
-        # Write faces (first number is the number of vertices in the face)
-        for face in faces
-            # Assuming triangular faces (3 vertices per face)
-            # Note: OFF format uses 0-based indexing, while Julia uses 1-based indexing
-            indices = [i-1 for i in face]  # Convert to 0-based indexing
-            println(io, "3 $(indices[1]) $(indices[2]) $(indices[3])")
-        end
-    end
-end
 
 # ╔═╡ 47641b85-0596-4ce4-992b-6811ff89574b
 nthreads()
@@ -87,7 +50,132 @@ atoms = RegularGrid(
     StructVector,3f0)
 
 # ╔═╡ 08abee3c-49ee-42a1-adae-7b5a7d09a8f5
-#@benchmark MLNanoShaperRunner._inrange(atoms,Point3f(10,22,0)) 
+@allocations MLNanoShaperRunner._inrange(Vector{Sphere},atoms,Point3f(10,22,0)) 
+
+# ╔═╡ 4c1d9e27-d23a-4817-ab9c-8c1a3142652b
+x = [1,2]
+
+# ╔═╡ 0a9217de-a955-4cad-81c6-86c9283caa01
+b = Batch([Point3f(10,22,0) for _ in 1:1000])
+
+# ╔═╡ d2390332-04a4-46c0-8ce5-0fdfb4179e03
+@allocations MLNanoShaperRunner._inrange(Matrix{Sphere},atoms,Batch([Point3f(10,22,0) for _ in 1:20])) 
+
+# ╔═╡ 08a75719-bb45-42e7-a544-1188a7c08e2b
+@allocations Ref(1)
+
+# ╔═╡ 29af96fc-56f9-48ed-9256-c88ad8c5416b
+@benchmark MLNanoShaperRunner._inrange(Matrix{Sphere},atoms,Batch([Point3f(10,22,0) for _ in 1:1])) 
+
+# ╔═╡ 017a44b2-f3e5-4760-8ba8-e907a04f81c0
+dx = [-1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+
+# ╔═╡ 2dc88a0b-73cb-4fde-afbd-acdb80477101
+dy = [-1, -1, -1, 0, 0, 0, 1, 1, 1, -1, -1, -1, 0, 0, 0, 1, 1, 1, -1, -1, -1, 0, 0, 0, 1, 1, 1]
+
+# ╔═╡ 95128735-cb1d-4b15-a634-18c516d3fd3d
+dz = [-1, 0, 1, -1, 0, 1, -1, 0, 1, -1, 0, 1, -1, 0, 1, -1, 0, 1, -1, 0, 1, -1, 0, 1, -1, 0, 1]
+
+# ╔═╡ 688854e5-72c7-41eb-95de-86dab8f6b904
+@benchmark MLNanoShaperRunner.__inrange(x ->nothing,atoms,Point3f(10,22,0),dx,dy,dz)
+
+# ╔═╡ efc64b46-6795-4395-9e03-ac81ce7d10c4
+@inline function get_id(point::Point3{T}, start::Point3{T}, radius::T)::Point3{Int} where T
+    scaled_offset = (point .- start) ./ radius
+    return unsafe_trunc.(Int64, scaled_offset ) .+ 1
+end
+
+# ╔═╡ a10220cb-7235-4586-aa42-13f6cd2b5a96
+function __inrange(f!::Function, g::RegularGrid{T}, p::Point3{T},dx::AbstractVector{Int},dy::AbstractVector{Int},dz::AbstractVector{Int}) where {T}
+    index = get_id(p, g.start, g.radius)
+	return
+	x,y,z = index
+    r2 = g.radius^2
+    for i in 1:27
+        x1 = x + dx[i]
+        y1 = y + dy[i]
+        z1 = z + dz[i]
+        if x1 in axes(g.grid, 1) && y1 in axes(g.grid, 2) && z1 in axes(g.grid, 3)
+            for s in g.grid[x1, y1, z1]
+                if sum((p .- g.center(s)) .^ 2) < r2
+                    nothing
+                end
+            end
+        end
+    end
+end
+
+# ╔═╡ e215e7dc-8fbd-45cf-a750-789c49c41029
+function _inrange(::Type{G}, g::RegularGrid{T}, p::Batch{<:AbstractVector{Point3{T}}}) where {T,G}
+    n = length(p.field)
+    res = MLNanoShaperRunner._summon_type(G)(undef, 128, n)
+    ret = Vector{SubArray{eltype(G),1,G,Tuple{UnitRange{Int64},Int},true}}(undef, n)
+	i = Ref(1)
+    for j in 1:n
+		i[] = 1
+        __inrange(x -> MLNanoShaperRunner.my_push!(res,i,j,x), g, p.field[j],dx,dy,dz)
+		#@info typeof(@view res[1:i[],j])
+        ret[j] =@view res[1:i[],j]
+    end
+    ret
+end
+
+# ╔═╡ 862548ce-a24c-4396-a343-7a48e28ff11f
+@benchmark _inrange(Matrix{Sphere{Float32}},atoms,b) 
+
+# ╔═╡ fa13ff40-ff34-4a81-bd3e-74e0a10d5785
+@allocations  _inrange(Matrix{Sphere{Float32}},atoms,b) 
+
+# ╔═╡ a7700bc0-69e6-4f80-92ee-234aacce5bc6
+@code_native _inrange(Matrix{Sphere{Float32}},atoms,b) 
+
+# ╔═╡ dea65c13-ddac-4c26-a388-b6b931533782
+@allocations __inrange(x ->nothing,atoms,Point3f(-1.84,15.696,-3.1),dx,dy,dz)
+
+# ╔═╡ d38d4fca-eacd-476d-8f96-fe71e81f8b45
+@code_native __inrange(x ->nothing,atoms,Point3f(-1.84,15.696,-3.1),dx,dy,dz)
+
+# ╔═╡ 9579140a-0795-447e-9880-65fee4511579
+trunc(Int64,-1.1)
+
+# ╔═╡ 722045b9-9522-4fc3-8333-546e438ea1a1
+floor(Int64,-1.1)
+
+# ╔═╡ 8281213a-ec6b-43c6-b5ef-bc3781489dbf
+@code_native atoms.center
+
+# ╔═╡ bc1a6493-4f30-4080-8f90-736290edab7c
+atoms.grid |> typeof
+
+# ╔═╡ e66cfea3-cc28-4e5f-9054-52132c0f0714
+typeof(atoms)
+
+# ╔═╡ 402ca037-bbff-4917-88ab-49455da9d98c
+function f()
+	p = Point3f(-1.84,15.696,-3.1)
+	g = atoms
+	coord =  get_id(p, g.start, g.radius)
+	x,y,z = coord
+    r2 = g.radius^2
+    for i in 1:27
+        x1 = x + dx[i]
+        y1 = y + dy[i]
+        z1 = z + dz[i]
+        if x1 in axes(g.grid, 1) && y1 in axes(g.grid, 2) && z1 in axes(g.grid, 3)
+            for s in g.grid[x1, y1, z1]
+                if sum((p .- g.center(s)) .^ 2) < r2
+                    nothing
+                end
+            end
+        end
+    end
+end
+
+# ╔═╡ f20b112f-a01b-4da2-b5ba-a7b37b6b944f
+@allocated MLNanoShaperRunner.get_id(Point3f(-1.84,15.696,-3.1), atoms.start, atoms.radius)
+
+# ╔═╡ 6de0dc85-76da-405b-8bfb-d0d8f66e3d58
+atoms.grid[8,8,5][1]
 
 # ╔═╡ f2343acb-23c2-4155-b393-c0bcea4d9760
 #@benchmark model((MLNanoShaperRunner.Batch([Point3f(10,22,0)]),atoms))
@@ -99,28 +187,25 @@ atoms = RegularGrid(
 #@benchmark model((MLNanoShaperRunner.Batch([Point3f(10,22,0) for _ in 1:1000]),atoms))
 
 # ╔═╡ f723350c-c5c2-428b-9617-4db6722d87f7
-#@benchmark model((MLNanoShaperRunner.Batch([Point3f(10,22,0) for _ in 1:1000_000]),atoms))
+#@benchmark model((MLNanoShaperRunner.Batch([Point3f(10,22,0) for _ in 1:100000]),atoms))
 
 # ╔═╡ cb7a84e8-d5ae-4f43-a1ca-bd047f39dd2b
-#@benchmark model_gpu((MLNanoShaperRunner.Batch([Point3f(10,22,0) for _ in 1:1000]),atoms))
+#@benchmark model_gpu((MLNanoShaperRunner.Batch([Point3f(10,22,0) for _ in 1:100000]),atoms)
 
 # ╔═╡ fac62889-166c-43dc-8bb9-210f217ebcb0
-#@benchmark model.model.layers[1].fun((MLNanoShaperRunner.Batch([Point3f(10,22,0) for _ in 1:1000]),atoms))
+#@benchmark model.model.layers[1].fun((MLNanoShaperRunner.Batch([Point3f(10,22,0) for _ in 1:100000]),atoms))
+
+# ╔═╡ 1ba4d717-e948-4a8e-b96b-0bc21d284e54
+(11 - 9.5)/ (77 - 9.5 )
 
 # ╔═╡ c97eb631-f5fa-4f13-a7bf-2bc874c527d2
-CUDA.@profile model_gpu((MLNanoShaperRunner.Batch([Point3f(10,22,0) for _ in 1:1000]),atoms))
-
-# ╔═╡ 3817b4a9-18ea-490f-9bf0-2b9593478bdd
-14.3 - 11.6
-
-# ╔═╡ c89ef485-4986-4c9e-adc4-1e8019a872cb
-11.6 - 8.3
+#CUDA.@profile model_gpu((MLNanoShaperRunner.Batch([Point3f(10,22,0) for _ in 1:1000]),atoms))
 
 # ╔═╡ d634d86e-3db5-4d25-8177-0fcb7ff18643
 77/20
 
 # ╔═╡ bb374966-08bf-420b-a486-eba42ad359ce
-@benchmark model.model.layers[1].fun((MLNanoShaperRunner.Batch([Point3f(10,22,0) for _ in 1:10]),atoms))
+#@benchmark model.model.layers[1].fun((MLNanoShaperRunner.Batch([Point3f(10,22,0) for _ in 1:10]),atoms))
 
 # ╔═╡ 376569b8-1225-4b44-9eae-62bdba87eed1
 #@benchmark MLNanoShaperRunner.select_neighboord(Point3f(10,22,0),atoms)
@@ -132,7 +217,7 @@ length(atoms.grid) * 2e-6 * 3*3*3 / 12
 model_weights = deserialize("$(homedir())/datasets/models/tiny_angular_dense_s_jobs_14_6_3_c_2025-03-19_epoch_400_9592899277305186470")
 
 # ╔═╡ a820838f-7105-4770-8a26-b4cb4af3bec1
-model_gpu = Lux.StatefulLuxLayer{true}(model_weights.model(on_gpu=true),model_weights.parameters |> gpu_device(),model_weights.states)
+model_gpu = MLNanoShaperRunner.production_instantiate(model_weights,on_gpu=true)
 
 # ╔═╡ e6f8e419-2fb4-4c8a-afd3-05e500553cfc
 model_fixed_size = Lux.StatefulLuxLayer{true}(model_weights.model(max_nb_atoms = 10),model_weights.parameters,model_weights.states)
@@ -143,42 +228,11 @@ gpu_device()
 # ╔═╡ 0adf29e7-a6e4-48ae-bfe0-e5340d1d1a70
 model = MLNanoShaperRunner.production_instantiate(model_weights)
 
-# ╔═╡ c114a7fc-12bd-4a4c-99c9-c665145eaf92
-model((Batch([Point3f(10,22.65,0),Point3f(0,0,0),Point3f(0,0,0)]),atoms))
-
-# ╔═╡ a29d5a40-6c4b-4a48-98c3-176f1a3a0591
-begin
-	vol = evaluate_model(model,atoms;step)
-	mins = atoms.start .-2 |> collect
-	maxes = mins .+ size(atoms.grid) .* Float32(atoms.radius) .+2
-	x,y,z = range.(mins,maxes;step) .|> collect .|> Vector{Float32}
-	mc = MC(vol;x,y,z)
-	march(mc,.5)
-	msh = MarchingCubes.makemesh(GeometryBasics, mc)
-	msh
-	Mk.mesh(msh; color = :red)
-end
-
-# ╔═╡ f7bd50f3-607f-419f-bd64-c7c6e938bf14
-vol
-
-# ╔═╡ 87ebe306-cda2-49f3-980d-e303fd1244b7
-# ╠═╡ skip_as_script = true
-#=╠═╡
-write_off("predicted.off",msh)
-  ╠═╡ =#
-
-# ╔═╡ c4b601eb-8f31-4d07-84a4-46c58ee81e6b
-abs.(MLNanoShaperRunner.evaluate_field(model,atoms) .- evaluate_model(model,atoms)) |> maximum
-
 # ╔═╡ 0d81f6cb-c6d4-4748-b23c-46ab1b0f9a8e
 cutoff_radius = 3.0f0
 
 # ╔═╡ 2ff3238a-2205-405a-9075-553f27db84d6
-default_value = -8.0f0
 
-# ╔═╡ cfea79c8-b72f-462c-ac17-6ab259677430
-@benchmark cu([1,2])
 
 # ╔═╡ f44f276c-7de9-49dc-b584-5a64a04006a0
 51 * 56 * 48 / 4000 * 0.03
@@ -214,7 +268,7 @@ using malloc in preprocessing : 78 ms
 begin
     Profile.clear()
     Profile.init(n = 10^6, delay = .05*10^-6)
-    @profile  [model((MLNanoShaperRunner.Batch([Point3f(10,22,0) for _ in 1:1000]),atoms)) for _ in 1:100] 
+    @profile [MLNanoShaperRunner._inrange(Matrix{Sphere},atoms,Batch([Point3f(10,22,0) for _ in 1:100])) for _ in 1:100] 
 	pprof()
 end
   ╠═╡ =#
@@ -225,28 +279,45 @@ end
 # ╠═1c0a8115-da6e-4b09-a9ac-17672c8b73d2
 # ╠═e9f0f433-0fe9-4096-b484-b432ec54afc8
 # ╠═e4a81477-34da-4891-9d0e-34a30ada4ac3
-# ╠═9e4b837a-d031-41c9-b3f8-f079b0a6d16b
-# ╠═c114a7fc-12bd-4a4c-99c9-c665145eaf92
 # ╠═c6e28039-0412-4327-a4a0-b4df80b5ef78
-# ╠═e6b81054-46b2-4854-be41-ca522bead47a
-# ╠═a29d5a40-6c4b-4a48-98c3-176f1a3a0591
-# ╠═f7bd50f3-607f-419f-bd64-c7c6e938bf14
-# ╠═87ebe306-cda2-49f3-980d-e303fd1244b7
 # ╠═47641b85-0596-4ce4-992b-6811ff89574b
 # ╠═5765cbc5-ec12-406e-b43f-9291c99b9d1d
 # ╠═2cce8a1a-97fe-45ae-bca7-584b843739d6
 # ╠═d9898910-1b29-400c-bcea-457017723c70
-# ╠═c4b601eb-8f31-4d07-84a4-46c58ee81e6b
 # ╠═08abee3c-49ee-42a1-adae-7b5a7d09a8f5
+# ╠═e215e7dc-8fbd-45cf-a750-789c49c41029
+# ╠═862548ce-a24c-4396-a343-7a48e28ff11f
+# ╠═4c1d9e27-d23a-4817-ab9c-8c1a3142652b
+# ╠═0a9217de-a955-4cad-81c6-86c9283caa01
+# ╠═fa13ff40-ff34-4a81-bd3e-74e0a10d5785
+# ╠═a7700bc0-69e6-4f80-92ee-234aacce5bc6
+# ╠═d2390332-04a4-46c0-8ce5-0fdfb4179e03
+# ╠═08a75719-bb45-42e7-a544-1188a7c08e2b
+# ╠═29af96fc-56f9-48ed-9256-c88ad8c5416b
+# ╠═688854e5-72c7-41eb-95de-86dab8f6b904
+# ╠═017a44b2-f3e5-4760-8ba8-e907a04f81c0
+# ╠═2dc88a0b-73cb-4fde-afbd-acdb80477101
+# ╠═95128735-cb1d-4b15-a634-18c516d3fd3d
+# ╠═a10220cb-7235-4586-aa42-13f6cd2b5a96
+# ╠═dea65c13-ddac-4c26-a388-b6b931533782
+# ╠═d38d4fca-eacd-476d-8f96-fe71e81f8b45
+# ╠═efc64b46-6795-4395-9e03-ac81ce7d10c4
+# ╠═9579140a-0795-447e-9880-65fee4511579
+# ╠═722045b9-9522-4fc3-8333-546e438ea1a1
+# ╠═8281213a-ec6b-43c6-b5ef-bc3781489dbf
+# ╠═bc1a6493-4f30-4080-8f90-736290edab7c
+# ╠═e66cfea3-cc28-4e5f-9054-52132c0f0714
+# ╠═402ca037-bbff-4917-88ab-49455da9d98c
+# ╠═f20b112f-a01b-4da2-b5ba-a7b37b6b944f
+# ╠═6de0dc85-76da-405b-8bfb-d0d8f66e3d58
 # ╠═f2343acb-23c2-4155-b393-c0bcea4d9760
 # ╠═187ca178-6b4c-406b-b312-81e12026b720
 # ╠═f49f8d87-540b-4767-bbb2-794cab2da54a
 # ╠═f723350c-c5c2-428b-9617-4db6722d87f7
 # ╠═cb7a84e8-d5ae-4f43-a1ca-bd047f39dd2b
 # ╠═fac62889-166c-43dc-8bb9-210f217ebcb0
+# ╠═1ba4d717-e948-4a8e-b96b-0bc21d284e54
 # ╠═c97eb631-f5fa-4f13-a7bf-2bc874c527d2
-# ╠═3817b4a9-18ea-490f-9bf0-2b9593478bdd
-# ╠═c89ef485-4986-4c9e-adc4-1e8019a872cb
 # ╠═d634d86e-3db5-4d25-8177-0fcb7ff18643
 # ╠═bb374966-08bf-420b-a486-eba42ad359ce
 # ╠═376569b8-1225-4b44-9eae-62bdba87eed1
@@ -258,7 +329,6 @@ end
 # ╠═0adf29e7-a6e4-48ae-bfe0-e5340d1d1a70
 # ╠═0d81f6cb-c6d4-4748-b23c-46ab1b0f9a8e
 # ╠═2ff3238a-2205-405a-9075-553f27db84d6
-# ╠═cfea79c8-b72f-462c-ac17-6ab259677430
 # ╠═f44f276c-7de9-49dc-b584-5a64a04006a0
 # ╠═70663eda-5bd3-4f08-8792-5f848edccaff
 # ╠═1b16179f-8da8-4c34-9455-5554a3151f40

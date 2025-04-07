@@ -108,7 +108,7 @@ end
 
 function get_regularisation_loss(model::AbstractLuxLayer,ps,st,input)
     ignore_derivatives() do
-        @info model ps st input
+        # @info model ps st input
     end
     intermediary_model = ignore_derivatives() do
          get_last_chain(model)
@@ -138,13 +138,21 @@ function categorical_loss(model::Lux.AbstractLuxLayer,
             inputs,
             d_reals))::Tuple{
         Float32, Any, CategoricalMetric}
-    v_pred, st = model(inputs, ps, st)
+    v_pred, _st = model(inputs, ps, st)
     v_pred = vcat(v_pred, 1 .- v_pred)
     v_pred = cpu_device()(v_pred)
     probabilities = ignore_derivatives() do
         generate_true_probabilities(d_reals)
     end 
     epsilon = 1.0f-5
+    model,st,inputs = ignore_derivatives() do
+        model,st,inputs
+    end
+    loss = mean(KL(probabilities, v_pred)) +  1f-5 *get_regularisation_loss(model,ps,st,inputs)
+    ignore_derivatives() do
+        @info "loss" loss mean(KL(probabilities, v_pred)) get_regularisation_loss(model,ps,st,inputs)
+        # @assert !isnan(loss)
+    end
     stats = ignore_derivatives() do
         true_vec = Iterators.filter(vec(d_reals)) do dist
             abs(dist) > epsilon
@@ -157,13 +165,8 @@ function categorical_loss(model::Lux.AbstractLuxLayer,
         end
         BayesianStats(true_vec, pred_vec)
     end    
-    loss = mean(KL(probabilities, v_pred))# +  .15 * get_regularisation_loss(model,ps,st,inputs)
-    ignore_derivatives() do
-        @info "loss" loss mean(KL(probabilities, v_pred)) get_regularisation_loss(model,ps,st,inputs)
-       @assert !isnan(loss)
-    end
 
-    (loss, st, (;stats ))
+    (loss, _st, (;stats ))
 end
 
 struct CategoricalLoss <: LossType end

@@ -10,7 +10,7 @@ auxiliary_parameters = MLNanoShaper.read_from_TOML(
     MLNanoShaper.AuxiliaryParameters, conf)
 (; model, learning_rate) = training_parameters
 log_dir = mktempdir()
-optim = OptimiserChain(WeightDecay(), Adam(learning_rate))
+optim = OptimiserChain(ClipGrad(),WeightDecay(), Adam(learning_rate))
 ps = Lux.initialparameters(MersenneTwister(42), model())
 st = Lux.initialstates(MersenneTwister(42), model())
 
