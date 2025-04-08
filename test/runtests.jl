@@ -1,6 +1,7 @@
 using Test
 using TOML, MLUtils, Optimisers, Logging, TensorBoardLogger, Lux, Random, Zygote 
 using MLNanoShaper, MLNanoShaperRunner
+Random.seed!(1234)
 conf = TOML.parsefile(MLNanoShaper.params_file)
 conf["AuxiliaryParameters"]["nb_epoch"] = 1 |> UInt
 conf["AuxiliaryParameters"]["model_dir"] = mktempdir()
