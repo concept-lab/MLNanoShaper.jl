@@ -41,7 +41,7 @@ end
         inputs =  MLNanoShaperRunner.ConcatenatedBatch(Float32[1;],[0,1])
         m = model() 
 
-         @info gradient(ps) do ps
+         gradient(ps) do ps
             MLNanoShaper.get_regularisation_loss(m,ps,st,inputs) 
         end
         true

@@ -162,7 +162,7 @@ function categorical_loss(model::Lux.AbstractLuxLayer,
     end
     m =  mean(KL(probabilities, v_pred))
     reg_loss = get_regularisation_loss(model,ps,st,inputs)
-    loss = m +  1f-3 *reg_loss
+    loss = m +  .5f0 *reg_loss
     ignore_derivatives() do
         @assert !isnan(loss)
     end
