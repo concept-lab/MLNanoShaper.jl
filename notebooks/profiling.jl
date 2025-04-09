@@ -52,11 +52,20 @@ atoms = RegularGrid(
 # ╔═╡ 08abee3c-49ee-42a1-adae-7b5a7d09a8f5
 @allocations MLNanoShaperRunner._inrange(Vector{Sphere},atoms,Point3f(10,22,0)) 
 
+# ╔═╡ 862548ce-a24c-4396-a343-7a48e28ff11f
+@benchmark _inrange(Matrix{Sphere{Float32}},atoms,b) 
+
 # ╔═╡ 4c1d9e27-d23a-4817-ab9c-8c1a3142652b
 x = [1,2]
 
 # ╔═╡ 0a9217de-a955-4cad-81c6-86c9283caa01
 b = Batch([Point3f(10,22,0) for _ in 1:1000])
+
+# ╔═╡ fa13ff40-ff34-4a81-bd3e-74e0a10d5785
+@allocations  _inrange(Matrix{Sphere{Float32}},atoms,b) 
+
+# ╔═╡ a7700bc0-69e6-4f80-92ee-234aacce5bc6
+@code_native _inrange(Matrix{Sphere{Float32}},atoms,b) 
 
 # ╔═╡ d2390332-04a4-46c0-8ce5-0fdfb4179e03
 @allocations MLNanoShaperRunner._inrange(Matrix{Sphere},atoms,Batch([Point3f(10,22,0) for _ in 1:20])) 
@@ -67,6 +76,9 @@ b = Batch([Point3f(10,22,0) for _ in 1:1000])
 # ╔═╡ 29af96fc-56f9-48ed-9256-c88ad8c5416b
 @benchmark MLNanoShaperRunner._inrange(Matrix{Sphere},atoms,Batch([Point3f(10,22,0) for _ in 1:1])) 
 
+# ╔═╡ 688854e5-72c7-41eb-95de-86dab8f6b904
+@benchmark MLNanoShaperRunner.__inrange(x ->nothing,atoms,Point3f(10,22,0),dx,dy,dz)
+
 # ╔═╡ 017a44b2-f3e5-4760-8ba8-e907a04f81c0
 dx = [-1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 
@@ -75,15 +87,6 @@ dy = [-1, -1, -1, 0, 0, 0, 1, 1, 1, -1, -1, -1, 0, 0, 0, 1, 1, 1, -1, -1, -1, 0,
 
 # ╔═╡ 95128735-cb1d-4b15-a634-18c516d3fd3d
 dz = [-1, 0, 1, -1, 0, 1, -1, 0, 1, -1, 0, 1, -1, 0, 1, -1, 0, 1, -1, 0, 1, -1, 0, 1, -1, 0, 1]
-
-# ╔═╡ 688854e5-72c7-41eb-95de-86dab8f6b904
-@benchmark MLNanoShaperRunner.__inrange(x ->nothing,atoms,Point3f(10,22,0),dx,dy,dz)
-
-# ╔═╡ efc64b46-6795-4395-9e03-ac81ce7d10c4
-@inline function get_id(point::Point3{T}, start::Point3{T}, radius::T)::Point3{Int} where T
-    scaled_offset = (point .- start) ./ radius
-    return unsafe_trunc.(Int64, scaled_offset ) .+ 1
-end
 
 # ╔═╡ a10220cb-7235-4586-aa42-13f6cd2b5a96
 function __inrange(f!::Function, g::RegularGrid{T}, p::Point3{T},dx::AbstractVector{Int},dy::AbstractVector{Int},dz::AbstractVector{Int}) where {T}
@@ -120,20 +123,17 @@ function _inrange(::Type{G}, g::RegularGrid{T}, p::Batch{<:AbstractVector{Point3
     ret
 end
 
-# ╔═╡ 862548ce-a24c-4396-a343-7a48e28ff11f
-@benchmark _inrange(Matrix{Sphere{Float32}},atoms,b) 
-
-# ╔═╡ fa13ff40-ff34-4a81-bd3e-74e0a10d5785
-@allocations  _inrange(Matrix{Sphere{Float32}},atoms,b) 
-
-# ╔═╡ a7700bc0-69e6-4f80-92ee-234aacce5bc6
-@code_native _inrange(Matrix{Sphere{Float32}},atoms,b) 
-
 # ╔═╡ dea65c13-ddac-4c26-a388-b6b931533782
 @allocations __inrange(x ->nothing,atoms,Point3f(-1.84,15.696,-3.1),dx,dy,dz)
 
 # ╔═╡ d38d4fca-eacd-476d-8f96-fe71e81f8b45
 @code_native __inrange(x ->nothing,atoms,Point3f(-1.84,15.696,-3.1),dx,dy,dz)
+
+# ╔═╡ efc64b46-6795-4395-9e03-ac81ce7d10c4
+@inline function get_id(point::Point3{T}, start::Point3{T}, radius::T)::Point3{Int} where T
+    scaled_offset = (point .- start) ./ radius
+    return unsafe_trunc.(Int64, scaled_offset ) .+ 1
+end
 
 # ╔═╡ 9579140a-0795-447e-9880-65fee4511579
 trunc(Int64,-1.1)

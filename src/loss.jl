@@ -127,8 +127,10 @@ function get_regularisation_loss(model::AbstractLuxLayer,ps,st,input)
          get_last_chain(model)
      end
     input = ignore_derivatives() do
-        a = similar(input.field,get_last_chain_dim(model),1)
+        device = model[2].prepross[1].func
+        a = similar(input.field,get_last_chain_dim(model),1) |> device
         a .= zero(eltype(input.field))
+        # @info "input" a input.field
         a
     end
     output = first(intermediary_model(input,ps,st))
@@ -148,8 +150,10 @@ function categorical_loss(model::Lux.AbstractLuxLayer,
         st,
         (;
             inputs,
-            d_reals))::Tuple{
-        Float32, Any, CategoricalMetric}
+            d_reals))::Tuple{Float32, <:Any, CategoricalMetric}
+    # ignore_derivatives() do
+        # @info "loss" model inputs ps st
+    # end
     v_pred, _st = model(inputs, ps, st)
     v_pred = vcat(v_pred, 1 .- v_pred)
     v_pred = cpu_device()(v_pred)
@@ -163,9 +167,6 @@ function categorical_loss(model::Lux.AbstractLuxLayer,
     m =  mean(KL(probabilities, v_pred))
     reg_loss = get_regularisation_loss(model,ps,st,inputs)
     loss = m +  .5f0 *reg_loss
-    ignore_derivatives() do
-        @assert !isnan(loss)
-    end
     stats = ignore_derivatives() do
         true_vec = Iterators.filter(vec(d_reals)) do dist
             abs(dist) > epsilon
