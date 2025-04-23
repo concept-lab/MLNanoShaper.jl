@@ -78,14 +78,6 @@ full_data = map(MLNanoShaper.implicit_surface.(Ref(atoms), models[1:1], param[1:
 end |> StructVector
   ╠═╡ =#
 
-# ╔═╡ ff9a463c-7742-4a6a-85b8-d9b71a7e83cd
-m = models[2]
-
-# ╔═╡ 2e208c01-0893-4ab0-a1db-51cada6a95b6
-#=╠═╡
-data = select_in_domaine.(((x, _, z),) -> -5 <= x <= 5, full_data)
-  ╠═╡ =#
-
 # ╔═╡ d38242b4-0bee-44c8-9885-42e8441faf25
 function select_in_domaine(predicate, (; points, top))
     top = filter(top) do top
@@ -96,6 +88,11 @@ function select_in_domaine(predicate, (; points, top))
     #point = filter(predicate,point)
     (; points, top)
 end
+
+# ╔═╡ 2e208c01-0893-4ab0-a1db-51cada6a95b6
+#=╠═╡
+data = select_in_domaine.(((x, _, z),) -> -5 <= x <= 5, full_data)
+  ╠═╡ =#
 
 # ╔═╡ 4a1478c6-d200-4073-8d9d-1cbab26ff94d
 invert((a, b, c)::NgonFace) = NgonFace(a, c, b)
@@ -216,15 +213,13 @@ begin
 end
 
 # ╔═╡ d8dc5f29-347f-451f-897b-176c85460069
+#=╠═╡
 Mk.plot(map(22.65:.00001:22.75) do y m((Batch([Point3f(10,y,0)]),atoms)) |> only end)
+  ╠═╡ =#
 
 # ╔═╡ 31803972-9bf4-462c-920d-22aa1e76f7eb
-map(21.45:.00001:21.46) do y minimum(m.model.layers.layer_1.fun((Batch([Point3f(10,y,0)]),atoms)).field[5,:]) end
-
-# ╔═╡ 42ac2eda-dfdc-4323-9185-098394477c1b
-# ╠═╡ disabled = true
 #=╠═╡
-m = Chain(Lux.NoOpLayer(),Lux.NoOpLayer(),models[1].model[3],models[1].model[4],models[1].model[5];disable_optimizations=true)
+map(21.45:.00001:21.46) do y minimum(m.model.layers.layer_1.fun((Batch([Point3f(10,y,0)]),atoms)).field[5,:]) end
   ╠═╡ =#
 
 # ╔═╡ 1bec33cd-4db0-4aea-b7d1-35de8c07bbfd
@@ -232,6 +227,17 @@ ps = models[1].ps
 
 # ╔═╡ a3f888d6-66a5-4425-9fe3-6af5d2d3f7fb
 st = models[1].st
+
+# ╔═╡ 42ac2eda-dfdc-4323-9185-098394477c1b
+# ╠═╡ disabled = true
+#=╠═╡
+m = Chain(Lux.NoOpLayer(),Lux.NoOpLayer(),models[1].model[3],models[1].model[4],models[1].model[5];disable_optimizations=true)
+  ╠═╡ =#
+
+# ╔═╡ ff9a463c-7742-4a6a-85b8-d9b71a7e83cd
+#=╠═╡
+m = models[2]
+  ╠═╡ =#
 
 # ╔═╡ Cell order:
 # ╟─5f801ac4-1f27-11ef-3246-afece906b714

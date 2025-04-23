@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.4
+# v0.20.6
 
 using Markdown
 using InteractiveUtils
@@ -27,9 +27,6 @@ html"""
 	}
 </style>
 """
-
-# ╔═╡ 1c0a8115-da6e-4b09-a9ac-17672c8b73d2
-import CairoMakie as Mk
 
 # ╔═╡ c6e28039-0412-4327-a4a0-b4df80b5ef78
 step = 1
@@ -276,7 +273,6 @@ end
 # ╔═╡ Cell order:
 # ╠═e4fc0299-2b72-4b8f-940d-9f55a76f83ca
 # ╠═28210014-39eb-11ef-24eb-110acb81da08
-# ╠═1c0a8115-da6e-4b09-a9ac-17672c8b73d2
 # ╠═e9f0f433-0fe9-4096-b484-b432ec54afc8
 # ╠═e4a81477-34da-4891-9d0e-34a30ada4ac3
 # ╠═c6e28039-0412-4327-a4a0-b4df80b5ef78
