@@ -43,9 +43,6 @@ function test_protein(
     loss_fn = get_loss_fn(loss)
     data = batch_dataset(data)
     for data_batch in BatchView(data; batchsize = 200)
-        if length(data_batch.inputs.field) == 0
-            continue
-        end
         loss, _, stats = loss_fn(training_states.model, training_states.parameters,
             Lux.testmode(training_states.states), data_batch)
         loss, stats = (loss, stats) .|> cpu_device()
@@ -63,10 +60,7 @@ function train_protein(
     loss_fn = get_loss_fn(loss)
     data = batch_dataset(data)
     for data_batch in BatchView(data; batchsize = 200)
-        if length(data_batch.inputs.field) == 0
-            continue
-        end
-        # @info "batch" data_batch.inputs.field 
+       # @info "batch" data_batch.inputs.field 
         grads, loss, stats, training_states = Lux.Training.compute_gradients(
             AutoZygote(),
             loss_fn,
