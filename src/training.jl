@@ -43,6 +43,9 @@ function test_protein(
     loss_fn = get_loss_fn(loss)
     data = batch_dataset(data)
     for data_batch in BatchView(data; batchsize = 200)
+        if length(data_batch.inputs.field) == 0
+            continue
+        end
         loss, _, stats = loss_fn(training_states.model, training_states.parameters,
             Lux.testmode(training_states.states), data_batch)
         loss, stats = (loss, stats) .|> cpu_device()
@@ -60,13 +63,16 @@ function train_protein(
     loss_fn = get_loss_fn(loss)
     data = batch_dataset(data)
     for data_batch in BatchView(data; batchsize = 200)
+        if length(data_batch.inputs.field) == 0
+            continue
+        end
         # @info "batch" data_batch.inputs.field 
         grads, loss, stats, training_states = Lux.Training.compute_gradients(
             AutoZygote(),
             loss_fn,
             data_batch,
             training_states)
-        @info loss
+        # @info loss
         @assert !isnan(loss)
         training_states = Lux.Training.apply_gradients(training_states, grads)
         loss, stats = (loss, stats) .|> cpu_device()
@@ -115,7 +121,7 @@ function _train(
         (; atoms_tree, skin)::TreeTrainingData -> first(
             approximates_points(
                 MersenneTwister(42), atoms_tree.tree, skin.tree, training_parameters) do point
-                -2training_parameters.cutoff_radius < signed_distance(point, skin) < 0
+                -training_parameters.cutoff_radius < signed_distance(point, skin) < 0
             end,
             1000),
         (; atoms_tree, skin)::TreeTrainingData -> first(
