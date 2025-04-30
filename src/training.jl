@@ -60,11 +60,13 @@ function train_protein(
     loss_fn = get_loss_fn(loss)
     data = batch_dataset(data)
     for data_batch in BatchView(data; batchsize = 200)
+        # @info "batch" data_batch.inputs.field 
         grads, loss, stats, training_states = Lux.Training.compute_gradients(
             AutoZygote(),
             loss_fn,
             data_batch,
             training_states)
+        @info loss
         @assert !isnan(loss)
         training_states = Lux.Training.apply_gradients(training_states, grads)
         loss, stats = (loss, stats) .|> cpu_device()
