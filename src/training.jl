@@ -159,6 +159,7 @@ function _train(
         inside=length(first(test_data.inside)),
         core=length(first(test_data.core)),
         atoms_center=length(first(test_data.atoms_center)))
+    @info "training size:$(floor((Base.summarysize(train_data) + Base.summarysize(test_data))/(1024*1024*1024);digits=3)) Go"
 
     @info "Starting training"
     @progress name="training" for epoch in 1:nb_epoch
