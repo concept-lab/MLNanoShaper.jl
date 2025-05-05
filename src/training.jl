@@ -27,7 +27,7 @@ function implicit_surface(model::Lux.StatefulLuxLayer,
         SVector{3, Float32}, SVector{3, Int}, mins, maxes - mins)
 end
 function batch_dataset((; inputs, d_reals)::GlobalPreprocessed)
-    mapobs(1:(length(inputs.lengths) - 1)) do i
+    mapobs(1:(length(inputs))) do i
         let inputs = get_element(inputs, i),
             d_reals = d_reals[i]
 
@@ -37,12 +37,12 @@ function batch_dataset((; inputs, d_reals)::GlobalPreprocessed)
 end
 function test_protein(
         data::GlobalPreprocessed,
-        training_states::Lux.Training.TrainState, (; loss)::TrainingParameters)
+        training_states::Lux.Training.TrainState, (; loss)::TrainingParameters,(;batch_size)::AuxiliaryParameters)
     loss_vec = Float32[]
     stats_vec = StructVector((metric_type(loss))[])
     loss_fn = get_loss_fn(loss)
-    data = batch_dataset(data)
-    for data_batch in BatchView(data; batchsize = 200)
+    # data = batch_dataset(data)
+    for data_batch in BatchView(data; batchsize = batch_size)
         loss, _, stats = loss_fn(training_states.model, training_states.parameters,
             Lux.testmode(training_states.states), data_batch)
         loss, stats = (loss, stats) .|> cpu_device()
@@ -54,13 +54,14 @@ end
 
 function train_protein(
         data::GlobalPreprocessed,
-        training_states::Lux.Training.TrainState, (; loss)::TrainingParameters)
+        training_states::Lux.Training.TrainState, (; loss)::TrainingParameters,(;batch_size)::AuxiliaryParameters)
     loss_vec = Float32[]
     stats_vec = StructVector((metric_type(loss))[])
     loss_fn = get_loss_fn(loss)
-    data = batch_dataset(data)
-    for data_batch in BatchView(data; batchsize = 200)
-       # @info "batch" data_batch.inputs.field 
+    # data = batch_dataset(data)
+    # @info "batch" data
+    for data_batch in BatchView(data; batchsize = batch_size)
+       # @info "batch length" length(data_batch.inputs) Base.summarysize(data_batch)/1024^3 
         grads, loss, stats, training_states = Lux.Training.compute_gradients(
             AutoZygote(),
             loss_fn,
@@ -100,7 +101,7 @@ function _train(
             test_data)::Tuple{MLUtils.AbstractDataContainer, MLUtils.AbstractDataContainer},
         training_states::Lux.Training.TrainState, training_parameters::TrainingParameters,
         auxiliary_parameters::AuxiliaryParameters)
-    (; nb_epoch, save_periode, model_dir) = auxiliary_parameters
+    (; nb_epoch, save_periode, model_dir,batch_size) = auxiliary_parameters
 
     @info "nb threades" Threads.nthreads()
 
@@ -159,7 +160,8 @@ function _train(
         inside=length(first(test_data.inside)),
         core=length(first(test_data.core)),
         atoms_center=length(first(test_data.atoms_center)))
-    @info "training size:$(floor((Base.summarysize(train_data) + Base.summarysize(test_data))/(1024*1024*1024);digits=3)) Go"
+    @info "training size: $(floor((Base.summarysize(train_data) + Base.summarysize(test_data))/1024^3;digits=3)) Go"
+    @info "example batch size: $(floor(mean(Base.summarysize.(BatchView(train_data.inside;batchsize =batch_size)))/1024^3;digits=3)) Go"
 
     @info "Starting training"
     @progress name="training" for epoch in 1:nb_epoch
@@ -169,14 +171,14 @@ function _train(
         train_v = Dict{Symbol, StructVector}()
         for p::Symbol in prop
             training_states, _train_v = train_protein(
-                getproperty(train_data, p), training_states, training_parameters)
+                getproperty(train_data, p), training_states, training_parameters,auxiliary_parameters)
             train_v[p] = _train_v
         end
         #test
         test_v = Dict(
             prop .=>
             test_protein.(getproperty.(Ref(test_data), prop),
-                Ref(training_states), Ref(training_parameters)))
+                Ref(training_states), Ref(training_parameters),Ref(auxiliary_parameters)))
         #log
         @info "log" test=aggregate(test_v) train=aggregate(train_v)
 

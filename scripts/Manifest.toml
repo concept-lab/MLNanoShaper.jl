@@ -1209,7 +1209,7 @@ uuid = "0ae43799-6878-4589-9bc9-cf11e8180012"
 version = "0.1.0"
 
 [[deps.MLNanoShaperRunner]]
-deps = ["Adapt", "BioStructures", "ChainRulesCore", "ConcreteStructs", "Distances", "Folds", "GeometryBasics", "LinearAlgebra", "Lux", "LuxCore", "NearestNeighbors", "Random", "Reexport", "Serialization", "SimpleChains", "Static", "StaticArrays", "StaticTools", "Statistics", "StructArrays", "TOML", "Transducers"]
+deps = ["Adapt", "BioStructures", "ChainRulesCore", "ConcreteStructs", "Distances", "Folds", "GeometryBasics", "LinearAlgebra", "Lux", "LuxCore", "MLUtils", "NearestNeighbors", "Random", "Reexport", "Serialization", "SimpleChains", "Static", "StaticArrays", "StaticTools", "Statistics", "StructArrays", "TOML", "Transducers"]
 path = "../MLNanoShaperRunner"
 uuid = "0d104b66-282b-4c8e-a741-e32dba8f77f1"
 version = "0.1.0"

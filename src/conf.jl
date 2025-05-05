@@ -11,6 +11,7 @@ struct AuxiliaryParameters
     nb_epoch::UInt
     save_periode::Int
     on_gpu::Bool
+    batch_size::Int
 end
 unpact_dict(T::Type, x::AbstractDict{Symbol}) = T(getindex.(Ref(x), fieldnames(T))...)
 """

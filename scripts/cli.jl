@@ -13,6 +13,10 @@ function parse_cli_args()
         help = "the number of epochs to compute"
         arg_type = Int
         default = 0
+        "--batch_size"
+        help=" the size of the batch, must be configured in function of VRAM size"
+        default = 0
+        arg_type=Int
         "--model", "-m"
         help = "the model name"
         arg_type = String
@@ -83,6 +87,7 @@ In order to override the param, you can use the differents options.
 
 """
 function _main(; nb_epoch::Int = 0,
+        batch_size::Int=0,
         model::String = "",
         van_der_waals_channel::Bool = true,
         smoothing::Bool = true,
@@ -97,6 +102,9 @@ function _main(; nb_epoch::Int = 0,
     conf = TOML.parsefile(params_file)
     if nb_epoch > 0
         conf["AuxiliaryParameters"]["nb_epoch"] = nb_epoch |> UInt
+    end
+    if batch_size > 0
+        conf["TrainingParameters"]["batch_size"] = batch_size
     end
     if cutoff_radius != 0.0f0
         conf["TrainingParameters"]["cutoff_radius"] = cutoff_radius
