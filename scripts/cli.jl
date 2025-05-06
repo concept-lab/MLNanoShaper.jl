@@ -104,7 +104,7 @@ function _main(; nb_epoch::Int = 0,
         conf["AuxiliaryParameters"]["nb_epoch"] = nb_epoch |> UInt
     end
     if batch_size > 0
-        conf["TrainingParameters"]["batch_size"] = batch_size
+        conf["AuxiliaryParameters"]["batch_size"] = batch_size
     end
     if cutoff_radius != 0.0f0
         conf["TrainingParameters"]["cutoff_radius"] = cutoff_radius
@@ -128,7 +128,8 @@ function _main(; nb_epoch::Int = 0,
     conf["TrainingParameters"]["model_kargs"] = Dict(
         :van_der_waals_channel => van_der_waals_channel, :smoothing => smoothing,:on_gpu => on_gpu)
     if nb_data_points > 0
-        conf["TrainingParameters"]["data_ids"] = conf["TrainingParameters"]["data_ids"][begin:(begin + nb_data_points)]
+        len = length(conf["TrainingParameters"]["data_ids"])
+        conf["TrainingParameters"]["data_ids"] = conf["TrainingParameters"]["data_ids"][begin:(begin + min(len,nb_data_points))]
     end
 
     training_parameters = read_from_TOML(TrainingParameters, conf)
