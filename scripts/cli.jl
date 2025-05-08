@@ -97,7 +97,7 @@ function _main(; nb_epoch::Int = 0,
         ref_distance::Float32 = 00.0f0,
         loss::String = "categorical",
         learning_rate::Float64 = 1e-5,
-        on_gpu::Bool = false),
+        on_gpu::Bool = false)
     global_logger(TerminalLogger())
     conf = TOML.parsefile(params_file)
     if nb_epoch > 0
