@@ -93,7 +93,8 @@ get_loss_type(x::StaticSymbol) = _get_loss_type(x)
 
 CategoricalMetric = @NamedTuple{
     stats::BayesianStats,
-    reg_loss::Float32
+    inner_reg_loss::Float32,
+    outer_reg_loss::Float32,
 }
 function generate_true_probabilities(d_real::AbstractArray)
     epsilon = 1.0f-5
@@ -122,7 +123,19 @@ function max_abs_weight(ps)
   return max_val
 end
 
-function get_regularisation_loss(model::AbstractLuxLayer,ps,st,input)
+
+function get_inner_regularisation_loss(model::AbstractLuxLayer,ps,st,input)
+    _input = ignore_derivatives() do
+        device = model[2].prepross[1].func
+        a = similar(input.field,6,1)
+        a[:,1] .= eltype(a).([2,0,0,0,1,1])
+        ConcatenatedBatch(a,[0,1]) |> device
+    end
+    output = first(model(_input,ps,st))
+    sum(abs.(output .- one(eltype(input.field))))
+end
+
+function get_outer_regularisation_loss(model::AbstractLuxLayer,ps,st,input)
     intermediary_model = ignore_derivatives() do
          get_last_chain(model)
      end
@@ -165,8 +178,9 @@ function categorical_loss(model::Lux.AbstractLuxLayer,
         model,st,inputs
     end
     m =  mean(KL(probabilities, v_pred))
-    reg_loss = get_regularisation_loss(model,ps,st,inputs)
-    loss = m # +  1f0 *reg_loss
+    inner_reg_loss = get_inner_regularisation_loss(model,ps,st,inputs)
+    outer_reg_loss = get_outer_regularisation_loss(model,ps,st,inputs)
+    loss = m  +  inner_reg_loss + outer_reg_loss
     stats = ignore_derivatives() do
         true_vec = Iterators.filter(vec(d_reals)) do dist
             abs(dist) > epsilon
@@ -180,7 +194,7 @@ function categorical_loss(model::Lux.AbstractLuxLayer,
         BayesianStats(true_vec, pred_vec)
     end    
 
-    (loss, _st, (;stats,reg_loss ))
+    (loss, _st, (;stats,inner_reg_loss,outer_reg_loss))
 end
 
 struct CategoricalLoss <: LossType end
