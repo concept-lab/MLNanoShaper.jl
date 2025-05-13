@@ -128,7 +128,7 @@ function get_inner_regularisation_loss(model::AbstractLuxLayer,ps,st,input)
     _input = ignore_derivatives() do
         device = model[2].prepross[1].func
         a = similar(input.field,6,1)
-        a[:,1] .= eltype(a).([2,0,0,0,1,1])
+        a[:,1] .= eltype(a).([0,2,0,0,0,1])
         ConcatenatedBatch(a,[0,1]) |> device
     end
     output = first(model(_input,ps,st))
