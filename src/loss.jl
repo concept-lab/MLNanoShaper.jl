@@ -147,7 +147,7 @@ function get_outer_regularisation_loss(model::AbstractLuxLayer,ps,st,input)
         a
     end
     output = first(intermediary_model(input,ps,st))
-    sum(abs.(output))
+    sum(abs.(output) .^2)
 end
 
 
@@ -178,9 +178,9 @@ function categorical_loss(model::Lux.AbstractLuxLayer,
         model,st,inputs
     end
     m =  mean(KL(probabilities, v_pred))
-    inner_reg_loss = get_inner_regularisation_loss(model,ps,st,inputs)
+    # inner_reg_loss = get_inner_regularisation_loss(model,ps,st,inputs)
     outer_reg_loss = get_outer_regularisation_loss(model,ps,st,inputs)
-    loss = m  +  outer_reg_loss
+    loss = m  +  10f0*outer_reg_loss
     stats = ignore_derivatives() do
         true_vec = Iterators.filter(vec(d_reals)) do dist
             abs(dist) > epsilon
@@ -194,7 +194,7 @@ function categorical_loss(model::Lux.AbstractLuxLayer,
         BayesianStats(true_vec, pred_vec)
     end    
 
-    (loss, _st, (;stats,inner_reg_loss,outer_reg_loss))
+    (loss, _st, (;stats,inner_reg_loss = 0f0,outer_reg_loss))
 end
 
 struct CategoricalLoss <: LossType end

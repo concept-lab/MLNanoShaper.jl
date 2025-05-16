@@ -45,15 +45,11 @@ dataset_dir = "$(dirname(dirname(@__FILE__)))/examples"
 # ╔═╡ b91501dd-f66f-4a60-afa9-c4c9d0fc3504
 names = [
 "$(homedir())/datasets/models/light_soft_max_angular_dense_s_jobs_26_6_3_c_2025-05-15_epoch_2500_398331725248691691"
-"$(homedir())/datasets/models/tiny_soft_max_angular_dense_s_jobs_26_6_3_c_2025-05-15_epoch_2500_4984326408182674431"
+"$(homedir())/datasets/models/light_soft_max_angular_dense_s_test14_2025-05-16_epoch_360_15329832546741584021"
 ]
 
 # ╔═╡ 69ee1b79-b99d-4e3a-9769-254b1939aba6
 models = names.|> deserialize .|> MLNanoShaperRunner.production_instantiate
-
-
-# ╔═╡ 7287dae9-50f6-465a-b938-3b42644aa35e
-
 
 # ╔═╡ f7041ca8-97be-4998-9c10-2cbed79eb135
 atoms = RegularGrid(
@@ -163,9 +159,6 @@ function get_slice(atoms, model, z, (; cutoff_radius, step, default_value))
     end
 end
 
-# ╔═╡ 2efd35b8-dfe0-43b4-a131-baaa32f84f20
-MLNanoShaperRunner.get_batch_lengths([[1,1,1],[],[1]])
-
 # ╔═╡ ee6dc376-b884-4ecb-8c63-1830bd664597
 slice1 = get_slice(atoms,models[1],6.0,(;cutoff_radius=3.0f0,step=.1f0,default_value=0f0))
 
@@ -179,7 +172,7 @@ begin
     plt1 = Mk.plot!(g[1, 1], slice1;colormap = :rainbow)
 	Mk.Colorbar(g[1, 2],plt1)
     Mk.Axis(g[1, 3], title="tiny_angular_dense 2A")
-    plt2 = Mk.plot!(g[1, 3],slice2;colormap = :rainbow,colorrange = [0,1])
+    plt2 = Mk.plot!(g[1, 3],slice2;colormap = :rainbow)
 	Mk.Colorbar(g[1, 4],plt2)
 	g
 end
@@ -209,14 +202,14 @@ Mk.plot(σ.(dist);colormap = :rainbow,colorrange = [0,1])
 begin
 	h = Mk.Figure(size = (700,500))
 	Mk.Axis(h[1, 1], title="tiny_angular_dense 3A")
-	Mk.contour!(h[1,1],ranges[1],ranges[2],slice1,levels=[.5],color=:red)
+	Mk.contour!(h[1,1],ranges[1],ranges[2],slice2,levels=[.5],color=:red)
 	Mk.contour!(h[1,1],ranges[1],ranges[2],dist,levels=[0],color = :green)
 	Mk.Legend(h[1,2],[Mk.LineElement(color = :green),Mk.LineElement(color = :red)],["true value","predicted value"])
 	h
 end
 
 # ╔═╡ d8dc5f29-347f-451f-897b-176c85460069
-Mk.plot(map(22.65:.00001:22.75) do y m((Batch([Point3f(10,y,0)]),atoms)) |> only end)
+Mk.plot(map(22.65:.000001:22.75) do y m((Batch([Point3f(10,y,0)]),atoms)) |> only end)
 
 # ╔═╡ 31803972-9bf4-462c-920d-22aa1e76f7eb
 map(21.45:.00001:21.46) do y minimum(m.model.layers.layer_1.fun((Batch([Point3f(10,y,0)]),atoms)).field[5,:]) end
@@ -244,7 +237,6 @@ st = models[1].st
 # ╠═ba125a1e-09ff-4c7f-a1d4-6da28810c0a8
 # ╠═b91501dd-f66f-4a60-afa9-c4c9d0fc3504
 # ╠═69ee1b79-b99d-4e3a-9769-254b1939aba6
-# ╠═7287dae9-50f6-465a-b938-3b42644aa35e
 # ╠═f7041ca8-97be-4998-9c10-2cbed79eb135
 # ╠═58cf0ac8-d68d-47a7-b08f-098b65d19908
 # ╠═a0a5f16f-0224-47b1-ae86-c4b5bd48fd07
@@ -261,7 +253,6 @@ st = models[1].st
 # ╠═e7e6584b-5059-46f6-a614-76866f1b1df9
 # ╠═e78e5812-1927-4f67-bd3a-9bd1b577f9ad
 # ╠═2b0fc2fd-47c1-491c-b9a3-6ddff7b61850
-# ╠═2efd35b8-dfe0-43b4-a131-baaa32f84f20
 # ╠═ee6dc376-b884-4ecb-8c63-1830bd664597
 # ╠═a8a43fdf-f69c-41ef-b309-ee8531e5df23
 # ╠═d679ca88-615e-4675-9d0a-419cd18246f9
