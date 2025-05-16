@@ -180,7 +180,7 @@ function categorical_loss(model::Lux.AbstractLuxLayer,
     m =  mean(KL(probabilities, v_pred))
     inner_reg_loss = get_inner_regularisation_loss(model,ps,st,inputs)
     outer_reg_loss = get_outer_regularisation_loss(model,ps,st,inputs)
-    loss = m  +  inner_reg_loss # + outer_reg_loss
+    loss = m  +  outer_reg_loss
     stats = ignore_derivatives() do
         true_vec = Iterators.filter(vec(d_reals)) do dist
             abs(dist) > epsilon
