@@ -44,8 +44,8 @@ dataset_dir = "$(dirname(dirname(@__FILE__)))/examples"
 
 # ╔═╡ b91501dd-f66f-4a60-afa9-c4c9d0fc3504
 names = [
-"$(homedir())/datasets/models/tiny_soft_max_angular_dense_s_jobs_20_5_4_c_2025-05-06_epoch_30_17159541835372920696"
-"$(homedir())/datasets/models/tiny_soft_max_angular_dense_s_jobs_23_5_4_c_2025-05-13_epoch_250_3376626144222841682"
+"$(homedir())/datasets/models/light_soft_max_angular_dense_s_jobs_26_6_3_c_2025-05-15_epoch_2500_398331725248691691"
+"$(homedir())/datasets/models/tiny_soft_max_angular_dense_s_jobs_26_6_3_c_2025-05-15_epoch_2500_4984326408182674431"
 ]
 
 # ╔═╡ 69ee1b79-b99d-4e3a-9769-254b1939aba6
@@ -176,7 +176,7 @@ slice2 = get_slice(atoms,models[2],6.0,(;cutoff_radius=3.0f0,step=.1f0,default_v
 begin
     g = Mk.Figure(size = (1200,500))
     Mk.Axis(g[1, 1], title="tiny_angular_dense 3A")
-    plt1 = Mk.plot!(g[1, 1], slice1;colormap = :rainbow,colorrange = [0,1])
+    plt1 = Mk.plot!(g[1, 1], slice1;colormap = :rainbow)
 	Mk.Colorbar(g[1, 2],plt1)
     Mk.Axis(g[1, 3], title="tiny_angular_dense 2A")
     plt2 = Mk.plot!(g[1, 3],slice2;colormap = :rainbow,colorrange = [0,1])
@@ -209,7 +209,7 @@ Mk.plot(σ.(dist);colormap = :rainbow,colorrange = [0,1])
 begin
 	h = Mk.Figure(size = (700,500))
 	Mk.Axis(h[1, 1], title="tiny_angular_dense 3A")
-	Mk.contour!(h[1,1],ranges[1],ranges[2],slice2,levels=[.5],color=:red)
+	Mk.contour!(h[1,1],ranges[1],ranges[2],slice1,levels=[.5],color=:red)
 	Mk.contour!(h[1,1],ranges[1],ranges[2],dist,levels=[0],color = :green)
 	Mk.Legend(h[1,2],[Mk.LineElement(color = :green),Mk.LineElement(color = :red)],["true value","predicted value"])
 	h
