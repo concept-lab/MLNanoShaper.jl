@@ -44,8 +44,8 @@ dataset_dir = "$(dirname(dirname(@__FILE__)))/examples"
 
 # ╔═╡ b91501dd-f66f-4a60-afa9-c4c9d0fc3504
 names = [
-"$(homedir())/datasets/models/light_soft_max_angular_dense_s_jobs_26_6_3_c_2025-05-15_epoch_2500_398331725248691691"
-"$(homedir())/datasets/models/light_soft_max_angular_dense_s_test14_2025-05-16_epoch_360_15329832546741584021"
+"$(homedir())/datasets/models/light_soft_max_angular_dense_s_test16_2025-05-16_epoch_340_17702298446281170695"
+"$(homedir())/datasets/models/light_soft_max_angular_dense_s_test14_2025-05-16_epoch_800_15329832546741584021"
 ]
 
 # ╔═╡ 69ee1b79-b99d-4e3a-9769-254b1939aba6
@@ -177,9 +177,6 @@ begin
 	g
 end
 
-# ╔═╡ 0aba8461-83f7-4ce7-9b8b-f90a47001cea
-Mk.plot(MLNanoShaperRunner.cut.(1.,0:.001:1))
-
 # ╔═╡ 55e62c2f-6797-4075-b8cc-d7d11e05317e
 mins = atoms.start
 
@@ -202,7 +199,7 @@ Mk.plot(σ.(dist);colormap = :rainbow,colorrange = [0,1])
 begin
 	h = Mk.Figure(size = (700,500))
 	Mk.Axis(h[1, 1], title="tiny_angular_dense 3A")
-	Mk.contour!(h[1,1],ranges[1],ranges[2],slice2,levels=[.5],color=:red)
+	Mk.contour!(h[1,1],ranges[1],ranges[2],slice1,levels=[.5],color=:red)
 	Mk.contour!(h[1,1],ranges[1],ranges[2],dist,levels=[0],color = :green)
 	Mk.Legend(h[1,2],[Mk.LineElement(color = :green),Mk.LineElement(color = :red)],["true value","predicted value"])
 	h
@@ -256,7 +253,6 @@ st = models[1].st
 # ╠═ee6dc376-b884-4ecb-8c63-1830bd664597
 # ╠═a8a43fdf-f69c-41ef-b309-ee8531e5df23
 # ╠═d679ca88-615e-4675-9d0a-419cd18246f9
-# ╠═0aba8461-83f7-4ce7-9b8b-f90a47001cea
 # ╠═55e62c2f-6797-4075-b8cc-d7d11e05317e
 # ╠═3c300122-c050-4ed0-9e9c-181a0698803c
 # ╠═67cb1851-a1a3-458f-9c9d-b5061a57ed37
