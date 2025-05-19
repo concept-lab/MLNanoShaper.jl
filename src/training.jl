@@ -211,7 +211,7 @@ function _train(training_parameters::TrainingParameters, auxiliary_parameters::A
     (; model, learning_rate) = training_parameters
     (; log_dir, on_gpu) = auxiliary_parameters
     device = on_gpu ? gpu_device() : identity
-    optim = OptimiserChain(ClipGrad(),WeightDecay(),AccumGrad(8),AdaDelta(.99))
+    optim = OptimiserChain(ClipGrad(),WeightDecay(),AccumGrad(8),AdamDelta(.99))
     (; train_data, test_data) = get_dataset(training_parameters, auxiliary_parameters)
     ps = Lux.initialparameters(MersenneTwister(42), model())
     st = Lux.initialstates(MersenneTwister(42), model())

@@ -48,6 +48,7 @@ using MLNanoShaperRunner
 
 export train
 
+include("optimiser.jl")
 include("loss.jl")
 include("conf.jl")
 include("logging.jl")

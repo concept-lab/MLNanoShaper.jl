@@ -1,6 +1,7 @@
 /docs/build/
 /data
 /**/*.pdb
+/**/*.pdf
 /**/*.gz
 /**/*.xyzr
 /**/*.xyz
