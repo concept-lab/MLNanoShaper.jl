@@ -44,7 +44,7 @@ dataset_dir = "$(dirname(dirname(@__FILE__)))/examples"
 
 # ╔═╡ b91501dd-f66f-4a60-afa9-c4c9d0fc3504
 names = [
-"$(homedir())/datasets/models/light_soft_max_angular_dense_s_test19_2025-05-20_epoch_800_7548190348801555869"
+"$(homedir())/datasets/models/light_soft_max_angular_dense_s_test19_2025-05-20_epoch_1200_7548190348801555869"
 "$(homedir())/datasets/models/light_soft_max_angular_dense_s_test18_2025-05-20_epoch_800_9695086156856198229"
 ]
 

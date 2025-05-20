@@ -12,7 +12,7 @@ using Optimisers: @.., _eps,  @def
 """
 @def struct AdamDelta <: AbstractRule
   rho = 0.99
-  beta = 0.9
+  beta = 0.99
   epsilon = 1e-8
 end
 
