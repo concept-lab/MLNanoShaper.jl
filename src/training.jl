@@ -1,5 +1,8 @@
+using Base: fieldindex
+using MLNanoShaperRunner: stack_ConcatenatedBatch
+using Optimisers: trainable
 function get_cutoff_radius(x::Lux.AbstractLuxLayer)
-    get_preprocessing(x).fun.kargs[:cutoff_radius]
+   get_preprocessing(x).fun.kargs[:cutoff_radius]
 end
 get_cutoff_radius(x::Lux.StatefulLuxLayer) = get_cutoff_radius(x.model)
 
@@ -53,7 +56,7 @@ function test_protein(
 end
 
 function train_protein(
-        data::GlobalPreprocessed,
+        data,
         training_states::Lux.Training.TrainState, (; loss)::TrainingParameters,(;batch_size)::AuxiliaryParameters)
     loss_vec = Float32[]
     stats_vec = StructVector((metric_type(loss))[])
@@ -92,10 +95,20 @@ struct DataSet
     atoms_center::GlobalPreprocessed
 end
 
+function join_dataset(vec)
+    inputs = stack_ConcatenatedBatch(getproperty.(vec,:inputs) |> collect)
+    d_reals =  vcat(getproperty.(vec,:d_reals)...)
+    (;inputs,d_reals)
+end
+function shuffle_dataset(rng::AbstractRNG,vec::GlobalPreprocessed)
+    perm = randperm(rng,length(vec.d_reals))
+    (; inputs = get_element(vec.inputs, perm), d_reals = vec.d_reals[perm])
+end
 """
 	train((train_data,test_data),training_states; nb_epoch)
 train the model on the data with nb_epoch
 """
+
 function _train(
         (train_data,
             test_data)::Tuple{MLUtils.AbstractDataContainer, MLUtils.AbstractDataContainer},
@@ -160,21 +173,17 @@ function _train(
         inside=length(first(test_data.inside)),
         core=length(first(test_data.core)),
         atoms_center=length(first(test_data.atoms_center)))
+    train_data = shuffle_dataset(MersenneTwister(41), join_dataset(getproperty.(Ref(train_data),propertynames(train_data))))
     @info "training size: $(floor((Base.summarysize(train_data) + Base.summarysize(test_data))/1024^3;digits=3)) Go"
-    @info "example batch size: $(floor(mean(Base.summarysize.(BatchView(train_data.inside;batchsize =batch_size)))/1024^3;digits=3)) Go"
+    @info "example batch size: $(floor(mean(Base.summarysize.(BatchView(train_data;batchsize =batch_size)))/1024^3;digits=3)) Go"
 
     @info "Starting training"
     @progress name="training" for epoch in 1:nb_epoch
         # for epoch in 1:nb_epoch
-        prop = propertynames(train_data)
         #train
-        train_v = Dict{Symbol, StructVector}()
-        for p::Symbol in prop
-            training_states, _train_v = train_protein(
-                getproperty(train_data, p), training_states, training_parameters,auxiliary_parameters)
-            train_v[p] = _train_v
-        end
+            training_states, train_v = train_protein(train_data, training_states, training_parameters,auxiliary_parameters)
         #test
+        prop = propertynames(test_data)
         test_v = Dict(
             prop .=>
             test_protein.(getproperty.(Ref(test_data), prop),
@@ -211,7 +220,7 @@ function _train(training_parameters::TrainingParameters, auxiliary_parameters::A
     (; model, learning_rate) = training_parameters
     (; log_dir, on_gpu) = auxiliary_parameters
     device = on_gpu ? gpu_device() : identity
-    optim = OptimiserChain(ClipGrad(),WeightDecay(),AccumGrad(8),AdamDelta(.99))
+    optim = OptimiserChain(ClipGrad(),WeightDecay(),AdamDelta(.99))
     (; train_data, test_data) = get_dataset(training_parameters, auxiliary_parameters)
     ps = Lux.initialparameters(MersenneTwister(42), model())
     st = Lux.initialstates(MersenneTwister(42), model())
