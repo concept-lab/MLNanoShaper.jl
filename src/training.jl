@@ -178,10 +178,16 @@ function _train(
     @info "example batch size: $(floor(mean(Base.summarysize.(BatchView(train_data;batchsize =batch_size)))/1024^3;digits=3)) Go"
 
     @info "Starting training"
+    η = training_parameters.learning_rate
     @progress name="training" for epoch in 1:nb_epoch
         # for epoch in 1:nb_epoch
         #train
-            training_states, train_v = train_protein(train_data, training_states, training_parameters,auxiliary_parameters)
+        training_states, train_v = train_protein(train_data, training_states, training_parameters,auxiliary_parameters)
+        η *= .999
+        if η < 1e-7
+            η = 1e-7
+        end
+        Optimisers.adjust!(training_states.optimizer_state,η)
         #test
         prop = propertynames(test_data)
         test_v = Dict(
@@ -220,7 +226,7 @@ function _train(training_parameters::TrainingParameters, auxiliary_parameters::A
     (; model, learning_rate) = training_parameters
     (; log_dir, on_gpu) = auxiliary_parameters
     device = on_gpu ? gpu_device() : identity
-    optim = OptimiserChain(ClipGrad(),WeightDecay(),AdamDelta(),ClipGrad())
+    optim = OptimiserChain(ClipGrad(),WeightDecay(),Adam(1e-4),ClipGrad())
     (; train_data, test_data) = get_dataset(training_parameters, auxiliary_parameters)
     ps = Lux.initialparameters(MersenneTwister(42), model())
     st = Lux.initialstates(MersenneTwister(42), model())
