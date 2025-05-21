@@ -93,7 +93,7 @@ get_loss_type(x::StaticSymbol) = _get_loss_type(x)
 
 CategoricalMetric = @NamedTuple{
     stats::BayesianStats,
-    inner_reg_loss::Float32,
+    kl_div::Float32,
     outer_reg_loss::Float32,
 }
 function generate_true_probabilities(d_real::AbstractArray)
@@ -177,10 +177,12 @@ function categorical_loss(model::Lux.AbstractLuxLayer,
     model,st,inputs = ignore_derivatives() do
         model,st,inputs
     end
-    m =  mean(KL(probabilities, v_pred))
-    # inner_reg_loss = get_inner_regularisation_loss(model,ps,st,inputs)
+    kl_div =  mean(KL(probabilities, v_pred))
     outer_reg_loss = get_outer_regularisation_loss(model,ps,st,inputs)
-    loss = m  +  20f0*outer_reg_loss
+    r1, r2 = ignore_derivatives() do
+        ((kl_div,outer_reg_loss) .+ epsilon) ./ (outer_reg_loss + kl_div +2*epsilon) 
+    end
+    loss = r1 * kl_div + r2 * outer_reg_loss
     stats = ignore_derivatives() do
         true_vec = Iterators.filter(vec(d_reals)) do dist
             abs(dist) > epsilon
@@ -194,7 +196,7 @@ function categorical_loss(model::Lux.AbstractLuxLayer,
         BayesianStats(true_vec, pred_vec)
     end    
 
-    (loss, _st, (;stats,inner_reg_loss = 0f0,outer_reg_loss))
+    (loss, _st, (;stats,kl_div,outer_reg_loss))
 end
 
 struct CategoricalLoss <: LossType end

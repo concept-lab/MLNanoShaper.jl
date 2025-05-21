@@ -183,14 +183,17 @@ function _train(
         #train
         training_states, train_v = train_protein(train_data, training_states, training_parameters,auxiliary_parameters)
         if η > 1e-4
-            η *= .985
+            η *= .995
+        elseif η > 1e-5
+            η *= .998
         else
-            η *= .99
+            η *= .999
         end
         if η < 1e-6
             η = 1e-6
         end
-        Optimisers.adjust!(training_states.optimizer_state,η)
+        Optimisers.adjust!(training_states.optimizer_state,η,)
+        Optimisers.adjust!(training_states.optimizer_state,lambda = η /2 )
         #test
         prop = propertynames(test_data)
         test_v = Dict(
@@ -229,7 +232,7 @@ function _train(training_parameters::TrainingParameters, auxiliary_parameters::A
     (; model, learning_rate) = training_parameters
     (; log_dir, on_gpu) = auxiliary_parameters
     device = on_gpu ? gpu_device() : identity
-    optim = OptimiserChain(ClipGrad(),WeightDecay(),Adam(learning_rate),ClipGrad())
+    optim = OptimiserChain(ClipGrad(learning_rate/2),WeightDecay(),Adam(learning_rate),ClipGrad())
     (; train_data, test_data) = get_dataset(training_parameters, auxiliary_parameters)
     ps = Lux.initialparameters(MersenneTwister(42), model())
     st = Lux.initialstates(MersenneTwister(42), model())

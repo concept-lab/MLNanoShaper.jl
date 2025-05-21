@@ -73,7 +73,7 @@ model = "tiny_angular_dense"
 model_kargs.van_der_waals_channel=false
 ref_distance=0.05
 loss="categorical"
-learning_rate=1e-4
+learning_rate=1e-3
 data_ids = [
 1,
 10,

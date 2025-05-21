@@ -12,7 +12,7 @@ Pkg.activate(".")
 
 # ╔═╡ fc935a86-ceac-4d5a-8fcb-34d9c754a2f1
 using MLNanoShaper, MLNanoShaperRunner, Serialization, Static, StructArrays, FileIO,
-      GeometryBasics, Folds, Lux, Random,Accessors,NearestNeighbors, Statistics
+      GeometryBasics, Folds, Lux, Random,Accessors,NearestNeighbors, Statistics 
 
 # ╔═╡ 5f801ac4-1f27-11ef-3246-afece906b714
 md"""
@@ -44,7 +44,7 @@ dataset_dir = "$(dirname(dirname(@__FILE__)))/examples"
 
 # ╔═╡ b91501dd-f66f-4a60-afa9-c4c9d0fc3504
 names = [
-"$(homedir())/datasets/models/light_soft_max_angular_dense_s_jobs_34_4_c_2025-05-20_epoch_140_10573357927115778064"
+"$(homedir())/datasets/models/light_soft_max_angular_dense_s_test33_2025-05-21_epoch_1200_11684836089037617147"
 "$(homedir())/datasets/models/light_soft_max_angular_dense_s_test28_2025-05-20_epoch_750_13395197924094577505"
 ]
 
@@ -190,7 +190,7 @@ ranges = range.(mins, maxes; step = 0.1)
 grid = get_input_slice(atoms, 0.1, 6)
 
 # ╔═╡ a98327b5-f8a4-46cc-a14c-8dd234ca9933
-dist = signed_distance.(grid, Ref(RegionMesh(surface)))
+dist = MLNanoShaper.signed_distance.(grid, Ref(MLNanoShaper.RegionMesh(surface)))
 
 # ╔═╡ 96a915f1-08b1-4e59-bf5b-ab8f77cb39fa
 Mk.plot(σ.(dist);colormap = :rainbow,colorrange = [0,1])
@@ -199,7 +199,7 @@ Mk.plot(σ.(dist);colormap = :rainbow,colorrange = [0,1])
 begin
 	h = Mk.Figure(size = (700,500))
 	Mk.Axis(h[1, 1], title="tiny_angular_dense 3A")
-	Mk.contour!(h[1,1],ranges[1],ranges[2],slice2,levels=[.5],color=:red)
+	Mk.contour!(h[1,1],ranges[1],ranges[2],slice1,levels=[.5],color=:red)
 	Mk.contour!(h[1,1],ranges[1],ranges[2],dist,levels=[0],color = :green)
 	Mk.Legend(h[1,2],[Mk.LineElement(color = :green),Mk.LineElement(color = :red)],["true value","predicted value"])
 	h
