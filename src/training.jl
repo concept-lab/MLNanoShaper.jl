@@ -183,11 +183,11 @@ function _train(
         #train
         training_states, train_v = train_protein(train_data, training_states, training_parameters,auxiliary_parameters)
         if η > 1e-4
-            η *= .995
+            η *= .95
         elseif η > 1e-5
-            η *= .998
+            η *= .98
         else
-            η *= .999
+            η *= .99
         end
         if η < 1e-6
             η = 1e-6

@@ -54,7 +54,7 @@ prot_num = 1
 surface = load("$(homedir())/datasets/pqr/$prot_num/triangulatedSurf.off")
 
 # ╔═╡ 43cc30fc-c266-4cf1-aff0-c5c505cf4924
-model_weights = deserialize("$(homedir())/datasets/models/light_soft_max_angular_dense_s_test28_2025-05-20_epoch_750_13395197924094577505")
+model_weights = deserialize("$(homedir())/datasets/models/light_soft_max_angular_dense_s_jobs_34_5_c_2025-05-21_epoch_20_12976875653292425431")
 
 # ╔═╡ 2b75694a-d5ae-45f3-93af-61c4167314d9
 model = MLNanoShaperRunner.production_instantiate(model_weights)
@@ -65,17 +65,19 @@ atoms = RegularGrid(
         read("$(homedir())/datasets/pqr/$prot_num/structure.pqr", PQR{Float32}), :pos) |>
     StructVector,3f0)
 
+# ╔═╡ 8d39769c-9e87-4f5b-aa50-34abe8c78cf5
+vol = MLNanoShaperRunner.evaluate_field(model,atoms;step)
+
 # ╔═╡ bf954fa9-6d15-4226-bea2-a96807c130da
 begin
-	vol = MLNanoShaperRunner.evaluate_field(model,atoms;step)
+	
 	mins = atoms.start .-2 |> collect
 	maxes = mins .+ size(atoms.grid) .* Float32(atoms.radius) .+2
 	x,y,z = range.(mins,maxes;step) .|> collect .|> Vector{Float32}
 	mc = MC(vol;x,y,z)
 	march(mc,.5)
 	msh = MarchingCubes.makemesh(GeometryBasics, mc)
-	msh
-	Mk.mesh(msh; color = :red)
+	#Mk.mesh(msh; color = :red)
 end
 
 # ╔═╡ c7cf7dd4-148c-40c4-ada4-fa6935348c7f
@@ -93,5 +95,6 @@ write_off("predicted.off",msh)
 # ╠═43cc30fc-c266-4cf1-aff0-c5c505cf4924
 # ╠═2b75694a-d5ae-45f3-93af-61c4167314d9
 # ╠═634427ef-6126-4fdd-a8b2-3d0bfee0d0b6
+# ╠═8d39769c-9e87-4f5b-aa50-34abe8c78cf5
 # ╠═bf954fa9-6d15-4226-bea2-a96807c130da
 # ╠═c7cf7dd4-148c-40c4-ada4-fa6935348c7f
