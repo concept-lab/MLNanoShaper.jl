@@ -117,7 +117,6 @@ function _train(
     (; nb_epoch, save_periode, model_dir,batch_size) = auxiliary_parameters
 
     @info "nb threades" Threads.nthreads()
-
     @info "building KDtrees"
     cutoff_radius = training_parameters.cutoff_radius
     train_data = Folds.map(x -> TreeTrainingData(x,cutoff_radius), train_data)
@@ -141,13 +140,13 @@ function _train(
                 MersenneTwister(42), atoms_tree.tree, skin.tree, training_parameters) do point
                 0 < signed_distance(point, skin) < 2training_parameters.cutoff_radius
             end,
-            500),
+            1500),
         (; atoms_tree, skin)::TreeTrainingData -> first(
             approximates_points(
                 MersenneTwister(42), atoms_tree.tree, skin.tree, training_parameters) do point
                 signed_distance(point, skin) > 2 * training_parameters.cutoff_radius
             end,
-            480),
+            1480),
         (; atoms_tree)::TreeTrainingData -> first(
             shuffle(MersenneTwister(42), atoms_tree.data.center), 20)
     ]
@@ -183,9 +182,13 @@ function _train(
         # for epoch in 1:nb_epoch
         #train
         training_states, train_v = train_protein(train_data, training_states, training_parameters,auxiliary_parameters)
-        η *= .999
-        if η < 1e-7
-            η = 1e-7
+        if η > 1e-4
+            η *= .985
+        else
+            η *= .99
+        end
+        if η < 1e-6
+            η = 1e-6
         end
         Optimisers.adjust!(training_states.optimizer_state,η)
         #test

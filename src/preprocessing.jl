@@ -1,3 +1,21 @@
+struct RegionMesh
+    triangles::Vector{TriangleFace{Point3f}}
+    tree::KDTree
+end
+function RegionMesh(mesh::GeometryBasics.Mesh)
+    triangles = Vector{TriangleFace{Point3f}}(undef, length(coordinates(mesh)))
+    for (j, tri) in enumerate(faces(mesh))
+        ctri = map(tri) do j
+            coordinates(mesh)[j]
+        end
+        for i in tri
+            triangles[i] = ctri
+        end
+    end
+    RegionMesh(triangles,
+        KDTree(coordinates(mesh); reorder=false))
+end
+
 """
 Training information used in model training.
 # Fields
@@ -9,6 +27,22 @@ struct TrainingData{T <: Number}
     skin::GeometryBasics.Mesh
 end
 
+
+"""
+	AnnotedKDTree(data::StructVector,property::StaticSymbol)
+# Fields
+- data::StructVector
+- tree::KDTree
+"""
+struct AnnotedKDTree{Type,Property,Subtype}
+    data::StructVector{Type}
+    tree::KDTree{Subtype}
+    function AnnotedKDTree(data::StructVector, property::StaticSymbol)
+        new{eltype(data),dynamic(property),
+            eltype(getproperty(StructArrays.components(data), dynamic(property)))}(
+            data, KDTree(getproperty(data, dynamic(property)); reorder=false))
+    end
+end
 struct TreeTrainingData{T <: Number}
     atoms_grid::RegularGrid{T}
     atoms_tree::AnnotedKDTree{Sphere{T},:center,Point3{T}}
@@ -72,15 +106,15 @@ function pre_compute_data_set(points_generator::Function,
             preprocessing, points, protein_data, training_parameters)
     end |> aggregate_input_data
 end
-"""
-	load_data_pdb(T, name::String)
+# """
+# 	load_data_pdb(T, name::String)
 
-Load a `TrainingData{T}` from current directory.
-You should have a pdb and an off file with name `name` in current directory.
-"""
-function load_data_pdb(T::Type{<:Number}, name::String)
-    TrainingData{T}(extract_balls(T, read("$name.pdb", PDBFormat)), load("$name.off"))
-end
+# Load a `TrainingData{T}` from current directory.
+# You should have a pdb and an off file with name `name` in current directory.
+# """
+# function load_data_pdb(T::Type{<:Number}, name::String)
+#     TrainingData{T}(extract_balls(T, read("$name.pdb", PDBFormat)), load("$name.off"))
+# end
 """
 	load_data_pqr(T, name::String)
 
@@ -91,3 +125,31 @@ function load_data_pqr(T::Type{<:Number}, dir::String)
     TrainingData{T}(getproperty.(read("$dir/structure.pqr", PQR{T}), :pos) |> StructVector,
         load("$dir/triangulatedSurf.off"))
 end
+distance(x::AbstractVector, y::KDTree)::Number = nn(y, x) |> last
+
+"""
+    signed_distance(p::Point3, mesh::RegionMesh)::Number
+
+returns the signed distance between point p and the mesh
+a positive distance means that we are inside the mesh
+"""
+function signed_distance(p::Point3{T}, mesh::RegionMesh)::T where {T<:Number}
+    id_point, dist = nn(mesh.tree, p)
+    x, y, z = mesh.triangles[OffsetInteger{-1,UInt32}(id_point)]
+    # @info "triangle" x y z
+
+    direction = hcat(y - x, z - x, p - x) |> det |> sign
+    -direction * dist
+end
+
+"""
+    distance(x::GeometryBasics.Mesh, y::KDTree)
+
+Return the Hausdorff distance betwen the mesh coordinates
+"""
+function distance(vec::AbstractVector{<:AbstractVector}, y::KDTree)::Number
+    minimum(vec) do x
+        distance(x, y)
+    end
+end
+

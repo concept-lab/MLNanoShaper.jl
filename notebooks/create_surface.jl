@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.4
+# v0.20.6
 
 using Markdown
 using InteractiveUtils
@@ -54,7 +54,7 @@ prot_num = 1
 surface = load("$(homedir())/datasets/pqr/$prot_num/triangulatedSurf.off")
 
 # ╔═╡ 43cc30fc-c266-4cf1-aff0-c5c505cf4924
-model_weights = deserialize("$(homedir())/datasets/models/tiny_angular_dense_s_jobs_15_6_3_c_2025-04-03_epoch_400_4474706076735193690")
+model_weights = deserialize("$(homedir())/datasets/models/light_soft_max_angular_dense_s_test28_2025-05-20_epoch_750_13395197924094577505")
 
 # ╔═╡ 2b75694a-d5ae-45f3-93af-61c4167314d9
 model = MLNanoShaperRunner.production_instantiate(model_weights)
