@@ -134,7 +134,7 @@ function _train(
         (; atoms_tree, skin)::TreeTrainingData -> first(
             exact_points(
                 MersenneTwister(42), atoms_tree.tree, skin.tree, training_parameters),
-            1000),
+            400),
         (; atoms_tree, skin)::TreeTrainingData -> first(
             approximates_points(
                 MersenneTwister(42), atoms_tree.tree, skin.tree, training_parameters) do point
@@ -182,18 +182,11 @@ function _train(
         # for epoch in 1:nb_epoch
         #train
         training_states, train_v = train_protein(train_data, training_states, training_parameters,auxiliary_parameters)
-        if η > 1e-4
-            η *= .95
-        elseif η > 1e-5
-            η *= .98
-        else
-            η *= .99
-        end
-        if η < 1e-6
-            η = 1e-6
-        end
+        loss_mean = train_v.loss |> mean
+        counter = 1 + (loss_mean > .5) + (loss_mean > .3) +  (loss_mean > .1)
+        η = (1e-6,1e-5,1e-4,1e-3)[counter]
         Optimisers.adjust!(training_states.optimizer_state,η,)
-        Optimisers.adjust!(training_states.optimizer_state,lambda = η /2 )
+        Optimisers.adjust!(training_states.optimizer_state,lambda = η)
         #test
         prop = propertynames(test_data)
         test_v = Dict(

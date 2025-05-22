@@ -147,7 +147,7 @@ function get_outer_regularisation_loss(model::AbstractLuxLayer,ps,st,input)
         a
     end
     output = first(intermediary_model(input,ps,st))
-    sum(abs.(output) .^2)
+    sum(abs.(output))
 end
 
 
@@ -168,12 +168,13 @@ function categorical_loss(model::Lux.AbstractLuxLayer,
         # @info "loss" model inputs ps st
     # end
     v_pred, _st = model(inputs, ps, st)
+    epsilon = 1.0f-5
+    v_pred = epsilon .+ v_pred .*(1-2*epsilon)
     v_pred = vcat(v_pred, 1 .- v_pred)
     v_pred = cpu_device()(v_pred)
     probabilities = ignore_derivatives() do
         generate_true_probabilities(d_reals)
     end 
-    epsilon = 1.0f-5
     model,st,inputs = ignore_derivatives() do
         model,st,inputs
     end
