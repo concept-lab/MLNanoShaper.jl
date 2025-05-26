@@ -54,7 +54,7 @@ prot_num = 1
 surface = load("$(homedir())/datasets/pqr/$prot_num/triangulatedSurf.off")
 
 # ╔═╡ 43cc30fc-c266-4cf1-aff0-c5c505cf4924
-model_weights = deserialize("$(homedir())/datasets/models/tiny_soft_max_angular_dense_s_test35_2025-05-22_epoch_3200_7123690842925557240")
+model_weights = deserialize("$(homedir())/datasets/models/tiny_soft_max_angular_dense_s_test35_2025-05-23_epoch_500_773799609939854503")
 
 # ╔═╡ 2b75694a-d5ae-45f3-93af-61c4167314d9
 model = MLNanoShaperRunner.production_instantiate(model_weights)

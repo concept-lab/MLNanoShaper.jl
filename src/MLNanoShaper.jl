@@ -43,6 +43,7 @@ using Reexport
 
 using LoopVectorization
 using Octavian
+using PrecompileTools
 using MLNanoShaperRunner
 @reexport using MLNanoShaperRunner.Import
 
@@ -55,5 +56,18 @@ include("logging.jl")
 include("preprocessing.jl")
 include("training.jl")
 include("generate_data.jl")
+# @setup_workload begin
+#     inputs = (Batch([Point3f(0,0,0)]),RegularGrid([Sphere(Point3f(0,0,0),1f0),Sphere(Point3f(0,0,0),1f0)] |> StructVector,3f0))
+#     model = MLNanoShaperRunner.tiny_soft_max_angular_dense()
+#     preprocessing = MLNanoShaperRunner.get_preprocessing(model)
+#     _model = MLNanoShaperRunner.drop_preprocessing(model)
+#     ps,st = Lux.setup(MersenneTwister(42),model) |> cu
+#     @compile_workload begin
+#         preprocessed_data,_ = preprocessing(inputs,ps,st)
+#         jacobian(ps) do ps
+#             _model(preprocessed_data,ps,st) |> first 
+#         end
+#     end
+# end
 
 end

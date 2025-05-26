@@ -44,8 +44,8 @@ dataset_dir = "$(dirname(dirname(@__FILE__)))/examples"
 
 # ╔═╡ b91501dd-f66f-4a60-afa9-c4c9d0fc3504
 names = [
-"$(homedir())/datasets/models/tiny_soft_max_angular_dense_s_test35_2025-05-22_epoch_3200_7123690842925557240"
-"$(homedir())/datasets/models/light_soft_max_angular_dense_s_test28_2025-05-20_epoch_750_13395197924094577505"
+"$(homedir())/datasets/models/tiny_soft_max_angular_dense_s_test35_2025-05-23_epoch_500_773799609939854503"
+"$(homedir())/datasets/models/tiny_soft_max_angular_dense_s_test35_2025-05-23_epoch_500_9700423181272133195"
 ]
 
 # ╔═╡ 69ee1b79-b99d-4e3a-9769-254b1939aba6

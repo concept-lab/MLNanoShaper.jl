@@ -1219,13 +1219,13 @@ version = "1.9.1"
     oneAPI = "8f75cd03-7ff8-4ecb-9b8f-daf728133b1b"
 
 [[deps.MLNanoShaper]]
-deps = ["ADTypes", "Adapt", "BioStructures", "CUDA", "ChainRulesCore", "ConcreteStructs", "Configurations", "Curry", "Dates", "Distances", "Distributed", "FileIO", "Folds", "GeometryBasics", "LazyArrays", "LinearAlgebra", "Logging", "LoggingExtras", "LoopVectorization", "Lux", "LuxCUDA", "MLNanoShaperRunner", "MLUtils", "MeshIO", "Meshes", "Meshing", "NearestNeighbors", "Octavian", "Optimisers", "ProgressLogging", "Random", "Reexport", "Serialization", "SimpleChains", "Static", "StaticArrays", "Statistics", "StructArrays", "TOML", "TensorBoardLogger", "TerminalLoggers", "Transducers", "Zygote"]
+deps = ["ADTypes", "Adapt", "BioStructures", "CUDA", "ChainRulesCore", "ConcreteStructs", "Configurations", "Curry", "Dates", "Distances", "Distributed", "FileIO", "Folds", "GeometryBasics", "LazyArrays", "LinearAlgebra", "Logging", "LoggingExtras", "LoopVectorization", "Lux", "LuxCUDA", "MLNanoShaperRunner", "MLUtils", "MeshIO", "Meshes", "Meshing", "NearestNeighbors", "Octavian", "Optimisers", "PrecompileTools", "ProgressLogging", "Random", "Reexport", "Serialization", "SimpleChains", "Static", "StaticArrays", "Statistics", "StructArrays", "TOML", "TensorBoardLogger", "TerminalLoggers", "Transducers", "Zygote"]
 path = ".."
 uuid = "0ae43799-6878-4589-9bc9-cf11e8180012"
 version = "0.1.0"
 
 [[deps.MLNanoShaperRunner]]
-deps = ["Adapt", "BioSymbols", "ChainRulesCore", "ConcreteStructs", "Distances", "Folds", "GeometryBasics", "LinearAlgebra", "Lux", "LuxCore", "NearestNeighbors", "Random", "Reexport", "Serialization", "Static", "StaticArrays", "StaticTools", "Statistics", "StructArrays", "TOML", "Transducers"]
+deps = ["Adapt", "BioSymbols", "ChainRulesCore", "ConcreteStructs", "Distances", "Folds", "GeometryBasics", "LinearAlgebra", "Lux", "LuxCore", "Random", "Reexport", "Serialization", "Static", "StaticArrays", "StaticTools", "Statistics", "StructArrays", "TOML", "Transducers"]
 path = "../MLNanoShaperRunner"
 uuid = "0d104b66-282b-4c8e-a741-e32dba8f77f1"
 version = "0.1.0"

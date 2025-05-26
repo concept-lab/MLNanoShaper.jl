@@ -92,7 +92,7 @@ struct DataSet
     surface::GlobalPreprocessed
     inside::GlobalPreprocessed
     core::GlobalPreprocessed
-    atoms_center::GlobalPreprocessed
+    # atoms_center::GlobalPreprocessed
 end
 
 function join_dataset(vec)
@@ -134,21 +134,21 @@ function _train(
         (; atoms_tree, skin)::TreeTrainingData -> first(
             exact_points(
                 MersenneTwister(42), atoms_tree.tree, skin.tree, training_parameters),
-            400),
+            500),
         (; atoms_tree, skin)::TreeTrainingData -> first(
             approximates_points(
                 MersenneTwister(42), atoms_tree.tree, skin.tree, training_parameters) do point
-                0 < signed_distance(point, skin) < 2training_parameters.cutoff_radius
+                0 < signed_distance(point, skin) < training_parameters.cutoff_radius
             end,
-            1500),
+            2000),
         (; atoms_tree, skin)::TreeTrainingData -> first(
             approximates_points(
                 MersenneTwister(42), atoms_tree.tree, skin.tree, training_parameters) do point
-                signed_distance(point, skin) > 2 * training_parameters.cutoff_radius
+                signed_distance(point, skin) > training_parameters.cutoff_radius
             end,
-            1480),
-        (; atoms_tree)::TreeTrainingData -> first(
-            shuffle(MersenneTwister(42), atoms_tree.data.center), 20)
+            1000),
+        # (; atoms_tree)::TreeTrainingData -> first(
+            # shuffle(MersenneTwister(42), atoms_tree.data.center), 20)
     ]
     train_data, test_data = map([train_data, test_data]) do dataset
         DataSet(map(processing) do generate_points
@@ -165,13 +165,15 @@ function _train(
         surface=length(first(train_data.surface)),
         inside=length(first(train_data.inside)),
         core=length(first(train_data.core)),
-        atoms_center=length(first(train_data.atoms_center)))
+        # atoms_center=length(first(train_data.atoms_center))
+        )
     @info("test data size",
         outside=length(first(test_data.outside)),
         surface=length(first(test_data.surface)),
         inside=length(first(test_data.inside)),
         core=length(first(test_data.core)),
-        atoms_center=length(first(test_data.atoms_center)))
+        # atoms_center=length(first(test_data.atoms_center))
+        )
     train_data = shuffle_dataset(MersenneTwister(41), join_dataset(getproperty.(Ref(train_data),propertynames(train_data))))
     @info "training size: $(floor((Base.summarysize(train_data) + Base.summarysize(test_data))/1024^3;digits=3)) Go"
     @info "example batch size: $(floor(mean(Base.summarysize.(BatchView(train_data;batchsize =batch_size)))/1024^3;digits=3)) Go"
@@ -183,8 +185,8 @@ function _train(
         #train
         training_states, train_v = train_protein(train_data, training_states, training_parameters,auxiliary_parameters)
         loss_mean = train_v.loss |> mean
-        counter = 1 + (loss_mean > .5) + (loss_mean > .3) +  (loss_mean > .1)
-        η = (1e-6,1e-5,1e-4,1e-3)[counter]
+        counter = 1 + (loss_mean > .6) + (loss_mean > .5) +  (loss_mean > .4) + (loss_mean > .35)
+        η = (1e-5,5e-5,1e-4,2e-4,5e-4)[counter]
         Optimisers.adjust!(training_states.optimizer_state,η,)
         Optimisers.adjust!(training_states.optimizer_state,lambda = η)
         #test
