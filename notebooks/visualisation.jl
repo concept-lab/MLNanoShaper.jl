@@ -45,7 +45,7 @@ dataset_dir = "$(dirname(dirname(@__FILE__)))/examples"
 # ╔═╡ b91501dd-f66f-4a60-afa9-c4c9d0fc3504
 names = [
 "$(homedir())/datasets/models/tiny_soft_max_angular_dense_s_test35_2025-05-23_epoch_500_773799609939854503"
-"$(homedir())/datasets/models/tiny_soft_max_angular_dense_s_test35_2025-05-23_epoch_500_9700423181272133195"
+"$(homedir())/datasets/models/tiny_soft_max_angular_dense_test36_notwmooth_2025-05-26_epoch_1300_5942676625624463582"
 ]
 
 # ╔═╡ 69ee1b79-b99d-4e3a-9769-254b1939aba6
@@ -73,9 +73,6 @@ full_data = map(MLNanoShaper.implicit_surface.(Ref(atoms), models[1:1], param[1:
     (; points, top)
 end |> StructVector
   ╠═╡ =#
-
-# ╔═╡ ff9a463c-7742-4a6a-85b8-d9b71a7e83cd
-m = models[2]
 
 # ╔═╡ 2e208c01-0893-4ab0-a1db-51cada6a95b6
 #=╠═╡
@@ -165,6 +162,9 @@ slice1 = get_slice(atoms,models[1],6.0,(;cutoff_radius=3.0f0,step=.1f0,default_v
 # ╔═╡ a8a43fdf-f69c-41ef-b309-ee8531e5df23
 slice2 = get_slice(atoms,models[2],6.0,(;cutoff_radius=3.0f0,step=.1f0,default_value=0.0f0))
 
+# ╔═╡ ff9a463c-7742-4a6a-85b8-d9b71a7e83cd
+m = models[2]
+
 # ╔═╡ d679ca88-615e-4675-9d0a-419cd18246f9
 begin
     g = Mk.Figure(size = (1200,500))
@@ -199,7 +199,7 @@ Mk.plot(σ.(dist);colormap = :rainbow,colorrange = [0,1])
 begin
 	h = Mk.Figure(size = (700,500))
 	Mk.Axis(h[1, 1], title="tiny_angular_dense 3A")
-	Mk.contour!(h[1,1],ranges[1],ranges[2],slice1,levels=[.5],color=:red)
+	Mk.contour!(h[1,1],ranges[1],ranges[2],slice2,levels=[.5],color=:red)
 	Mk.contour!(h[1,1],ranges[1],ranges[2],dist,levels=[0],color = :green)
 	Mk.Legend(h[1,2],[Mk.LineElement(color = :green),Mk.LineElement(color = :red)],["true value","predicted value"])
 	h
@@ -238,7 +238,6 @@ st = models[1].st
 # ╠═58cf0ac8-d68d-47a7-b08f-098b65d19908
 # ╠═a0a5f16f-0224-47b1-ae86-c4b5bd48fd07
 # ╠═7f3602e9-028f-44fc-b7dd-052f76438dae
-# ╠═ff9a463c-7742-4a6a-85b8-d9b71a7e83cd
 # ╠═2e208c01-0893-4ab0-a1db-51cada6a95b6
 # ╠═d38242b4-0bee-44c8-9885-42e8441faf25
 # ╠═4a1478c6-d200-4073-8d9d-1cbab26ff94d
@@ -252,6 +251,7 @@ st = models[1].st
 # ╠═2b0fc2fd-47c1-491c-b9a3-6ddff7b61850
 # ╠═ee6dc376-b884-4ecb-8c63-1830bd664597
 # ╠═a8a43fdf-f69c-41ef-b309-ee8531e5df23
+# ╠═ff9a463c-7742-4a6a-85b8-d9b71a7e83cd
 # ╠═d679ca88-615e-4675-9d0a-419cd18246f9
 # ╠═55e62c2f-6797-4075-b8cc-d7d11e05317e
 # ╠═3c300122-c050-4ed0-9e9c-181a0698803c

@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.4
+# v0.20.6
 
 using Markdown
 using InteractiveUtils
@@ -29,7 +29,7 @@ auxp = MLN.read_from_TOML(MLN.AuxiliaryParameters,parms)
 sort(test_data.data.data[test_data.indices])
 
 # ╔═╡ 448467e1-337f-4847-b42f-0221af4b0d30
-model_weights = deserialize("$(homedir())/datasets/models/tiny_angular_dense_s_jobs_15_6_3_c_2025-04-03_epoch_400_4474706076735193690")
+model_weights = deserialize("$(homedir())/datasets/models/tiny_soft_max_angular_dense_s_test35_2025-05-23_epoch_500_773799609939854503")
 
 # ╔═╡ 994a8229-d8f1-4048-912c-cb3d8d3c09dc
 model = MLNR.production_instantiate(model_weights)
@@ -70,7 +70,7 @@ function precision(x::AbstractVector{Point3{T}},y::AbstractVector{Point3{T}};rad
 end
 
 # ╔═╡ 1639c4f0-1d54-40c2-83a0-24c7468a4d2a
-metrics = map(test_data)do (;atoms,skin)
+metrics = map(test_data[1:2])do (;atoms,skin)
 	pred = get_mesh(atoms,r_grid)
 	pred_coord = coordinates(pred)
 	skin_coord = coordinates(skin)
