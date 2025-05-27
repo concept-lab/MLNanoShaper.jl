@@ -185,8 +185,8 @@ function _train(
         #train
         training_states, train_v = train_protein(train_data, training_states, training_parameters,auxiliary_parameters)
         loss_mean = train_v.loss |> mean
-        counter = 1 +  (loss_mean > .4) + (loss_mean > .35)  + (loss_mean > .3)
-        η = (6e-6,1e-5,3e-5,1e-4)[counter]
+        counter = 1 +  (loss_mean > .6) + (loss_mean > .4)  + (loss_mean > .3)
+        η = (3e-7,1e-6,3e-6,1e-5)[counter]
         Optimisers.adjust!(training_states.optimizer_state,η,)
         Optimisers.adjust!(training_states.optimizer_state,lambda = η)
         #test
