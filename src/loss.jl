@@ -207,10 +207,13 @@ _get_loss_type(::StaticSymbol{:categorical}) = CategoricalLoss()
 
 ContinousMetric = @NamedTuple{
     stats::BayesianStats,
+    SER::Float32,
+    outer_reg_loss::Float32,
     bias_error::Float32,
     abs_error::Float32,
     bias_distance::Float32,
-    abs_distance::Float32}
+    abs_distance::Float32
+}
 
 """
     continus_loss(model, ps, st, (; point, atoms, d_real))
@@ -229,10 +232,15 @@ function continus_loss(model,
     v_pred = cpu_device()(v_pred)
     v_real = σ.(d_reals)
     error = v_pred .- v_real
-    loss = mean(error .^ 2)
+    SER = mean(error .^ 2)
+    epsilon = 1.0f-5
+    outer_reg_loss = get_outer_regularisation_loss(model,ps,st,inputs)
+    r1, r2 = ignore_derivatives() do
+        ((SER,outer_reg_loss) .+ epsilon) ./ (outer_reg_loss + SER+2*epsilon) 
+    end
+    loss = r1 * SER+ r2 * outer_reg_loss
     D_distance = loggit.(max.(0, v_pred) * (1 .- 1.0f-4)) .- d_reals
 
-    epsilon = 1.0f-5
     true_vec = Iterators.filter(vec(d_reals)) do dist
         abs(dist) > epsilon
     end .> 0.5f0
@@ -244,10 +252,13 @@ function continus_loss(model,
     (loss,
         st,
         (; stats = BayesianStats(true_vec, pred_vec),
+            SER,
+            outer_reg_loss,
             bias_error = mean(error),
             abs_error = mean(abs.(error)),
             bias_distance = mean(D_distance),
-            abs_distance = abs.(D_distance) |> mean))
+            abs_distance = abs.(D_distance) |> mean
+            ))
 end
 
 struct ContinousLoss <: LossType end
