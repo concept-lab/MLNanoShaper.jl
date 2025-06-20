@@ -8,7 +8,7 @@ using InteractiveUtils
 using TensorBoardLogger, CairoMakie, ValueHistories
 
 # ╔═╡ 28fe1595-08e6-499b-bbef-ce1fd0d4dc1d
-log_path = "light_soft_max_angular_dense_s_jobs_26_5_3_c_2025-05-15_13372590970039508824"
+log_path = 			"light_soft_max_angular_dense_s_jobs_40_5_c_2025-05-28_11845445769936303495"
 
 # ╔═╡ d221e857-d6d9-4324-b108-098b7671f450
 logger = TBReader("$(homedir())/datasets/logs/$log_path")
@@ -20,9 +20,9 @@ hist =convert(MVHistory, logger)
 get_value(hit,s::String) = hist[Symbol(s)].values
 
 # ╔═╡ 55b6ccc3-2e71-4e58-bc16-fd2126bc24ff
-function generic_plot(hist,value::AbstractString,title::AbstractString)
+function generic_plot(hist,value::AbstractString,title::AbstractString,path::AbstractString)
 	train_loss= get_value(hist,"log/train/$value")
-	test_loss= get_value(hist,"log/test/$value")
+	test_loss= get_value(hist,"log/test/global/$value")
 	f = Figure()
 	ax = Axis(f[1, 1],xlabel = "epoch",ylabel = title,
 		#limits =(0,nothing,0, nothing)
@@ -30,76 +30,94 @@ function generic_plot(hist,value::AbstractString,title::AbstractString)
 	lines!(ax, train_loss,label= "train")
 	lines!(ax, test_loss,label= "test")
 	axislegend(ax,position = :rt)
-	save("$title.pdf",f)
+	mkpath(path)
+	save("$path/$title.pdf",f)
 	f
 end
 
 # ╔═╡ ef62cda0-39e9-4fb3-bc23-039a7b035875
-function plot_loss(hist)
-	generic_plot(hist,"global/loss","loss")
+function plot_loss(hist,path)
+	generic_plot(hist,"loss","loss",path)
 end
 
 # ╔═╡ 6654fc36-1644-42f5-8137-d36fa2abd729
-function plot_error_rate(hist)
-	generic_plot(hist,"global/stats/stats/error_rate","error_rate")
+function plot_error_rate(hist,path)
+	generic_plot(hist,"stats/stats/error_rate","error_rate",path)
+end
+
+# ╔═╡ 74f26fbc-f71e-4183-8537-bc6a6365c9e9
+function plot_false_negative_rate(hist,path)
+	generic_plot(hist,"stats/stats/false_negative_rate","false_negative_rate",path)
+end
+
+# ╔═╡ dce322c1-8e03-4711-a164-1bc0d2ba7100
+function plot_false_positive_rate(hist,path)
+	generic_plot(hist,"stats/stats/false_positive_rate","false_positive_rate",path)
+end
+
+# ╔═╡ 6490366e-7404-413e-9b27-9a4decfdf4d5
+function plot_kl_div(hist,path)
+	generic_plot(hist,"stats/kl_div","kl_div",path)
+end
+
+# ╔═╡ a60e1bcb-8eb8-4686-8f63-dce61fe22ba3
+function plot_outer_reg_loss(hist,path)
+	generic_plot(hist,"stats/outer_reg_loss","outer_reg_loss",path)
 end
 
 # ╔═╡ 84f6f4ac-30bf-4e81-aeab-986128123b99
 F1(x,y) = 2/(1/x + 1/y)
 
+# ╔═╡ 0b652719-8a51-464e-a0b3-f50ea54b8676
+h_string = "stats/stats"
+
 # ╔═╡ 53d9e8d0-a7a6-4a45-a527-ec35ee6b772b
-function plot_F1(hist)
-	h_string = "global/stats/stats"
+function plot_F1(hist,path)
+	h_string = "stats/stats"
 	train_value= F1.(
 		1 .- get_value(hist,"log/train/$h_string/false_positive_rate"),
 		1 .- get_value(hist,"log/train/$h_string/false_negative_rate")
 	)
 	test_value= F1.(
-		1 .- get_value(hist,"log/test/$h_string/false_positive_rate"),
-		1 .- get_value(hist,"log/test/$h_string/false_negative_rate")
+		1 .- get_value(hist,"log/test/global/$h_string/false_positive_rate"),
+		1 .- get_value(hist,"log/test/global/$h_string/false_negative_rate")
 	)
 	f = Figure()
 	ax = Axis(f[1, 1],xlabel = "epoch",ylabel = "F1_score", limits =(0,nothing,0, nothing))
 	lines!(ax, train_value,label= "train")
 	lines!(ax, test_value,label= "test")
 	axislegend(ax,position = :rb)
-	save("F1_score.pdf",f)
+	mkpath(path)
+	save("$path/F1_score.pdf",f)
 	f
 end
 
-# ╔═╡ 74f26fbc-f71e-4183-8537-bc6a6365c9e9
-function plot_false_negative_rate(hist)
-	generic_plot(hist,"global/stats/stats/false_negative_rate","false_negative_rate")
-end
-
-# ╔═╡ dce322c1-8e03-4711-a164-1bc0d2ba7100
-function plot_false_positive_rate(hist)
-	generic_plot(hist,"global/stats/stats/false_positive_rate","false_positive_rate")
-end
-
 # ╔═╡ c32d23ab-1c5f-4c30-8dac-900502153eb8
-plot_loss(hist)
+plot_loss(hist,log_path)
+
+# ╔═╡ c4bfae61-ea91-4bda-b99a-416ecf617c8d
+plot_kl_div(hist,log_path)
+
+# ╔═╡ 98cad7b1-f374-48d5-aef5-dc7e92347418
+plot_outer_reg_loss(hist,log_path)
 
 # ╔═╡ b24e8129-79bf-40da-a8d3-2dadc06573e6
-plot_error_rate(hist)
+plot_error_rate(hist,log_path)
 
 # ╔═╡ fac10a46-38bd-4f06-b711-bdf9756f7c99
-plot_false_negative_rate(hist)
+plot_false_negative_rate(hist,log_path)
 
 # ╔═╡ 1176c0cc-a206-433c-a110-8c5a4c8612ce
-plot_false_positive_rate(hist)
+plot_false_positive_rate(hist,log_path)
 
 # ╔═╡ 65ec010d-338f-40ec-ad24-768984965432
-plot_F1(hist)
-
-# ╔═╡ 0b652719-8a51-464e-a0b3-f50ea54b8676
-h_string = "global/stats/stats"
+plot_F1(hist,log_path)
 
 # ╔═╡ b838bd39-04f2-4f97-9cf8-094c64968b6b
  F1.(
 		1 .- get_value(hist,"log/train/$h_string/false_positive_rate"),
 		1 .- get_value(hist,"log/train/$h_string/false_negative_rate")
-	) |> maximum
+	) |> last
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -1646,16 +1664,20 @@ version = "3.6.0+0"
 # ╠═55b6ccc3-2e71-4e58-bc16-fd2126bc24ff
 # ╠═ef62cda0-39e9-4fb3-bc23-039a7b035875
 # ╠═6654fc36-1644-42f5-8137-d36fa2abd729
-# ╠═84f6f4ac-30bf-4e81-aeab-986128123b99
-# ╠═53d9e8d0-a7a6-4a45-a527-ec35ee6b772b
 # ╠═74f26fbc-f71e-4183-8537-bc6a6365c9e9
 # ╠═dce322c1-8e03-4711-a164-1bc0d2ba7100
+# ╠═6490366e-7404-413e-9b27-9a4decfdf4d5
+# ╠═a60e1bcb-8eb8-4686-8f63-dce61fe22ba3
+# ╠═84f6f4ac-30bf-4e81-aeab-986128123b99
+# ╠═0b652719-8a51-464e-a0b3-f50ea54b8676
+# ╠═53d9e8d0-a7a6-4a45-a527-ec35ee6b772b
 # ╠═c32d23ab-1c5f-4c30-8dac-900502153eb8
+# ╠═c4bfae61-ea91-4bda-b99a-416ecf617c8d
+# ╠═98cad7b1-f374-48d5-aef5-dc7e92347418
 # ╠═b24e8129-79bf-40da-a8d3-2dadc06573e6
 # ╠═fac10a46-38bd-4f06-b711-bdf9756f7c99
 # ╠═1176c0cc-a206-433c-a110-8c5a4c8612ce
 # ╠═65ec010d-338f-40ec-ad24-768984965432
-# ╠═0b652719-8a51-464e-a0b3-f50ea54b8676
 # ╠═b838bd39-04f2-4f97-9cf8-094c64968b6b
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

@@ -19,6 +19,9 @@ using Base.Threads
 # ╔═╡ 05145ea8-59b9-41fb-ad7e-fce08fa0c36c
 import CairoMakie as Mk
 
+# ╔═╡ 880fbf4e-0951-400e-a997-d4f6ecf72ad1
+Threads.nthreads()
+
 # ╔═╡ b1188b32-f4ba-44c0-995e-070ff2505888
 function write_off(filename::String, mesh::GeometryBasics.Mesh)
     open(filename, "w") do io
@@ -45,19 +48,19 @@ function write_off(filename::String, mesh::GeometryBasics.Mesh)
 end
 
 # ╔═╡ 0f509aaf-d162-4b90-908f-0958a2846245
-step =.3f0
+step =.5f0
 
 # ╔═╡ ddba2880-fff8-4df2-87e1-67b8c87bcd72
-prot_num = 1
+prot_num = 2
 
-# ╔═╡ c595e154-3530-4dfe-b886-9fc975e0eda1
-surface = load("$(homedir())/datasets/pqr/$prot_num/triangulatedSurf.off")
+# ╔═╡ 498adb72-6edf-4b36-b9a5-474f6660a030
+model_name = "tiny_soft_max_angular_dense_jobs_40_3_2025-06-04_epoch_4370_75456560920357034"
 
 # ╔═╡ 43cc30fc-c266-4cf1-aff0-c5c505cf4924
-model_weights = deserialize("$(homedir())/datasets/models/tiny_soft_max_angular_dense_s_test35_2025-05-23_epoch_500_773799609939854503")
+model_weights = deserialize("$(homedir())/datasets/models/$model_name")
 
 # ╔═╡ 2b75694a-d5ae-45f3-93af-61c4167314d9
-model = MLNanoShaperRunner.production_instantiate(model_weights)
+model = MLNanoShaperRunner.production_instantiate(model_weights,on_gpu=false)
 
 # ╔═╡ 634427ef-6126-4fdd-a8b2-3d0bfee0d0b6
 atoms = RegularGrid(
@@ -65,8 +68,26 @@ atoms = RegularGrid(
         read("$(homedir())/datasets/pqr/$prot_num/structure.pqr", PQR{Float32}), :pos) |>
     StructVector,3f0)
 
+# ╔═╡ ce214ac0-f811-4382-beac-b0ba82b0e206
+read("$(homedir())/datasets/pqr/$prot_num/structure.pqr", PQR{Float32}) |> length
+
 # ╔═╡ 8d39769c-9e87-4f5b-aa50-34abe8c78cf5
-vol = MLNanoShaperRunner.evaluate_field(model,atoms;step)
+vol = MLNanoShaperRunner.evaluate_field_fast(model,atoms;step)
+
+# ╔═╡ 206cb7a0-bc63-4f3d-b0f6-cf7255cea696
+vol1 = MLNanoShaperRunner.evaluate_field(model,atoms;step)
+
+# ╔═╡ 439948ac-0a40-4ce6-ad07-b139c73e053d
+maximum(vol .- vol1)
+
+# ╔═╡ cdd55fc4-fccd-4dd7-b0dc-3b7b65804334
+mean((vol .- mean(vol)) .* (vol1 .- mean(vol1)))
+
+# ╔═╡ 1c843626-0390-4bea-819f-114506062d3b
+mean(vol .- vol1)
+
+# ╔═╡ 81d5a6d9-0030-45d2-83b7-f1b043fed0f9
+length(vol) / 1000
 
 # ╔═╡ bf954fa9-6d15-4226-bea2-a96807c130da
 begin
@@ -76,25 +97,33 @@ begin
 	x,y,z = range.(mins,maxes;step) .|> collect .|> Vector{Float32}
 	mc = MC(vol;x,y,z)
 	march(mc,.5)
+	mc
 	msh = MarchingCubes.makemesh(GeometryBasics, mc)
-	#Mk.mesh(msh; color = :red)
+	Mk.mesh(msh; color = :red)
 end
 
 # ╔═╡ c7cf7dd4-148c-40c4-ada4-fa6935348c7f
-write_off("predicted.off",msh)
+write_off("$model_name-predicted.off",msh)
 
 # ╔═╡ Cell order:
 # ╠═7b259d1e-1132-11f0-30c6-c9559109859f
 # ╠═05145ea8-59b9-41fb-ad7e-fce08fa0c36c
 # ╠═829ae9d2-105a-4a98-ad56-e0016b4f04d9
 # ╠═671c0869-ecf4-48be-a22c-7e373bebc294
+# ╠═880fbf4e-0951-400e-a997-d4f6ecf72ad1
 # ╠═b1188b32-f4ba-44c0-995e-070ff2505888
 # ╠═0f509aaf-d162-4b90-908f-0958a2846245
 # ╠═ddba2880-fff8-4df2-87e1-67b8c87bcd72
-# ╠═c595e154-3530-4dfe-b886-9fc975e0eda1
+# ╠═498adb72-6edf-4b36-b9a5-474f6660a030
 # ╠═43cc30fc-c266-4cf1-aff0-c5c505cf4924
 # ╠═2b75694a-d5ae-45f3-93af-61c4167314d9
 # ╠═634427ef-6126-4fdd-a8b2-3d0bfee0d0b6
+# ╠═ce214ac0-f811-4382-beac-b0ba82b0e206
 # ╠═8d39769c-9e87-4f5b-aa50-34abe8c78cf5
+# ╠═206cb7a0-bc63-4f3d-b0f6-cf7255cea696
+# ╠═439948ac-0a40-4ce6-ad07-b139c73e053d
+# ╠═cdd55fc4-fccd-4dd7-b0dc-3b7b65804334
+# ╠═1c843626-0390-4bea-819f-114506062d3b
+# ╠═81d5a6d9-0030-45d2-83b7-f1b043fed0f9
 # ╠═bf954fa9-6d15-4226-bea2-a96807c130da
 # ╠═c7cf7dd4-148c-40c4-ada4-fa6935348c7f
