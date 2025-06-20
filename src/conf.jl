@@ -32,13 +32,50 @@ struct TrainingParameters
     loss::LossType
     learning_rate::Float64
 end
+function Base.hash(x::TrainingParameters, h::UInt)
+    h = hash(x.name, h)
+    h = hash(x.scale, h)
+    h = hash(x.cutoff_radius, h)
+    h = hash(x.train_test_split, h)
+    h = hash(x.model, h)
+    h = hash(x.data_ids, h)
+    h = hash(x.ref_distance, h)
+    h = hash(x.loss, h)
+    h = hash(x.learning_rate, h)
+    return h
+end
 
 function generate_training_name(x::TrainingParameters, epoch::Integer)
-    "$(x.model().name)_$(x.name)_$(Dates.format(now(),"yyyy-mm-dd"))_epoch_$(epoch)_$(hash(x))"
+    "$(x.model().name)_$(x.name)_$(epoch)_$(hash(x))"
 end
 
 function generate_training_name(x::TrainingParameters)
-    "$(x.model().name)_$(x.name)_$(Dates.format(now(),"yyyy-mm-dd"))_$(hash(x))"
+    # @info hash(x.model()) hash(x.loss) hash(x.data_ids) hash(x.name)
+    "$(x.model().name)_$(x.name)_$(hash(x))"
+end
+function find_latest_epoch_file(directory::String, training_parameters::TrainingParameters)
+    training_name_prefix = "$(training_parameters.model().name)_$(training_parameters.name)"
+    hash_value = hash(training_parameters)
+    files = readdir(directory)
+    max_epoch = -1
+    latest_file = nothing
+
+    for file in files
+        # Split into name and extension
+
+        # The pattern to match the name part
+        pattern = Regex("^$(training_name_prefix)_(\\d+)_$(hash_value)\$")
+        m = match(pattern, file)
+        if m !== nothing
+            epoch = parse(Int, m.captures[1])
+            if epoch > max_epoch
+                max_epoch = epoch
+                latest_file = file
+            end
+        end
+    end
+
+    return latest_file,max_epoch
 end
 
 read_from_TOML(T::Type) = read_from_TOML(T, TOML.parsefile(params_file))

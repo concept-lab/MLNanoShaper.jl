@@ -113,7 +113,8 @@ function _train(
         (train_data,
             test_data)::Tuple{MLUtils.AbstractDataContainer, MLUtils.AbstractDataContainer},
         training_states::Lux.Training.TrainState, training_parameters::TrainingParameters,
-        auxiliary_parameters::AuxiliaryParameters)
+        auxiliary_parameters::AuxiliaryParameters,
+        start_epoch=1)
     (; nb_epoch, save_periode, model_dir,batch_size) = auxiliary_parameters
 
     @info "nb threades" Threads.nthreads()
@@ -180,7 +181,7 @@ function _train(
 
     @info "Starting training"
     η = training_parameters.learning_rate
-    @progress name="training" for epoch in 1:nb_epoch
+    @progress name="training" for epoch in start_epoch:nb_epoch
         # for epoch in 1:nb_epoch
         #train
         training_states, train_v = train_protein(train_data, training_states, training_parameters,auxiliary_parameters)
@@ -225,19 +226,32 @@ train the model given `TrainingParameters` and `AuxiliaryParameters`.
 """
 function _train(training_parameters::TrainingParameters, auxiliary_parameters::AuxiliaryParameters)
     (; model, learning_rate) = training_parameters
-    (; log_dir, on_gpu) = auxiliary_parameters
+    (; log_dir,model_dir, on_gpu) = auxiliary_parameters
+    log_name = "$(homedir())/$(log_dir)/$(generate_training_name(training_parameters))"    
     device = on_gpu ? gpu_device() : identity
+    (ps,st,epoch) = if isdir(log_name)
+        @info "found existing logfile at " log_name
+        epoch_file,epoch = find_latest_epoch_file("$(homedir())/$(model_dir)",training_parameters)
+        if ismissing(epoch_file)
+            @error "missing epoch file, abborting"
+            (Lux.initialparameters(MersenneTwister(42), model()),Lux.initialstates(MersenneTwister(42), model()),0)
+        else
+            serializedModel::SerializedModel = "$(homedir())/$model_dir/$epoch_file" |> deserialize
+            (serializedModel.parameters,serializedModel.states,epoch)
+        end
+    else
+        @info "staring training from scratch" log_name
+        (Lux.initialparameters(MersenneTwister(42), model()),Lux.initialstates(MersenneTwister(42), model()),0)
+    end
     optim = OptimiserChain(ClipGrad(learning_rate/2),WeightDecay(),Adam(learning_rate),ClipGrad())
     (; train_data, test_data) = get_dataset(training_parameters, auxiliary_parameters)
-    ps = Lux.initialparameters(MersenneTwister(42), model())
-    st = Lux.initialstates(MersenneTwister(42), model())
-    with_logger(get_logger("$(homedir())/$log_dir/$(generate_training_name(training_parameters))")) do
+    with_logger(get_logger(log_name,epoch)) do
         _train((train_data, test_data),
             Lux.Training.TrainState(
                 drop_preprocessing(model()),
                 ps |> device,
                 st |> device,
                 optim),
-            training_parameters, auxiliary_parameters)
+            training_parameters, auxiliary_parameters,epoch)
     end
 end
