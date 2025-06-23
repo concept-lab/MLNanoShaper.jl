@@ -24,13 +24,13 @@ struct BayesianStats
     function BayesianStats(
             nb_true_positives::Int, nb_false_negatives::Int, nb_true::Int, nb_false::Int)
         @assert nb_true_positives<=nb_true "got $nb_true_positives true positives for $nb_true true values"
-        @assert nb_false_negatives<=nb_false "got $nb_false_negatives true negatives for $nb_false true values"
+        @assert nb_false_negatives<=nb_true "got $nb_false_negatives false negatives for $nb_true true values"
         new(nb_true_positives, nb_false_negatives, nb_true, nb_false)
     end
 end
 function BayesianStats(real::AbstractVector{Bool}, pred::AbstractVector{Bool})
     nb_true_positives = count(real .&& pred)
-    nb_false_negatives = count(.!real .&& pred)
+    nb_false_negatives = count(real .&& .!pred)
     nb_true = count(real)
     nb_false = count(.!real)
     ignore_derivatives() do
