@@ -231,11 +231,12 @@ function _train(training_parameters::TrainingParameters, auxiliary_parameters::A
     device = on_gpu ? gpu_device() : identity
     (ps,st,epoch) = if isdir(log_name)
         @info "found existing logfile at " log_name
-        epoch_file,epoch = find_latest_epoch_file("$(homedir())/$(model_dir)",training_parameters)
+        epoch_file,epoch = find_latest_epoch_file("$(homedir())/$model_dir",training_parameters)
         if ismissing(epoch_file)
-            @error "missing epoch file, abborting"
+            @error "missing epoch file, starting from 0"
             (Lux.initialparameters(MersenneTwister(42), model()),Lux.initialstates(MersenneTwister(42), model()),0)
         else
+            @assert epoch >=0
             serializedModel::SerializedModel = "$(homedir())/$model_dir/$epoch_file" |> deserialize
             (serializedModel.parameters,serializedModel.states,epoch)
         end
