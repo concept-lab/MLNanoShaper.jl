@@ -11,7 +11,7 @@ using Pkg;Pkg.activate(".")
 using MLNanoShaper, MLNanoShaperRunner, FileIO, StructArrays, Static, Serialization,
       GeometryBasics, LuxCUDA, Lux, Profile, ProfileSVG, ChainRulesCore, Folds,
       BenchmarkTools, Zygote, Distances, LinearAlgebra, LoopVectorization, Folds,
-      StaticTools, PProf, CUDA, Adapt, NearestNeighbors, MarchingCubes, FileIO, Transducers,Accessors, Revise
+      StaticTools, PProf, CUDA, Adapt, NearestNeighbors, MarchingCubes, FileIO, Transducers,Accessors, Revise 
 
 # ╔═╡ 671c0869-ecf4-48be-a22c-7e373bebc294
 using Base.Threads
@@ -84,26 +84,38 @@ maximum(vol .- vol1)
 mean((vol .- mean(vol)) .* (vol1 .- mean(vol1)))
 
 # ╔═╡ 1c843626-0390-4bea-819f-114506062d3b
-mean(vol .- vol1)
+sqrt(mean((vol .- vol1).^2))
 
 # ╔═╡ 81d5a6d9-0030-45d2-83b7-f1b043fed0f9
 length(vol) / 1000
 
-# ╔═╡ bf954fa9-6d15-4226-bea2-a96807c130da
-begin
-	
+# ╔═╡ 315999e7-1a22-4cc1-a0da-5094a5843015
+function get_mesh(vol,atoms)
 	mins = atoms.start .-2 |> collect
 	maxes = mins .+ size(atoms.grid) .* Float32(atoms.radius) .+2
 	x,y,z = range.(mins,maxes;step) .|> collect .|> Vector{Float32}
 	mc = MC(vol;x,y,z)
 	march(mc,.5)
-	mc
-	msh = MarchingCubes.makemesh(GeometryBasics, mc)
-	Mk.mesh(msh; color = :red)
+	MarchingCubes.makemesh(GeometryBasics, mc)
 end
 
+# ╔═╡ f8a03541-2938-42c5-8c18-30cfdae902e9
+msh = get_mesh(vol,atoms)
+
+# ╔═╡ 9cff681f-a05e-4125-b070-35a831a26321
+msh1 = get_mesh(vol1,atoms)
+
 # ╔═╡ c7cf7dd4-148c-40c4-ada4-fa6935348c7f
-write_off("$model_name-predicted.off",msh)
+write_off("$model_name-predicted.off",msh1)
+
+# ╔═╡ 1595185f-054b-42bb-a651-1eb925bf31fe
+Mk.mesh(msh; color = :red)
+
+# ╔═╡ c0b55cc0-02bb-44f6-aaa5-bba81f0019f8
+Mk.mesh(msh1; color = :red)
+
+# ╔═╡ 1ffca824-d203-47e1-b140-e59cbd7ef655
+write_off("$model_name-predicted_fast.off",msh)
 
 # ╔═╡ Cell order:
 # ╠═7b259d1e-1132-11f0-30c6-c9559109859f
@@ -125,5 +137,10 @@ write_off("$model_name-predicted.off",msh)
 # ╠═cdd55fc4-fccd-4dd7-b0dc-3b7b65804334
 # ╠═1c843626-0390-4bea-819f-114506062d3b
 # ╠═81d5a6d9-0030-45d2-83b7-f1b043fed0f9
-# ╠═bf954fa9-6d15-4226-bea2-a96807c130da
+# ╠═315999e7-1a22-4cc1-a0da-5094a5843015
 # ╠═c7cf7dd4-148c-40c4-ada4-fa6935348c7f
+# ╠═f8a03541-2938-42c5-8c18-30cfdae902e9
+# ╠═9cff681f-a05e-4125-b070-35a831a26321
+# ╠═1595185f-054b-42bb-a651-1eb925bf31fe
+# ╠═c0b55cc0-02bb-44f6-aaa5-bba81f0019f8
+# ╠═1ffca824-d203-47e1-b140-e59cbd7ef655

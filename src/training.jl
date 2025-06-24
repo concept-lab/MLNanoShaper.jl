@@ -236,6 +236,7 @@ function _train(training_parameters::TrainingParameters, auxiliary_parameters::A
             @error "missing epoch file, starting from 0"
             (Lux.initialparameters(MersenneTwister(42), model()),Lux.initialstates(MersenneTwister(42), model()),0)
         else
+            @info "starting at epoch" epoch
             @assert epoch >=0
             @assert !ismissing(epoch_file)
             serializedModel::SerializedModel = "$(homedir())/$model_dir/$epoch_file" |> deserialize

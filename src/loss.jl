@@ -17,45 +17,45 @@ function KL(true_probabilities::AbstractArray{T},
 end
 
 struct BayesianStats
-    nb_true_positives::Int
+    nb_false_positives::Int
     nb_false_negatives::Int
     nb_true::Int
     nb_false::Int
     function BayesianStats(
-            nb_true_positives::Int, nb_false_negatives::Int, nb_true::Int, nb_false::Int)
-        @assert nb_true_positives<=nb_true "got $nb_true_positives true positives for $nb_true true values"
+            nb_false_positives::Int, nb_false_negatives::Int, nb_true::Int, nb_false::Int)
+        @assert nb_false_positives<=nb_false "got $nb_false_positives false positives for $nb_false false values"
         @assert nb_false_negatives<=nb_true "got $nb_false_negatives false negatives for $nb_true true values"
-        new(nb_true_positives, nb_false_negatives, nb_true, nb_false)
+        new(nb_false_positives, nb_false_negatives, nb_true, nb_false)
     end
 end
 function BayesianStats(real::AbstractVector{Bool}, pred::AbstractVector{Bool})
-    nb_true_positives = count(real .&& pred)
-    nb_false_negatives = count(real .&& .!pred)
+    nb_false_positives = count( .!real .&& pred)
+    nb_false_negatives = count( real .&& .!pred)
     nb_true = count(real)
     nb_false = count(.!real)
     ignore_derivatives() do
-        @debug "statistics" nb_true nb_false nb_true_positives nb_false_negatives
+        @debug "statistics" nb_true nb_false nb_false_positives nb_false_negatives
     end
-    BayesianStats(nb_true_positives, nb_false_negatives, nb_true, nb_false)
+    BayesianStats(nb_false_positives, nb_false_negatives, nb_true, nb_false)
 end
 function reduce_stats((;
-        nb_true_positives, nb_false_negatives, nb_true, nb_false)::BayesianStats)
+        nb_false_positives, nb_false_negatives, nb_true, nb_false)::BayesianStats)
     ignore_derivatives() do
-        @debug "reduce" nb_true nb_false nb_true_positives nb_false_negatives
+        @debug "reduce" nb_true nb_false nb_false_positives nb_false_negatives
     end
 
-    false_positive_rate = 1 - nb_true_positives / nb_true
-    false_negative_rate = nb_false_negatives / nb_false
+    false_positive_rate =  nb_false_positives / nb_false
+    false_negative_rate = nb_false_negatives / nb_true
     error_rate = max(false_positive_rate, false_negative_rate)
     (; false_positive_rate, false_negative_rate, error_rate)
 end
 
 function aggregate(x::AbstractArray{BayesianStats})
-    nb_true_positives = sum(getproperty.(x, :nb_true_positives))
+    nb_false_positives= sum(getproperty.(x, :nb_false_positives))
     nb_false_negatives = sum(getproperty.(x, :nb_false_negatives))
     nb_true = sum(getproperty.(x, :nb_true))
     nb_false = sum(getproperty.(x, :nb_false))
-    BayesianStats(nb_true_positives, nb_false_negatives, nb_true, nb_false) |> reduce_stats
+    BayesianStats(nb_false_positives, nb_false_negatives, nb_true, nb_false) |> reduce_stats
 end
 aggregate(x::AbstractArray{<:Number}) = mean(x)
 function aggregate(x::StructArray)
