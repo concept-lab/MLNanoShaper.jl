@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.6
+# v0.20.13
 
 using Markdown
 using InteractiveUtils
@@ -43,7 +43,7 @@ prot_num = 2
 dataset_dir = "$(dirname(dirname(@__FILE__)))/examples"
 
 # ╔═╡ 54e25826-94b0-49ec-96f6-7bc17d2e3dfb
-model_name = "light_soft_max_angular_dense_jobs_40_4_2025-05-31_epoch_560_1951733446584503143"
+model_name = "tiny_soft_max_angular_dense_testhardsigma1_18000_15292456774726595375"
 
 # ╔═╡ b91501dd-f66f-4a60-afa9-c4c9d0fc3504
 name ="$(homedir())/datasets/models/$model_name"

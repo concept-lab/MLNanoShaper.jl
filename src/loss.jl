@@ -93,8 +93,8 @@ get_loss_type(x::StaticSymbol) = _get_loss_type(x)
 
 CategoricalMetric = @NamedTuple{
     stats::BayesianStats,
-    kl_div::Float32,
-    outer_reg_loss::Float32,
+    # kl_div::Float32,
+    # outer_reg_loss::Float32,
 }
 function generate_true_probabilities(d_real::AbstractArray)
     epsilon = 1.0f-5
@@ -179,11 +179,12 @@ function categorical_loss(model::Lux.AbstractLuxLayer,
         model,st,inputs
     end
     kl_div =  mean(KL(probabilities, v_pred))
-    outer_reg_loss = get_outer_regularisation_loss(model,ps,st,inputs)
-    r1, r2 = ignore_derivatives() do
-        ((kl_div,outer_reg_loss) .+ epsilon) ./ (outer_reg_loss + kl_div +2*epsilon) 
-    end
-    loss = r1 * kl_div + r2 * outer_reg_loss
+    # outer_reg_loss = get_outer_regularisation_loss(model,ps,st,inputs)
+    # r1, r2 = ignore_derivatives() do
+        # ((kl_div,outer_reg_loss) .+ epsilon) ./ (outer_reg_loss + kl_div +2*epsilon) 
+    # end
+    # loss = r1 * kl_div + r2 * outer_reg_loss
+    loss = kl_div
     stats = ignore_derivatives() do
         true_vec = Iterators.filter(vec(d_reals)) do dist
             abs(dist) > epsilon
@@ -197,7 +198,11 @@ function categorical_loss(model::Lux.AbstractLuxLayer,
         BayesianStats(true_vec, pred_vec)
     end    
 
-    (loss, _st, (;stats,kl_div,outer_reg_loss))
+    (loss, _st, (;
+        stats,
+        # kl_div,
+        # outer_reg_loss
+    ))
 end
 
 struct CategoricalLoss <: LossType end
@@ -207,8 +212,8 @@ _get_loss_type(::StaticSymbol{:categorical}) = CategoricalLoss()
 
 ContinousMetric = @NamedTuple{
     stats::BayesianStats,
-    SER::Float32,
-    outer_reg_loss::Float32,
+    # SER::Float32,
+    # outer_reg_loss::Float32,
     bias_error::Float32,
     abs_error::Float32,
     bias_distance::Float32,
@@ -234,11 +239,12 @@ function continus_loss(model,
     error = v_pred .- v_real
     SER = mean(error .^ 2)
     epsilon = 1.0f-5
-    outer_reg_loss = get_outer_regularisation_loss(model,ps,st,inputs)
-    r1, r2 = ignore_derivatives() do
-        ((SER,outer_reg_loss) .+ epsilon) ./ (outer_reg_loss + SER+2*epsilon) 
-    end
-    loss = r1 * SER+ r2 * outer_reg_loss
+    # outer_reg_loss = get_outer_regularisation_loss(model,ps,st,inputs)
+    # r1, r2 = ignore_derivatives() do
+        # ((SER,outer_reg_loss) .+ epsilon) ./ (outer_reg_loss + SER+2*epsilon) 
+    # end
+    # loss = r1 * SER+ r2 * outer_reg_loss
+    loss = SER
     D_distance = loggit.(max.(0, v_pred) * (1 .- 1.0f-4)) .- d_reals
 
     true_vec = Iterators.filter(vec(d_reals)) do dist
@@ -252,8 +258,8 @@ function continus_loss(model,
     (loss,
         st,
         (; stats = BayesianStats(true_vec, pred_vec),
-            SER,
-            outer_reg_loss,
+            # SER,
+            # outer_reg_loss,
             bias_error = mean(error),
             abs_error = mean(abs.(error)),
             bias_distance = mean(D_distance),
