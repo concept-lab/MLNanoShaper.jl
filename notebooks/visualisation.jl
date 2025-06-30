@@ -34,7 +34,7 @@ html"""
 """
 
 # ╔═╡ e8a48b40-28b8-41a7-a67d-cbac2b361f84
-import GLMakie as Mk, Meshes as Ms
+import CairoMakie as Mk, Meshes as Ms
 
 # ╔═╡ ccbcea27-ea65-4b0c-8a56-c3a21fc976bb
 prot_num = 2
@@ -43,7 +43,7 @@ prot_num = 2
 dataset_dir = "$(dirname(dirname(@__FILE__)))/examples"
 
 # ╔═╡ 54e25826-94b0-49ec-96f6-7bc17d2e3dfb
-model_name = "light_soft_max_angular_dense_jobs_40_4_2025-05-31_epoch_560_1951733446584503143"
+model_name = "tiny_angular_dense_final_training_3_3.0_categorical_2400_9035030825599052093"
 
 # ╔═╡ b91501dd-f66f-4a60-afa9-c4c9d0fc3504
 name ="$(homedir())/datasets/models/$model_name"
