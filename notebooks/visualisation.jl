@@ -34,7 +34,7 @@ html"""
 """
 
 # ╔═╡ e8a48b40-28b8-41a7-a67d-cbac2b361f84
-import GLMakie as Mk, Meshes as Ms
+import CairoMakie as Mk, Meshes as Ms
 
 # ╔═╡ ccbcea27-ea65-4b0c-8a56-c3a21fc976bb
 prot_num = 2
@@ -43,7 +43,8 @@ prot_num = 2
 dataset_dir = "$(dirname(dirname(@__FILE__)))/examples"
 
 # ╔═╡ 54e25826-94b0-49ec-96f6-7bc17d2e3dfb
-model_name = "tiny_soft_max_angular_dense_testhardsigma1_18000_15292456774726595375"
+#model_name = "tiny_soft_max_angular_dense_testhardsigma3_35000_933236481126930411"
+model_name = "tiny_angular_dense_final_training_5_3.0_categorical_4500_14343157818768943814"
 
 # ╔═╡ b91501dd-f66f-4a60-afa9-c4c9d0fc3504
 name ="$(homedir())/datasets/models/$model_name"
@@ -139,9 +140,8 @@ end
 # ╔═╡ 2b0fc2fd-47c1-491c-b9a3-6ddff7b61850
 function get_slice(atoms, model, z, (; cutoff_radius, step, default_value))
     grid = get_input_slice(atoms, step, z)
-    volume = Folds.map(grid) do x
-        model((MLNanoShaper.Batch([x]), atoms)) |> only
-    end
+    volume = reshape(model((MLNanoShaper.Batch(vec(grid)), atoms)) ,size(grid))
+
 end
 
 # ╔═╡ ffc58bd7-683b-43a9-86ee-baf4eafaf995
