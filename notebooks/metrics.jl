@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.6
+# v0.20.13
 
 using Markdown
 using InteractiveUtils
@@ -37,7 +37,7 @@ models_paths = String[
 ]
 
 # ╔═╡ 448467e1-337f-4847-b42f-0221af4b0d30
-model_weights = deserialize("$(homedir())/datasets/models/tiny_soft_max_angular_dense_jobs_40_3_2025-06-04_epoch_4370_75456560920357034")
+model_weights = deserialize("$(homedir())/datasets/models/tiny_soft_max_angular_dense_testhardsigma3_35000_933236481126930411")
 
 # ╔═╡ 994a8229-d8f1-4048-912c-cb3d8d3c09dc
 model = MLNR.production_instantiate(model_weights;on_gpu=true)
@@ -54,13 +54,16 @@ function get_mesh(model,atoms::StructVector{<:Sphere},r::Float32=1f0)
 	mins = grid.start .- 2
 	maxes = mins .+ size(grid.grid) .* grid.radius .+ 2
 	x,y,z = map(1:3) do i collect(mins[i]:r:maxes[i]) end
-	mc = MarchingCubes.MC(MLNR.evaluate_field(model,grid;step = r);x,y,z)
+	mc = MarchingCubes.MC(MLNR.evaluate_field_fast(model,grid;step = r);x,y,z)
 	march(mc,.5)
 	MarchingCubes.makemesh(GeometryBasics, mc)
 end
 
 # ╔═╡ 2beaa16b-22e9-4c14-b34c-ec0f9f124338
 r_grid =.5f0
+
+# ╔═╡ b18c5fde-6a25-492f-a754-a2c45e3f2eec
+names = ["tiny softmax 3A","light softmax 3A", "light softmax 4A","light softmax 5A"]
 
 # ╔═╡ c37bac7e-1624-4b97-8175-a1109bc4a91b
 function has_neighborhood(p::Point3,r::MLNR.RegularGrid,radius::Number)::Bool
@@ -96,7 +99,7 @@ function get_dataframe_metrics(models,names)
 end
 
 # ╔═╡ 187cd2eb-7630-4a1b-a020-2e75a4f3ddce
-df = get_dataframe_metrics(models,["tiny softmax 3A","light softmax 3A", "light softmax 4A","light softmax 5A"]) 
+df = get_dataframe_metrics([model],names[1:1]) 
 
 # ╔═╡ d87429da-f6f4-4b4f-9ea7-af6ca226f532
 CSV.write("metrics.csv",df)
@@ -118,6 +121,7 @@ CSV.write("metrics.csv",df)
 # ╠═72f2eaca-1a28-43c7-99c9-7f463a553c93
 # ╠═2beaa16b-22e9-4c14-b34c-ec0f9f124338
 # ╠═957f510f-54e2-4d6e-81b3-022de69702e0
+# ╠═b18c5fde-6a25-492f-a754-a2c45e3f2eec
 # ╠═187cd2eb-7630-4a1b-a020-2e75a4f3ddce
 # ╠═d87429da-f6f4-4b4f-9ea7-af6ca226f532
 # ╠═c37bac7e-1624-4b97-8175-a1109bc4a91b

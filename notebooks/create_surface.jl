@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.6
+# v0.20.13
 
 using Markdown
 using InteractiveUtils
@@ -51,7 +51,7 @@ end
 step =.5f0
 
 # ╔═╡ ddba2880-fff8-4df2-87e1-67b8c87bcd72
-prot_num = 2
+prot_num = 1
 
 # ╔═╡ 498adb72-6edf-4b36-b9a5-474f6660a030
 model_name = "tiny_soft_max_angular_dense_jobs_40_3_2025-06-04_epoch_4370_75456560920357034"
@@ -60,7 +60,7 @@ model_name = "tiny_soft_max_angular_dense_jobs_40_3_2025-06-04_epoch_4370_754565
 model_weights = deserialize("$(homedir())/datasets/models/$model_name")
 
 # ╔═╡ 2b75694a-d5ae-45f3-93af-61c4167314d9
-model = MLNanoShaperRunner.production_instantiate(model_weights,on_gpu=false)
+model = MLNanoShaperRunner.production_instantiate(model_weights,on_gpu=true)
 
 # ╔═╡ 634427ef-6126-4fdd-a8b2-3d0bfee0d0b6
 atoms = RegularGrid(
@@ -74,8 +74,14 @@ read("$(homedir())/datasets/pqr/$prot_num/structure.pqr", PQR{Float32}) |> lengt
 # ╔═╡ 8d39769c-9e87-4f5b-aa50-34abe8c78cf5
 vol = MLNanoShaperRunner.evaluate_field_fast(model,atoms;step)
 
+# ╔═╡ ab1823fe-a0b3-4f34-a7c3-aa7d3e507efe
+Threads.nthreads()
+
+# ╔═╡ 3f5f7acc-5f9a-47a1-9ab9-084abee612f2
+@benchmark MLNanoShaperRunner.evaluate_field_fast(model,atoms;step) 
+
 # ╔═╡ 206cb7a0-bc63-4f3d-b0f6-cf7255cea696
-vol1 = MLNanoShaperRunner.evaluate_field(model,atoms;step)
+vol1 = MLNanoShaperRunner.evaluate_field(model,atoms;step) 
 
 # ╔═╡ 439948ac-0a40-4ce6-ad07-b139c73e053d
 maximum(vol .- vol1)
@@ -132,6 +138,8 @@ write_off("$model_name-predicted_fast.off",msh)
 # ╠═634427ef-6126-4fdd-a8b2-3d0bfee0d0b6
 # ╠═ce214ac0-f811-4382-beac-b0ba82b0e206
 # ╠═8d39769c-9e87-4f5b-aa50-34abe8c78cf5
+# ╠═ab1823fe-a0b3-4f34-a7c3-aa7d3e507efe
+# ╠═3f5f7acc-5f9a-47a1-9ab9-084abee612f2
 # ╠═206cb7a0-bc63-4f3d-b0f6-cf7255cea696
 # ╠═439948ac-0a40-4ce6-ad07-b139c73e053d
 # ╠═cdd55fc4-fccd-4dd7-b0dc-3b7b65804334
