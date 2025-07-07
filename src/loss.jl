@@ -170,8 +170,8 @@ function categorical_loss(model::Lux.AbstractLuxLayer,
     v_pred, _st = model(inputs, ps, st)
     epsilon = 1.0f-5
     v_pred = epsilon .+ v_pred .*(1-2*epsilon)
+    v_pred =  cpu_device()(v_pred)
     v_pred = vcat(v_pred, 1 .- v_pred)
-    v_pred = cpu_device()(v_pred)
     probabilities = ignore_derivatives() do
         generate_true_probabilities(d_reals)
     end 
@@ -186,16 +186,7 @@ function categorical_loss(model::Lux.AbstractLuxLayer,
     # loss = r1 * kl_div + r2 * outer_reg_loss
     loss = kl_div
     stats = ignore_derivatives() do
-        true_vec = Iterators.filter(vec(d_reals)) do dist
-            abs(dist) > epsilon
-        end .> 0
-        selected = Iterators.filter(zip(d_reals, vec(v_pred[1, :]))) do (dist, _)
-            abs(dist) > epsilon
-        end
-        pred_vec = map(selected) do (_, pred)
-            pred > 0.5f0
-        end
-        BayesianStats(true_vec, pred_vec)
+        get_stats(σ.(d_reals),view(v_pred,1,:))
     end    
 
     (loss, _st, (;
@@ -203,6 +194,16 @@ function categorical_loss(model::Lux.AbstractLuxLayer,
         # kl_div,
         # outer_reg_loss
     ))
+end
+
+function get_stats(
+        val_real::AbstractVector{Float32}, val_predicted::AbstractVector{Float32})
+    
+    epsilon  = 1f-5
+    ids = findall(val_real) do val
+        abs(val- .5f0) > epsilon
+    end 
+    BayesianStats(val_real[ids] .> .5f0 , val_predicted[ids] .> .5f0)
 end
 
 struct CategoricalLoss <: LossType end
@@ -227,14 +228,14 @@ The loss function used by in training.
 compare the predicted (square) distance with \$\\frac{1 + \tanh(d)}{2}\$
 Return the error with the espected distance as a metric.
 """
-function continus_loss(model,
+function continuous_loss(model,
         ps,
         st,
         (;
             inputs,
             d_reals))::Tuple{Float32, Any, ContinousMetric}
-    v_pred, st = model(inputs, ps, st)
-    v_pred = cpu_device()(v_pred)
+    v_pred, _st = model(inputs, ps, st)
+    v_pred = cpu_device()(v_pred) |> vec
     v_real = σ.(d_reals)
     error = v_pred .- v_real
     SER = mean(error .^ 2)
@@ -247,17 +248,12 @@ function continus_loss(model,
     loss = SER
     D_distance = loggit.(max.(0, v_pred) * (1 .- 1.0f-4)) .- d_reals
 
-    true_vec = Iterators.filter(vec(d_reals)) do dist
-        abs(dist) > epsilon
-    end .> 0.5f0
-    pred_vec = map(Iterators.filter(zip(d_reals, vec(v_pred))) do (dist, _)
-        abs(dist) > epsilon
-    end) do (_, pred)
-        pred > 0.5f0
-    end
+    stats = ignore_derivatives() do
+        get_stats(v_real,v_pred)
+    end    
     (loss,
-        st,
-        (; stats = BayesianStats(true_vec, pred_vec),
+        _st,
+        (; stats,
             # SER,
             # outer_reg_loss,
             bias_error = mean(error),
@@ -269,5 +265,5 @@ end
 
 struct ContinousLoss <: LossType end
 _metric_type(::Type{ContinousLoss}) = ContinousMetric
-get_loss_fn(::ContinousLoss) = continus_loss
+get_loss_fn(::ContinousLoss) = continuous_loss
 _get_loss_type(::StaticSymbol{:continuous}) = ContinousLoss()

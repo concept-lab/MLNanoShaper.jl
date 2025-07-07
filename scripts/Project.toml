@@ -1,3 +1,6 @@
+[compat]
+GLFW_jll = "=3.3.9"
+
 [deps]
 ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
@@ -25,5 +28,5 @@ StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
 TerminalLoggers = "5d786b92-1e48-4d6f-9151-6b4477ca9bed"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
-[compat]
-GLFW_jll = "=3.3.9"
+[extras]
+CUDA_Runtime_jll = "76a88914-d11a-5bdc-97e0-2f5a05c973a2"
