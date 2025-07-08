@@ -7,13 +7,11 @@ function loggit(x)
     log(x) - log(1 - x)
 end
 
-function KL(true_probabilities::AbstractArray{T},
-        expected_probabilities::AbstractArray{T}) where {T <: Number}
+function KL(true_probabilities::AbstractVector{T},
+        expected_probabilities::AbstractVector{T}) where {T <: Number}
     epsilon = 1.0f-5
-    sum(
-        true_probabilities .*
-        log.((true_probabilities .+ T(epsilon)) ./ (expected_probabilities .+ T(epsilon))),
-        dims = 1)
+    true_probabilities .* log.((true_probabilities .+ T(epsilon)) ./ (expected_probabilities .+ T(epsilon))) .+
+    (one(T) .- true_probabilities) .* log.(( one(T) .- true_probabilities .+ T(epsilon)) ./ ( one(T) .- expected_probabilities .+ T(epsilon)))
 end
 
 struct BayesianStats
@@ -96,17 +94,13 @@ CategoricalMetric = @NamedTuple{
     # kl_div::Float32,
     # outer_reg_loss::Float32,
 }
-function generate_true_probabilities(d_real::AbstractArray)
-    epsilon = 1.0f-5
+function generate_true_probabilities(d_real::AbstractVector{T})::AbstractVector{T} where T <: Number
+    epsilon = T(1.0f-5)
     is_inside = d_real .> epsilon
     is_outside = d_real .< epsilon
     is_surface = abs.(d_real) .<= epsilon
-    probabilities = zeros32(2, length(d_real))
-    probabilities[1, :] .= (1 - epsilon) * is_inside + 1 / 2 * is_surface +
+    (1 - epsilon) * is_inside + T(1 / 2) * is_surface +
                            epsilon * is_outside
-    probabilities[2, :] .= (1 - epsilon) * is_outside + 1 / 2 * is_surface +
-                           epsilon * is_inside
-    probabilities
 end
 function max_abs_weight(ps)
   max_val = 0.0  # Initialize with a value that will be smaller than any absolute weight
@@ -165,15 +159,15 @@ function categorical_loss(model::Lux.AbstractLuxLayer,
             inputs,
             d_reals))::Tuple{Float32, <:Any, CategoricalMetric}
     # ignore_derivatives() do
-        # @info "loss" model inputs ps st
+        # @info "d_real" d_reals 
     # end
     v_pred, _st = model(inputs, ps, st)
     epsilon = 1.0f-5
     v_pred = epsilon .+ v_pred .*(1-2*epsilon)
-    v_pred =  cpu_device()(v_pred)
-    v_pred = vcat(v_pred, 1 .- v_pred)
+    v_pred =  vec(cpu_device()(v_pred))
+    # v_pred = vcat(v_pred, 1 .- v_pred)
     probabilities = ignore_derivatives() do
-        generate_true_probabilities(d_reals)
+        generate_true_probabilities(vec(d_reals))
     end 
     model,st,inputs = ignore_derivatives() do
         model,st,inputs
@@ -186,7 +180,7 @@ function categorical_loss(model::Lux.AbstractLuxLayer,
     # loss = r1 * kl_div + r2 * outer_reg_loss
     loss = kl_div
     stats = ignore_derivatives() do
-        get_stats(σ.(d_reals),view(v_pred,1,:))
+        get_stats(σ.(d_reals),v_pred)
     end    
 
     (loss, _st, (;
@@ -198,6 +192,7 @@ end
 
 function get_stats(
         val_real::AbstractVector{Float32}, val_predicted::AbstractVector{Float32})
+    @assert length(val_real) == length(val_predicted)
     
     epsilon  = 1f-5
     ids = findall(val_real) do val

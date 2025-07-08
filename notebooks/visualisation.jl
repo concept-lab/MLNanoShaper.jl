@@ -44,7 +44,7 @@ dataset_dir = "$(dirname(dirname(@__FILE__)))/examples"
 
 # ╔═╡ 54e25826-94b0-49ec-96f6-7bc17d2e3dfb
 #model_name = "tiny_soft_max_angular_dense_testhardsigma3_35000_933236481126930411"
-model_name = "tiny_angular_dense_final_training_5_3.0_categorical_4500_14343157818768943814"
+model_name = "tiny_angular_dense_final_training_6_3.0_continuous_8000_4949788295742178926"
 
 # ╔═╡ b91501dd-f66f-4a60-afa9-c4c9d0fc3504
 name ="$(homedir())/datasets/models/$model_name"
