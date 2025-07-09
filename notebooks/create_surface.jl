@@ -7,11 +7,14 @@ using InteractiveUtils
 # ╔═╡ 7b259d1e-1132-11f0-30c6-c9559109859f
 using Pkg;Pkg.activate(".")
 
+# ╔═╡ 47e986dd-7fee-4e55-85ff-c63a592fc6ca
+using Revise
+
 # ╔═╡ 829ae9d2-105a-4a98-ad56-e0016b4f04d9
 using MLNanoShaper, MLNanoShaperRunner, FileIO, StructArrays, Static, Serialization,
       GeometryBasics, LuxCUDA, Lux, Profile, ProfileSVG, ChainRulesCore, Folds,
       BenchmarkTools, Zygote, Distances, LinearAlgebra, LoopVectorization, Folds,
-      StaticTools, PProf, CUDA, Adapt, NearestNeighbors, MarchingCubes, FileIO, Transducers,Accessors, Revise 
+      StaticTools, PProf, CUDA, Adapt, NearestNeighbors, MarchingCubes, FileIO, Transducers,Accessors 
 
 # ╔═╡ 671c0869-ecf4-48be-a22c-7e373bebc294
 using Base.Threads
@@ -54,7 +57,7 @@ step =.5f0
 prot_num = 1
 
 # ╔═╡ 498adb72-6edf-4b36-b9a5-474f6660a030
-model_name = "tiny_soft_max_angular_dense_jobs_40_3_2025-06-04_epoch_4370_75456560920357034"
+model_name = "tiny_soft_max_angular_dense_testhardsigma5_20000_17558598383046663794"
 
 # ╔═╡ 43cc30fc-c266-4cf1-aff0-c5c505cf4924
 model_weights = deserialize("$(homedir())/datasets/models/$model_name")
@@ -62,26 +65,28 @@ model_weights = deserialize("$(homedir())/datasets/models/$model_name")
 # ╔═╡ 2b75694a-d5ae-45f3-93af-61c4167314d9
 model = MLNanoShaperRunner.production_instantiate(model_weights,on_gpu=true)
 
-# ╔═╡ 634427ef-6126-4fdd-a8b2-3d0bfee0d0b6
-atoms = RegularGrid(
-    getfield.(
+# ╔═╡ 4f55720b-73d4-4b29-80d3-43c74f0f48bc
+vec_atoms = getfield.(
         read("$(homedir())/datasets/pqr/$prot_num/structure.pqr", PQR{Float32}), :pos) |>
-    StructVector,3f0)
+    StructVector
+
+# ╔═╡ 634427ef-6126-4fdd-a8b2-3d0bfee0d0b6
+atoms = RegularGrid(vec_atoms,3f0)
 
 # ╔═╡ ce214ac0-f811-4382-beac-b0ba82b0e206
 read("$(homedir())/datasets/pqr/$prot_num/structure.pqr", PQR{Float32}) |> length
 
 # ╔═╡ 8d39769c-9e87-4f5b-aa50-34abe8c78cf5
-vol = MLNanoShaperRunner.evaluate_field_fast(model,atoms;step)
+vol = MLNanoShaperRunner.evaluate_field_fast(model,vec_atoms;step) 
 
 # ╔═╡ ab1823fe-a0b3-4f34-a7c3-aa7d3e507efe
 Threads.nthreads()
 
 # ╔═╡ 3f5f7acc-5f9a-47a1-9ab9-084abee612f2
-@benchmark MLNanoShaperRunner.evaluate_field_fast(model,atoms;step) 
+#@benchmark MLNanoShaperRunner.evaluate_field_fast(model,atoms;step) 
 
 # ╔═╡ 206cb7a0-bc63-4f3d-b0f6-cf7255cea696
-vol1 = MLNanoShaperRunner.evaluate_field(model,atoms;step) 
+vol1 = MLNanoShaperRunner.evaluate_field(model,atoms;step)
 
 # ╔═╡ 439948ac-0a40-4ce6-ad07-b139c73e053d
 maximum(vol .- vol1)
@@ -109,7 +114,7 @@ end
 msh = get_mesh(vol,atoms)
 
 # ╔═╡ 9cff681f-a05e-4125-b070-35a831a26321
-msh1 = get_mesh(vol1,atoms)
+msh1 = get_mesh(vol1,atoms) 
 
 # ╔═╡ c7cf7dd4-148c-40c4-ada4-fa6935348c7f
 write_off("$model_name-predicted.off",msh1)
@@ -126,6 +131,7 @@ write_off("$model_name-predicted_fast.off",msh)
 # ╔═╡ Cell order:
 # ╠═7b259d1e-1132-11f0-30c6-c9559109859f
 # ╠═05145ea8-59b9-41fb-ad7e-fce08fa0c36c
+# ╠═47e986dd-7fee-4e55-85ff-c63a592fc6ca
 # ╠═829ae9d2-105a-4a98-ad56-e0016b4f04d9
 # ╠═671c0869-ecf4-48be-a22c-7e373bebc294
 # ╠═880fbf4e-0951-400e-a997-d4f6ecf72ad1
@@ -135,6 +141,7 @@ write_off("$model_name-predicted_fast.off",msh)
 # ╠═498adb72-6edf-4b36-b9a5-474f6660a030
 # ╠═43cc30fc-c266-4cf1-aff0-c5c505cf4924
 # ╠═2b75694a-d5ae-45f3-93af-61c4167314d9
+# ╠═4f55720b-73d4-4b29-80d3-43c74f0f48bc
 # ╠═634427ef-6126-4fdd-a8b2-3d0bfee0d0b6
 # ╠═ce214ac0-f811-4382-beac-b0ba82b0e206
 # ╠═8d39769c-9e87-4f5b-aa50-34abe8c78cf5

@@ -187,8 +187,8 @@ function _train(
         training_states, train_v = train_protein(train_data, training_states, training_parameters,auxiliary_parameters)
         loss_mean = train_v.loss |> mean
         counter = 1 +  (loss_mean > .6) + (loss_mean > .4)  + (loss_mean > .3)
-        η = (1e-6,3e-6,5e-6,1e-5)[counter]
-        Optimisers.adjust!(training_states.optimizer_state,η,)
+        Rη = (.05,.1,.5,1)[counter]
+        Optimisers.adjust!(training_states.optimizer_state,Rη*η,)
         # Optimisers.adjust!(training_states.optimizer_state,lambda = η)
         #test
         prop = propertynames(test_data)

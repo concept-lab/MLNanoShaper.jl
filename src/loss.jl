@@ -1,8 +1,58 @@
+using ChainRulesCore,ForwardDiff
+import Lux: sigmoid_fast
 GlobalPreprocessed = @NamedTuple{
     inputs::ConcatenatedBatch{T,Int,Vector{Int}},
     d_reals::Vector{Float32}
 } where {T <: AbstractArray{Float32}}
 
+function fast_log(x::Float32)::Float32
+    # Convert the Float32 to its bit representation (as a UInt32)
+    bx = reinterpret(UInt32, x)
+
+    # Extract the exponent (shift right by 23 bits to get the exponent)
+    ex = bx >> 23
+
+    # Calculate t = exponent - 127 (bias for single-precision floating-point)
+    t = Int32(ex) - 127
+    #s = t < 0 ? -t : t
+
+    # Set the exponent to 127 (bias) to get a number in the range [1, 2)
+    bx::UInt32 = UInt32(127 << 23) | (bx & 0b11111111111111111111111);
+    # Reinterpret the bits back to a Float32
+    x_approx = reinterpret(Float32, bx)
+ 
+	−1.49278f0+(2.11263f0+(−0.729104f0+0.10969f0*x_approx)*x_approx)*x_approx + 0.6931471806f0*t 
+end
+# # Define custom rules using ChainRulesCore
+# function ChainRulesCore.frule((_, Δx), ::typeof(fast_log), x::Float32)
+#     y = fast_log(x)
+#     # The derivative of fast_log is approximated as 1/x
+#     ∂y_∂x = 1.0f0 / x
+#     return y, ∂y_∂x * Δx
+# end
+
+# function ChainRulesCore.rrule(::typeof(fast_log), x::Float32)
+#     y = fast_log(x)
+#     function fast_log_pullback(Δy)
+#         # The derivative of fast_log is approximated as 1/x
+#         ∂y_∂x = 1.0f0 / x
+#         return (NoTangent(), ∂y_∂x * Δy)
+#     end
+#     return y, fast_log_pullback
+# end# Extend fast_log to handle ForwardDiff.Dual numbers
+function fast_log(x::ForwardDiff.Dual{Nothing, Float32, 1})
+    # Extract the value from the dual number
+    x_val = ForwardDiff.value(x)
+    # Compute fast_log on the extracted Float32 value
+    log_val = fast_log(x_val)
+    # Create a dual number with the same derivative part
+    # The derivative of fast_log is approximated as 1/x
+    derivative = 1.0f0 / x_val
+    return ForwardDiff.Dual{Nothing, Float32, 1}(log_val, ForwardDiff.Partials((derivative,)))
+end
+
+
+ChainRulesCore.@scalar_rule(fast_log(x::Float32),1/x)
 function loggit(x)
     log(x) - log(1 - x)
 end
@@ -10,8 +60,8 @@ end
 function KL(true_probabilities::AbstractVector{T},
         expected_probabilities::AbstractVector{T}) where {T <: Number}
     epsilon = 1.0f-5
-    true_probabilities .* log.((true_probabilities .+ T(epsilon)) ./ (expected_probabilities .+ T(epsilon))) .+
-    (one(T) .- true_probabilities) .* log.(( one(T) .- true_probabilities .+ T(epsilon)) ./ ( one(T) .- expected_probabilities .+ T(epsilon)))
+    true_probabilities .* fast_log.((true_probabilities .+ T(epsilon)) ./ (expected_probabilities .+ T(epsilon))) .+
+    (one(T) .- true_probabilities) .* fast_log.(( one(T) .- true_probabilities .+ T(epsilon)) ./ ( one(T) .- expected_probabilities .+ T(epsilon)))
 end
 
 struct BayesianStats
@@ -96,11 +146,15 @@ CategoricalMetric = @NamedTuple{
 }
 function generate_true_probabilities(d_real::AbstractVector{T})::AbstractVector{T} where T <: Number
     epsilon = T(1.0f-5)
-    is_inside = d_real .> epsilon
-    is_outside = d_real .< epsilon
-    is_surface = abs.(d_real) .<= epsilon
-    (1 - epsilon) * is_inside + T(1 / 2) * is_surface +
-                           epsilon * is_outside
+    map(d_real) do d
+        if d > epsilon 
+            1- epsilon
+        elseif d < -epsilon
+            epsilon
+        else
+            T(1/2)
+        end
+    end
 end
 function max_abs_weight(ps)
   max_val = 0.0  # Initialize with a value that will be smaller than any absolute weight
@@ -152,12 +206,12 @@ The loss function used by in training.
 Return the KL divergence between true probability and empirical probability
 Return the error with the espected distance as a metric.
 """
-function categorical_loss(model::Lux.AbstractLuxLayer,
+function categorical_loss(model,
         ps,
         st,
         (;
             inputs,
-            d_reals))::Tuple{Float32, <:Any, CategoricalMetric}
+            d_reals))::Tuple{Float32, Any, CategoricalMetric}
     # ignore_derivatives() do
         # @info "d_real" d_reals 
     # end
@@ -180,7 +234,7 @@ function categorical_loss(model::Lux.AbstractLuxLayer,
     # loss = r1 * kl_div + r2 * outer_reg_loss
     loss = kl_div
     stats = ignore_derivatives() do
-        get_stats(σ.(d_reals),v_pred)
+        get_stats(sigmoid_fast.(d_reals),v_pred)
     end    
 
     (loss, _st, (;
@@ -231,7 +285,7 @@ function continuous_loss(model,
             d_reals))::Tuple{Float32, Any, ContinousMetric}
     v_pred, _st = model(inputs, ps, st)
     v_pred = cpu_device()(v_pred) |> vec
-    v_real = σ.(d_reals)
+    v_real = sigmoid_fast.(d_reals)
     error = v_pred .- v_real
     SER = mean(error .^ 2)
     epsilon = 1.0f-5
