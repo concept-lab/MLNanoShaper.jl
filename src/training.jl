@@ -246,7 +246,7 @@ function _train(training_parameters::TrainingParameters, auxiliary_parameters::A
         @info "staring training from scratch" log_name
         (Lux.initialparameters(MersenneTwister(42), model()),Lux.initialstates(MersenneTwister(42), model()),0)
     end
-    optim = OptimiserChain(ClipGrad(learning_rate/2),WeightDecay(),Adam(learning_rate),ClipGrad())
+    optim = OptimiserChain(ClipGrad(),WeightDecay(),Adam(learning_rate))
     (; train_data, test_data) = get_dataset(training_parameters, auxiliary_parameters)
     with_logger(get_logger(log_name,epoch)) do
         _train((train_data, test_data),

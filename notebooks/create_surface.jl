@@ -7,9 +7,6 @@ using InteractiveUtils
 # ╔═╡ 7b259d1e-1132-11f0-30c6-c9559109859f
 using Pkg;Pkg.activate(".")
 
-# ╔═╡ 47e986dd-7fee-4e55-85ff-c63a592fc6ca
-using Revise
-
 # ╔═╡ 829ae9d2-105a-4a98-ad56-e0016b4f04d9
 using MLNanoShaper, MLNanoShaperRunner, FileIO, StructArrays, Static, Serialization,
       GeometryBasics, LuxCUDA, Lux, Profile, ProfileSVG, ChainRulesCore, Folds,
@@ -77,13 +74,16 @@ atoms = RegularGrid(vec_atoms,3f0)
 read("$(homedir())/datasets/pqr/$prot_num/structure.pqr", PQR{Float32}) |> length
 
 # ╔═╡ 8d39769c-9e87-4f5b-aa50-34abe8c78cf5
-vol = MLNanoShaperRunner.evaluate_field_fast(model,vec_atoms;step) 
+vol = MLNanoShaperRunner.evaluate_field_fast(model,vec_atoms;step)
 
 # ╔═╡ ab1823fe-a0b3-4f34-a7c3-aa7d3e507efe
 Threads.nthreads()
 
 # ╔═╡ 3f5f7acc-5f9a-47a1-9ab9-084abee612f2
-#@benchmark MLNanoShaperRunner.evaluate_field_fast(model,atoms;step) 
+@benchmark MLNanoShaperRunner.evaluate_field_fast(model,vec_atoms;step) 
+
+# ╔═╡ 860bd1b8-6422-4e4f-aeac-d8aac373d1f9
+@benchmark MLNanoShaperRunner.evaluate_field(model,atoms;step)
 
 # ╔═╡ 206cb7a0-bc63-4f3d-b0f6-cf7255cea696
 vol1 = MLNanoShaperRunner.evaluate_field(model,atoms;step)
@@ -128,8 +128,20 @@ Mk.mesh(msh1; color = :red)
 # ╔═╡ 1ffca824-d203-47e1-b140-e59cbd7ef655
 write_off("$model_name-predicted_fast.off",msh)
 
+# ╔═╡ 47e986dd-7fee-4e55-85ff-c63a592fc6ca
+# ╠═╡ disabled = true
+#=╠═╡
+using Revise
+  ╠═╡ =#
+
+# ╔═╡ 4b672af2-6636-4b6b-a3bb-461596647e4f
+#=╠═╡
+using Revise
+  ╠═╡ =#
+
 # ╔═╡ Cell order:
 # ╠═7b259d1e-1132-11f0-30c6-c9559109859f
+# ╠═4b672af2-6636-4b6b-a3bb-461596647e4f
 # ╠═05145ea8-59b9-41fb-ad7e-fce08fa0c36c
 # ╠═47e986dd-7fee-4e55-85ff-c63a592fc6ca
 # ╠═829ae9d2-105a-4a98-ad56-e0016b4f04d9
@@ -147,6 +159,7 @@ write_off("$model_name-predicted_fast.off",msh)
 # ╠═8d39769c-9e87-4f5b-aa50-34abe8c78cf5
 # ╠═ab1823fe-a0b3-4f34-a7c3-aa7d3e507efe
 # ╠═3f5f7acc-5f9a-47a1-9ab9-084abee612f2
+# ╠═860bd1b8-6422-4e4f-aeac-d8aac373d1f9
 # ╠═206cb7a0-bc63-4f3d-b0f6-cf7255cea696
 # ╠═439948ac-0a40-4ce6-ad07-b139c73e053d
 # ╠═cdd55fc4-fccd-4dd7-b0dc-3b7b65804334

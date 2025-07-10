@@ -60,8 +60,8 @@ end
 function KL(true_probabilities::AbstractVector{T},
         expected_probabilities::AbstractVector{T}) where {T <: Number}
     epsilon = 1.0f-5
-    true_probabilities .* log.((true_probabilities .+ T(epsilon)) ./ (expected_probabilities .+ T(epsilon))) .+
-    (one(T) .- true_probabilities) .* log.(( one(T) .- true_probabilities .+ T(epsilon)) ./ ( one(T) .- expected_probabilities .+ T(epsilon)))
+    true_probabilities .* fast_log.((true_probabilities .+ T(epsilon)) ./ (expected_probabilities .+ T(epsilon))) .+
+    (one(T) .- true_probabilities) .* fast_log.(( one(T) .- true_probabilities .+ T(epsilon)) ./ ( one(T) .- expected_probabilities .+ T(epsilon)))
 end
 
 struct BayesianStats
