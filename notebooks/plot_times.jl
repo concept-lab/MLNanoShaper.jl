@@ -1,0 +1,152 @@
+### A Pluto.jl notebook ###
+# v0.20.13
+
+using Markdown
+using InteractiveUtils
+
+# ╔═╡ 23ec82f2-5d85-11f0-0ff0-cbf9fa44e401
+using Pkg;Pkg.activate(".") 
+
+# ╔═╡ 980a41a3-f40e-40bd-aea6-2f60c437a2b5
+using Revise
+
+# ╔═╡ 5af29509-ec0c-4bba-a745-45b8b19e615e
+using MLNanoShaper, MLNanoShaperRunner, FileIO, StructArrays, Static, Serialization,
+      GeometryBasics, LuxCUDA, Lux, Profile, ProfileSVG, ChainRulesCore, Folds,
+      BenchmarkTools, Zygote, Distances, LinearAlgebra, LoopVectorization, Folds,
+      StaticTools, PProf, CUDA, Adapt, NearestNeighbors, MarchingCubes, FileIO, Transducers,Accessors, TOML, DataFrames
+
+# ╔═╡ d1d70b52-aaf2-4e90-87dc-bd8f09e94f00
+import CairoMakie as Mk
+
+# ╔═╡ 3a650977-0a52-448f-88cb-8cebd67886bc
+model_name ="tiny_angular_dense_s_final_training_10_3.0_categorical_6000_6331735514142882335"
+
+# ╔═╡ 04a6466c-4c5b-49d8-a4b9-30e9b57e4bc6
+model_weights = deserialize("$(homedir())/datasets/models/$model_name")
+
+# ╔═╡ 81b5b6a4-c90f-4a9d-82ab-1b89d448e360
+model = MLNanoShaperRunner.production_instantiate(model_weights,on_gpu=true)
+
+# ╔═╡ 1918aaec-d7af-4e19-be8e-26c0cb7bf70f
+prot_num=2
+
+# ╔═╡ 8f8af861-70a5-46d3-83fc-1b9fc970dc16
+vec_atoms = getfield.(
+        read("$(homedir())/datasets/pqr/$prot_num/structure.pqr", PQR{Float32}), :pos) |>
+    StructVector
+
+# ╔═╡ c5d6741d-7b17-4eb9-b9cf-304c61b5fe83
+function get_time_point(fun,prot_num::Number)
+	vec_atoms = getfield.(
+        read("$(homedir())/datasets/pqr/$prot_num/structure.pqr", PQR{Float32}), :pos) |>
+    StructVector
+	fun(vec_atoms)
+	return 
+	k = @benchmark $fun(vec_atoms)
+	length(vec_atoms),(k.times |> median) * 1e-9
+end
+
+# ╔═╡ db4627bf-53fa-4dd3-83cd-7143c76a1cc9
+parms = TOML.parsefile(MLNanoShaper.params_file)
+
+# ╔═╡ 463d282e-b770-441e-8d0b-81d1ea9f2f24
+trp = MLNanoShaper.read_from_TOML(MLNanoShaper.TrainingParameters,parms)
+
+# ╔═╡ 4efe8a36-df45-47d4-88aa-c80c171c74b8
+auxp = MLNanoShaper.read_from_TOML(MLNanoShaper.AuxiliaryParameters,parms)
+
+# ╔═╡ 54bcde7c-23f1-4d5f-a867-89e8699ac6cf
+(;test_data,train_data) = MLNanoShaper.get_dataset(trp,auxp)
+
+# ╔═╡ 1cb847ed-c204-4274-81ea-3f5311029118
+ids = test_data.data.data[test_data.indices] |> sort
+
+# ╔═╡ 524ccba2-af86-4207-bdf7-fbf56ae01017
+#vals = map(ids) do id
+#	get_time_point(id) do vec_atoms
+#		MLNanoShaperRunner.evaluate_field_fast(model,vec_atoms;step=.5f0)
+#	end
+#end
+
+# ╔═╡ 3d4719b4-bd6d-4bbf-934a-77c26df806f7
+cdtempdir(f,args...;kargs...) =  mktempdir(args...;kargs...) do dir
+	cd(f,dir) 
+end
+
+# ╔═╡ ae629a79-92d9-4bd6-b4cb-a245a8ca934f
+function write_pqr(io::IO,atoms::AbstractVector{Sphere{Float32}})
+	for (;center,r) in atoms
+		x,y,z = center
+		println(io,x," ",y," ",z," ",r)
+	end
+end 
+
+# ╔═╡ ea19b150-f555-40cd-9715-6b92af6b6424
+function run_nanoshaper(atoms::AbstractVector{Sphere{Float32}})
+    k = mktempdir()
+	@info k
+	cd(k) do
+		run(`pwd`;wait=true)
+        open("structure.xyzr","w") do io
+			write_pqr(io,atoms)
+		end
+			
+		conf_path = joinpath(@__DIR__, "conf.prm")
+        symlink(conf_path, "conf.prm")
+        command = `$(homedir())/workspace/nanoshaper/pkg_nanoshaper_0.7.8/NanoShaper conf.prm`
+		withenv(
+			"LD_LIBRARY_PATH" => "$(homedir())/workspace/nanoshaper/pkg_nanoshaper_0.7.8"
+		) do 
+        	#run(pipeline(command,devnull);wait = true)
+		end
+		#load("triangulatedSurf.off")::Mesh
+	end
+end
+
+# ╔═╡ 0d8b9cc9-4ebf-4830-b18e-3500538799c5
+map(ids) do id
+	get_time_point(id) do vec_atoms
+		if length(vec_atoms) < 3000
+			run_nanoshaper(vec_atoms)
+			throw("aaaa")
+		end
+	end 
+end 
+
+# ╔═╡ 4e622491-9874-4ef1-a4cf-33a385fc38b9
+begin
+	f = Mk.Figure()
+	ax = Mk.Axis(f[1,1],xlabel="nb atoms",ylabel = "execution time(s)")
+	Mk.plot!(ax,vals,color=:blue,label="MLNanoShaper")
+	Mk.plot!(ax,rev_vals,color=:red,label="nanoShaper")
+	f[1,2] = Mk.Legend(f,ax)
+	f
+end
+
+# ╔═╡ bda67f44-273a-4e67-8d45-864d8f2bcb51
+#save("execution_time.pdf",f)
+
+# ╔═╡ Cell order:
+# ╠═23ec82f2-5d85-11f0-0ff0-cbf9fa44e401
+# ╠═980a41a3-f40e-40bd-aea6-2f60c437a2b5
+# ╠═d1d70b52-aaf2-4e90-87dc-bd8f09e94f00
+# ╠═5af29509-ec0c-4bba-a745-45b8b19e615e
+# ╠═3a650977-0a52-448f-88cb-8cebd67886bc
+# ╠═04a6466c-4c5b-49d8-a4b9-30e9b57e4bc6
+# ╠═81b5b6a4-c90f-4a9d-82ab-1b89d448e360
+# ╠═1918aaec-d7af-4e19-be8e-26c0cb7bf70f
+# ╠═8f8af861-70a5-46d3-83fc-1b9fc970dc16
+# ╠═c5d6741d-7b17-4eb9-b9cf-304c61b5fe83
+# ╠═db4627bf-53fa-4dd3-83cd-7143c76a1cc9
+# ╠═463d282e-b770-441e-8d0b-81d1ea9f2f24
+# ╠═4efe8a36-df45-47d4-88aa-c80c171c74b8
+# ╠═54bcde7c-23f1-4d5f-a867-89e8699ac6cf
+# ╠═1cb847ed-c204-4274-81ea-3f5311029118
+# ╠═524ccba2-af86-4207-bdf7-fbf56ae01017
+# ╠═ea19b150-f555-40cd-9715-6b92af6b6424
+# ╠═3d4719b4-bd6d-4bbf-934a-77c26df806f7
+# ╠═ae629a79-92d9-4bd6-b4cb-a245a8ca934f
+# ╠═0d8b9cc9-4ebf-4830-b18e-3500538799c5
+# ╠═4e622491-9874-4ef1-a4cf-33a385fc38b9
+# ╠═bda67f44-273a-4e67-8d45-864d8f2bcb51
