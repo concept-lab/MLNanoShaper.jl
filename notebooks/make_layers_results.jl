@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.6
+# v0.20.13
 
 using Markdown
 using InteractiveUtils
@@ -17,10 +17,10 @@ end
 get_test_value(hist,s::String) = hist[Symbol("log/test/$s")].values
 
 # ╔═╡ 22957e47-39e1-409b-8e6b-2322ba5f7241
-log_path = "tiny_soft_max_angular_dense_s_jobs_40_3_c_2025-05-28_13929368605106502689"
+log_path ="tiny_angular_dense_s_final_training_10_3.0_categorical_6331735514142882335" 
 
 # ╔═╡ 65a75bef-7e68-4517-937c-c69fba604a6a
-hist = get_logger(log_path)
+hist = get_logger(log_path) 
 
 # ╔═╡ 48d37b40-f8d6-4aba-b877-bd80f10603c2
 function get_comparaison_dataframe(
@@ -35,7 +35,7 @@ function get_comparaison_dataframe(
 end
 
 # ╔═╡ c17cf949-02fd-4e05-aa04-d0a94ae3c845
-df = get_comparaison_dataframe(hist,["outside","surface","inside","core"],["stats/kl_div","stats/stats/false_positive_rate","stats/stats/false_negative_rate"],["kl_div","fpr","fnr"],last)
+df = get_comparaison_dataframe(hist,["outside","surface","inside","core"],["loss","stats/stats/false_positive_rate","stats/stats/false_negative_rate"],["kl_div","fpr","fnr"],last)
 
 # ╔═╡ 96d2ace6-49cf-4d82-9dd0-bcdce82b10dd
 CSV.write("surfaceComparaison.csv",df)

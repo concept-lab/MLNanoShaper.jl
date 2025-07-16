@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.6
+# v0.20.13
 
 using Markdown
 using InteractiveUtils
@@ -8,7 +8,7 @@ using InteractiveUtils
 using TensorBoardLogger, CairoMakie, ValueHistories
 
 # ╔═╡ 28fe1595-08e6-499b-bbef-ce1fd0d4dc1d
-log_path = 			"light_soft_max_angular_dense_s_jobs_40_5_c_2025-05-28_11845445769936303495"
+log_path = 			"tiny_angular_dense_s_final_training_10_3.0_categorical_6331735514142882335"
 
 # ╔═╡ d221e857-d6d9-4324-b108-098b7671f450
 logger = TBReader("$(homedir())/datasets/logs/$log_path")
@@ -21,8 +21,8 @@ get_value(hit,s::String) = hist[Symbol(s)].values
 
 # ╔═╡ 55b6ccc3-2e71-4e58-bc16-fd2126bc24ff
 function generic_plot(hist,value::AbstractString,title::AbstractString,path::AbstractString)
-	train_loss= get_value(hist,"log/train/$value")
-	test_loss= get_value(hist,"log/test/global/$value")
+	train_loss= get_value(hist,"log/train/$value")[1:600]
+	test_loss= get_value(hist,"log/test/global/$value")[1:600]
 	f = Figure()
 	ax = Axis(f[1, 1],xlabel = "epoch",ylabel = title,
 		#limits =(0,nothing,0, nothing)
@@ -94,12 +94,6 @@ end
 
 # ╔═╡ c32d23ab-1c5f-4c30-8dac-900502153eb8
 plot_loss(hist,log_path)
-
-# ╔═╡ c4bfae61-ea91-4bda-b99a-416ecf617c8d
-plot_kl_div(hist,log_path)
-
-# ╔═╡ 98cad7b1-f374-48d5-aef5-dc7e92347418
-plot_outer_reg_loss(hist,log_path)
 
 # ╔═╡ b24e8129-79bf-40da-a8d3-2dadc06573e6
 plot_error_rate(hist,log_path)
@@ -1672,8 +1666,6 @@ version = "3.6.0+0"
 # ╠═0b652719-8a51-464e-a0b3-f50ea54b8676
 # ╠═53d9e8d0-a7a6-4a45-a527-ec35ee6b772b
 # ╠═c32d23ab-1c5f-4c30-8dac-900502153eb8
-# ╠═c4bfae61-ea91-4bda-b99a-416ecf617c8d
-# ╠═98cad7b1-f374-48d5-aef5-dc7e92347418
 # ╠═b24e8129-79bf-40da-a8d3-2dadc06573e6
 # ╠═fac10a46-38bd-4f06-b711-bdf9756f7c99
 # ╠═1176c0cc-a206-433c-a110-8c5a4c8612ce

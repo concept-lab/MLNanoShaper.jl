@@ -30,11 +30,18 @@ sort(test_data.data.data[test_data.indices])
 
 # ╔═╡ 1d338fd4-6c87-4829-8942-cf97d0db0aad
 models_paths = String[
-	"tiny_soft_max_angular_dense_jobs_40_3_2025-06-04_epoch_4370_75456560920357034",
-	"light_soft_max_angular_dense_jobs_40_3_2025-06-04_epoch_2870_2744795346301154981",
-	"light_soft_max_angular_dense_jobs_40_4_2025-05-31_epoch_560_1951733446584503143",
-	"light_soft_max_angular_dense_jobs_40_5d_2025-06-04_epoch_120_8715503880527416838",
+	"tiny_angular_dense_s_final_training_10_3.0_categorical_6000_6331735514142882335",
+	"tiny_angular_dense_s_final_training_10_3.0_continuous_6000_6930415729134250803",
+	"light_angular_dense_s_final_training_10_3.0_categorical_3000_13233356928103905208",
+	"light_angular_dense_s_final_training_10_3.0_continuous_3000_16971193858460515576",
+	"tiny_angular_dense_s_final_training_10_4.0_categorical_3000_7858487215662934347",
+	"tiny_angular_dense_s_final_training_10_4.0_continuous_3000_17513372773368690140",
+	"light_angular_dense_s_final_training_10_4.0_categorical_3000_7024144549625149892",
+	"light_angular_dense_s_final_training_10_4.0_continuous_3000_4435365212306114114"
 ]
+
+# ╔═╡ b18c5fde-6a25-492f-a754-a2c45e3f2eec
+names = ["tiny categorical 3Å","tiny continuous 3Å","light categorical 3Å","light continuous 3Å", "tiny categorical 4Å","tiny continuous 4Å","light categorical 4Å","light continuous 4Å"]
 
 # ╔═╡ 448467e1-337f-4847-b42f-0221af4b0d30
 model_weights = deserialize("$(homedir())/datasets/models/tiny_soft_max_angular_dense_testhardsigma3_35000_933236481126930411")
@@ -43,7 +50,7 @@ model_weights = deserialize("$(homedir())/datasets/models/tiny_soft_max_angular_
 model = MLNR.production_instantiate(model_weights;on_gpu=true)
 
 # ╔═╡ 92118d0c-75b9-4035-92a0-0c836cc27c89
-models = MLNR.production_instantiate.(map(p -> "$(homedir())/datasets/models/$p",models_paths) .|> deserialize,on_gpu=true) 
+models = MLNR.production_instantiate.(map(p -> "$(homedir())/datasets/models/$p",models_paths) .|> deserialize,on_gpu=true)
 
 # ╔═╡ 757279cf-651e-4bc9-b487-b69bdb3b77f3
 obs = getobs(test_data,1)
@@ -54,16 +61,13 @@ function get_mesh(model,atoms::StructVector{<:Sphere},r::Float32=1f0)
 	mins = grid.start .- 2
 	maxes = mins .+ size(grid.grid) .* grid.radius .+ 2
 	x,y,z = map(1:3) do i collect(mins[i]:r:maxes[i]) end
-	mc = MarchingCubes.MC(MLNR.evaluate_field_fast(model,grid;step = r);x,y,z)
+	mc = MarchingCubes.MC(MLNR.evaluate_field_fast(model,atoms;step = r,batch_size=10000);x,y,z)
 	march(mc,.5)
 	MarchingCubes.makemesh(GeometryBasics, mc)
 end
 
 # ╔═╡ 2beaa16b-22e9-4c14-b34c-ec0f9f124338
 r_grid =.5f0
-
-# ╔═╡ b18c5fde-6a25-492f-a754-a2c45e3f2eec
-names = ["tiny softmax 3A","light softmax 3A", "light softmax 4A","light softmax 5A"]
 
 # ╔═╡ c37bac7e-1624-4b97-8175-a1109bc4a91b
 function has_neighborhood(p::Point3,r::MLNR.RegularGrid,radius::Number)::Bool
@@ -80,7 +84,7 @@ end
 # ╔═╡ 957f510f-54e2-4d6e-81b3-022de69702e0
 function get_dataframe_metrics(models,names)
 	lines = map(models) do model
-		metrics = map(test_data[1:20])do (;atoms,skin)
+		metrics = map(test_data)do (;atoms,skin)
 			pred = get_mesh(model,atoms,r_grid)
 			pred_coord = coordinates(pred)
 			skin_coord = coordinates(skin)
@@ -88,8 +92,8 @@ function get_dataframe_metrics(models,names)
 			skin_tree = KDTree(skin_coord)
 			p = precision(pred_coord,skin_coord;radius=r_grid)
 			r = precision(skin_coord,pred_coord;radius=r_grid)
-			p_d = nn(skin_tree,pred_coord) |> last |> mean 
-			r_d = nn(pred_tree,skin_coord) |> last |> mean 
+			r_d = nn(skin_tree,pred_coord) |> last |> mean 
+			p_d = nn(pred_tree,skin_coord) |> last |> mean 
 			f = 2/(1/p +1/r)
 			[p,r,f,p_d,r_d, p_d + r_d]
 		end |> stack
@@ -99,7 +103,7 @@ function get_dataframe_metrics(models,names)
 end
 
 # ╔═╡ 187cd2eb-7630-4a1b-a020-2e75a4f3ddce
-df = get_dataframe_metrics([model],names[1:1]) 
+df = get_dataframe_metrics(models,names)
 
 # ╔═╡ d87429da-f6f4-4b4f-9ea7-af6ca226f532
 CSV.write("metrics.csv",df)
@@ -114,6 +118,7 @@ CSV.write("metrics.csv",df)
 # ╠═7e5c4473-4fc7-4d66-8ec9-4a0e2ee86858
 # ╠═60193da7-260c-484d-9696-bd35fd89d57f
 # ╠═1d338fd4-6c87-4829-8942-cf97d0db0aad
+# ╠═b18c5fde-6a25-492f-a754-a2c45e3f2eec
 # ╠═448467e1-337f-4847-b42f-0221af4b0d30
 # ╠═994a8229-d8f1-4048-912c-cb3d8d3c09dc
 # ╠═92118d0c-75b9-4035-92a0-0c836cc27c89
@@ -121,7 +126,6 @@ CSV.write("metrics.csv",df)
 # ╠═72f2eaca-1a28-43c7-99c9-7f463a553c93
 # ╠═2beaa16b-22e9-4c14-b34c-ec0f9f124338
 # ╠═957f510f-54e2-4d6e-81b3-022de69702e0
-# ╠═b18c5fde-6a25-492f-a754-a2c45e3f2eec
 # ╠═187cd2eb-7630-4a1b-a020-2e75a4f3ddce
 # ╠═d87429da-f6f4-4b4f-9ea7-af6ca226f532
 # ╠═c37bac7e-1624-4b97-8175-a1109bc4a91b

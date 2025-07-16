@@ -7,6 +7,9 @@ using InteractiveUtils
 # ╔═╡ 7b259d1e-1132-11f0-30c6-c9559109859f
 using Pkg;Pkg.activate(".")
 
+# ╔═╡ 4b672af2-6636-4b6b-a3bb-461596647e4f
+using Revise
+
 # ╔═╡ 829ae9d2-105a-4a98-ad56-e0016b4f04d9
 using MLNanoShaper, MLNanoShaperRunner, FileIO, StructArrays, Static, Serialization,
       GeometryBasics, LuxCUDA, Lux, Profile, ProfileSVG, ChainRulesCore, Folds,
@@ -18,6 +21,12 @@ using Base.Threads
 
 # ╔═╡ 05145ea8-59b9-41fb-ad7e-fce08fa0c36c
 import CairoMakie as Mk
+
+# ╔═╡ 47e986dd-7fee-4e55-85ff-c63a592fc6ca
+# ╠═╡ disabled = true
+#=╠═╡
+using Revise
+  ╠═╡ =#
 
 # ╔═╡ 880fbf4e-0951-400e-a997-d4f6ecf72ad1
 Threads.nthreads()
@@ -54,7 +63,7 @@ step =.5f0
 prot_num = 1
 
 # ╔═╡ 498adb72-6edf-4b36-b9a5-474f6660a030
-model_name = "tiny_soft_max_angular_dense_testhardsigma5_20000_17558598383046663794"
+model_name="tiny_angular_dense_final_training_9_3.0_categorical_8000_17229532899560715654"
 
 # ╔═╡ 43cc30fc-c266-4cf1-aff0-c5c505cf4924
 model_weights = deserialize("$(homedir())/datasets/models/$model_name")
@@ -78,12 +87,6 @@ vol = MLNanoShaperRunner.evaluate_field_fast(model,vec_atoms;step)
 
 # ╔═╡ ab1823fe-a0b3-4f34-a7c3-aa7d3e507efe
 Threads.nthreads()
-
-# ╔═╡ 3f5f7acc-5f9a-47a1-9ab9-084abee612f2
-@benchmark MLNanoShaperRunner.evaluate_field_fast(model,vec_atoms;step) 
-
-# ╔═╡ 860bd1b8-6422-4e4f-aeac-d8aac373d1f9
-@benchmark MLNanoShaperRunner.evaluate_field(model,atoms;step)
 
 # ╔═╡ 206cb7a0-bc63-4f3d-b0f6-cf7255cea696
 vol1 = MLNanoShaperRunner.evaluate_field(model,atoms;step)
@@ -128,17 +131,6 @@ Mk.mesh(msh1; color = :red)
 # ╔═╡ 1ffca824-d203-47e1-b140-e59cbd7ef655
 write_off("$model_name-predicted_fast.off",msh)
 
-# ╔═╡ 47e986dd-7fee-4e55-85ff-c63a592fc6ca
-# ╠═╡ disabled = true
-#=╠═╡
-using Revise
-  ╠═╡ =#
-
-# ╔═╡ 4b672af2-6636-4b6b-a3bb-461596647e4f
-#=╠═╡
-using Revise
-  ╠═╡ =#
-
 # ╔═╡ Cell order:
 # ╠═7b259d1e-1132-11f0-30c6-c9559109859f
 # ╠═4b672af2-6636-4b6b-a3bb-461596647e4f
@@ -158,8 +150,6 @@ using Revise
 # ╠═ce214ac0-f811-4382-beac-b0ba82b0e206
 # ╠═8d39769c-9e87-4f5b-aa50-34abe8c78cf5
 # ╠═ab1823fe-a0b3-4f34-a7c3-aa7d3e507efe
-# ╠═3f5f7acc-5f9a-47a1-9ab9-084abee612f2
-# ╠═860bd1b8-6422-4e4f-aeac-d8aac373d1f9
 # ╠═206cb7a0-bc63-4f3d-b0f6-cf7255cea696
 # ╠═439948ac-0a40-4ce6-ad07-b139c73e053d
 # ╠═cdd55fc4-fccd-4dd7-b0dc-3b7b65804334

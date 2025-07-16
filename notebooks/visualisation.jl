@@ -15,7 +15,7 @@ using Revise
 
 # ╔═╡ fc935a86-ceac-4d5a-8fcb-34d9c754a2f1
 using MLNanoShaper, MLNanoShaperRunner, Serialization, Static, StructArrays, FileIO,
-      GeometryBasics, Folds, Lux, Random,Accessors,NearestNeighbors, Statistics 
+      GeometryBasics, Folds, Lux, Random,Accessors,NearestNeighbors, Statistics
 
 # ╔═╡ 5f801ac4-1f27-11ef-3246-afece906b714
 md"""
@@ -46,14 +46,20 @@ prot_num = 2
 dataset_dir = "$(dirname(dirname(@__FILE__)))/examples"
 
 # ╔═╡ 54e25826-94b0-49ec-96f6-7bc17d2e3dfb
-#model_name = "tiny_soft_max_angular_dense_testhardsigma3_35000_933236481126930411"
-model_name = "tiny_angular_dense_final_training_6_3.0_continuous_8000_4949788295742178926"
+model_name = "tiny_angular_dense_s_final_training_10_3.0_categorical_6000_6331735514142882335"
+#model_name = "tiny_angular_dense_final_training_9_3.0_continuous_14000_3279990235261157764"
 
 # ╔═╡ b91501dd-f66f-4a60-afa9-c4c9d0fc3504
 name ="$(homedir())/datasets/models/$model_name"
 
 # ╔═╡ 69ee1b79-b99d-4e3a-9769-254b1939aba6
 model = name |> deserialize |> MLNanoShaperRunner.production_instantiate
+
+# ╔═╡ bed5363b-3e01-4e8b-8d9e-0e48d9a9ab7c
+p = deserialize(name)
+
+# ╔═╡ 6f7210eb-59d6-4ab2-b31b-1a21636c0a29
+model1 = StatefulLuxLayer{true}(p.model(smoothing = true,on_gpu=false),(p.parameters),(p.states))
 
 # ╔═╡ f7041ca8-97be-4998-9c10-2cbed79eb135
 atoms = RegularGrid(
@@ -151,7 +157,7 @@ end
 step = .1f0
 
 # ╔═╡ ee6dc376-b884-4ecb-8c63-1830bd664597
-slice = get_slice(atoms,model,6.0,(;cutoff_radius=3.0f0,step,default_value=0f0))
+slice = get_slice(atoms,model1,6.0,(;cutoff_radius=3.0f0,step,default_value=0f0))
 
 # ╔═╡ d679ca88-615e-4675-9d0a-419cd18246f9
 g = begin
@@ -208,6 +214,8 @@ save("$model_name contour.png",h)
 # ╠═54e25826-94b0-49ec-96f6-7bc17d2e3dfb
 # ╠═b91501dd-f66f-4a60-afa9-c4c9d0fc3504
 # ╠═69ee1b79-b99d-4e3a-9769-254b1939aba6
+# ╠═bed5363b-3e01-4e8b-8d9e-0e48d9a9ab7c
+# ╠═6f7210eb-59d6-4ab2-b31b-1a21636c0a29
 # ╠═f7041ca8-97be-4998-9c10-2cbed79eb135
 # ╠═58cf0ac8-d68d-47a7-b08f-098b65d19908
 # ╠═a0a5f16f-0224-47b1-ae86-c4b5bd48fd07

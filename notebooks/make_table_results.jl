@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.6
+# v0.20.13
 
 using Markdown
 using InteractiveUtils
@@ -9,15 +9,18 @@ using TensorBoardLogger, CairoMakie, ValueHistories, DataFrames, CSV
 
 # ╔═╡ 2090a27d-23f9-456e-9fe4-8d79a1ef33bf
 log_paths = String[
-	"tiny_soft_max_angular_dense_s_jobs_40_3_c_2025-05-28_13929368605106502689",
-	"tiny_soft_max_angular_dense_s_jobs_40_4_c_2025-05-28_17986875086899216678",
-	"light_soft_max_angular_dense_s_jobs_40_3_c_2025-05-28_14363857244214938418",
-	"light_soft_max_angular_dense_jobs_40_4_2025-05-30_1951733446584503143",
-	"light_soft_max_angular_dense_s_jobs_40_5_c_2025-05-28_11845445769936303495",
+	"tiny_angular_dense_s_final_training_10_3.0_categorical_6331735514142882335",
+	"tiny_angular_dense_s_final_training_10_3.0_continuous_6930415729134250803",
+	"light_angular_dense_s_final_training_10_3.0_categorical_13233356928103905208",
+	"light_angular_dense_s_final_training_10_3.0_continuous_16971193858460515576",
+	"tiny_angular_dense_s_final_training_10_4.0_categorical_7858487215662934347",
+	"tiny_angular_dense_s_final_training_10_4.0_continuous_17513372773368690140",
+	"light_angular_dense_s_final_training_10_4.0_categorical_7024144549625149892",
+	"light_angular_dense_s_final_training_10_4.0_continuous_4435365212306114114"
 ]
 
 # ╔═╡ 44994376-8897-481e-ac26-89471d4cbfc5
-names = ["tiny softmax 3Å", "tiny softmax 4Å","light softmax 3Å", "light softmax 4Å","light softmax 5Å"]
+names = ["tiny categorical 3Å","tiny continuous 3Å","light categorical 3Å","light continuous 3Å", "tiny categorical 4Å","tiny continuous 4Å","light categorical 4Å","light continuous 4Å"]
 
 # ╔═╡ 7cfef0d3-8904-4717-94a0-45ccdb719031
 function get_logger(log_path)
@@ -34,25 +37,25 @@ get_logger(first(log_paths)) |> eachindex |> first
 # ╔═╡ 5c242f82-b0c0-433d-aa36-a8e2a92ce79d
 get_nb_epoch(hist) = length(hist,hist |> eachindex |> first)
 
-# ╔═╡ d95b63de-4e7e-4b93-8e9d-c4c613935d81
-get_nb_epoch.(get_logger.(log_paths))
-
 # ╔═╡ 4398c241-59c6-4ae3-9a72-620bec0ec12a
 function get_comparaison_dataframe(
+	f,
 	log_paths::Vector{String},
 	fields::Vector{String},
-	names::Vector{String},
-	f
+	names::Vector{String}
 )
-	lines = [get_test_value.(Ref(get_logger(log_path)),fields) .|> f for log_path in log_paths]
+	lines = [get_test_value.(Ref(get_logger(log_path)),fields) .|> f for (f,log_path) in zip(f,log_paths)]
 	DataFrame(stack(lines;dims=1),names)
 end
 
+# ╔═╡ 41568468-74e8-49ea-862f-20ca7b3ee0ac
+nb_epoch = [6000,6000,3000,3000,3000,3000,3000,3000]
+
 # ╔═╡ 693a76d7-ceea-40a2-b5e4-05f9b51119e5
-df = get_comparaison_dataframe(log_paths,["global/stats/kl_div","global/stats/stats/error_rate","global/stats/stats/false_positive_rate","global/stats/stats/false_negative_rate","inside/stats/stats/false_positive_rate","core/stats/stats/false_positive_rate"],["kl_div","error_rate","fpr","fnr","inside_fpr","core fpr"],last)
+df = get_comparaison_dataframe(map(k -> x -> x[k], nb_epoch), log_paths, ["global/loss","global/stats/stats/error_rate","global/stats/stats/false_positive_rate","global/stats/stats/false_negative_rate","inside/stats/stats/false_negative_rate","core/stats/stats/false_negative_rate"], ["kl_div","error_rate","fpr","fnr","inside_fnr","core fnr"]) 
 
 # ╔═╡ 842d62c3-88b0-4934-996f-7f64a11261f9
-CSV.write("results.csv", hcat(DataFrame(;names,nb_epoch = get_nb_epoch.(get_logger.(log_paths))),df))
+CSV.write("results.csv", hcat(DataFrame(;names),nb_epoch,df))
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -1683,8 +1686,8 @@ version = "3.6.0+0"
 # ╠═ecb8c4de-6aa7-4f45-9ada-8d1cd6c182c6
 # ╠═69e5853d-a403-4d43-87c0-dbe46f05ccb1
 # ╠═5c242f82-b0c0-433d-aa36-a8e2a92ce79d
-# ╠═d95b63de-4e7e-4b93-8e9d-c4c613935d81
 # ╠═4398c241-59c6-4ae3-9a72-620bec0ec12a
+# ╠═41568468-74e8-49ea-862f-20ca7b3ee0ac
 # ╠═693a76d7-ceea-40a2-b5e4-05f9b51119e5
 # ╠═842d62c3-88b0-4934-996f-7f64a11261f9
 # ╟─00000000-0000-0000-0000-000000000001
