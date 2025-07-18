@@ -45,6 +45,7 @@ using LoopVectorization
 using Octavian
 using PrecompileTools
 using MLNanoShaperRunner
+using MLNanoShaperRunner: Partial
 @reexport using MLNanoShaperRunner.Import
 
 export train
