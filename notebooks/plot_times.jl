@@ -40,10 +40,8 @@ vec_atoms = getfield.(
 function get_time_point(fun,prot_num::Number)
 	vec_atoms = getfield.(
         read("$(homedir())/datasets/pqr/$prot_num/structure.pqr", PQR{Float32}), :pos) |>
-    StructVector
-	fun(vec_atoms)
-	return 
-	k = @benchmark $fun(vec_atoms)
+    StructVector 
+	k = fun(vec_atoms)
 	length(vec_atoms),(k.times |> median) * 1e-9
 end
 
@@ -63,11 +61,12 @@ auxp = MLNanoShaper.read_from_TOML(MLNanoShaper.AuxiliaryParameters,parms)
 ids = test_data.data.data[test_data.indices] |> sort
 
 # ╔═╡ 524ccba2-af86-4207-bdf7-fbf56ae01017
-#vals = map(ids) do id
-#	get_time_point(id) do vec_atoms
-#		MLNanoShaperRunner.evaluate_field_fast(model,vec_atoms;step=.5f0)
-#	end
-#end
+vals  = get_time_point.(vec_atoms -> @benchmark(MLNanoShaperRunner.evaluate_field_fast(model,vec_atoms;step=.5f0)),ids) 
+
+
+# ╔═╡ b163e4d2-0b12-4fef-b0cd-5da80434d547
+get_time_point(vec_atoms -> @benchmark(MLNanoShaperRunner.evaluate_field_fast(model,vec_atoms;step=.5f0)),19) 
+
 
 # ╔═╡ 3d4719b4-bd6d-4bbf-934a-77c26df806f7
 cdtempdir(f,args...;kargs...) =  mktempdir(args...;kargs...) do dir
@@ -80,39 +79,26 @@ function write_pqr(io::IO,atoms::AbstractVector{Sphere{Float32}})
 		x,y,z = center
 		println(io,x," ",y," ",z," ",r)
 	end
-end 
+end
 
 # ╔═╡ ea19b150-f555-40cd-9715-6b92af6b6424
 function run_nanoshaper(atoms::AbstractVector{Sphere{Float32}})
-    k = mktempdir()
-	@info k
-	cd(k) do
-		run(`pwd`;wait=true)
+	cdtempdir() do
         open("structure.xyzr","w") do io
 			write_pqr(io,atoms)
 		end
 			
 		conf_path = joinpath(@__DIR__, "conf.prm")
         symlink(conf_path, "conf.prm")
-        command = `$(homedir())/workspace/nanoshaper/pkg_nanoshaper_0.7.8/NanoShaper conf.prm`
-		withenv(
-			"LD_LIBRARY_PATH" => "$(homedir())/workspace/nanoshaper/pkg_nanoshaper_0.7.8"
-		) do 
-        	#run(pipeline(command,devnull);wait = true)
-		end
-		#load("triangulatedSurf.off")::Mesh
+        command = addenv(
+			`$(homedir())/workspace/nanoshaper/pkg_nanoshaper_0.7.8/NanoShaper conf.prm`,
+			"LD_LIBRARY_PATH" => "$(homedir())/workspace/nanoshaper/pkg_nanoshaper_0.7.8")
+		@benchmark run(pipeline($command,devnull);wait = true)
 	end
 end
 
-# ╔═╡ 0d8b9cc9-4ebf-4830-b18e-3500538799c5
-map(ids) do id
-	get_time_point(id) do vec_atoms
-		if length(vec_atoms) < 3000
-			run_nanoshaper(vec_atoms)
-			throw("aaaa")
-		end
-	end 
-end 
+# ╔═╡ 49779c1f-fe10-4855-9da4-3e0d79d438e8
+rev_vals =  get_time_point.(run_nanoshaper,ids)
 
 # ╔═╡ 4e622491-9874-4ef1-a4cf-33a385fc38b9
 begin
@@ -125,7 +111,7 @@ begin
 end
 
 # ╔═╡ bda67f44-273a-4e67-8d45-864d8f2bcb51
-#save("execution_time.pdf",f)
+save("execution_time.pdf",f)
 
 # ╔═╡ Cell order:
 # ╠═23ec82f2-5d85-11f0-0ff0-cbf9fa44e401
@@ -144,9 +130,10 @@ end
 # ╠═54bcde7c-23f1-4d5f-a867-89e8699ac6cf
 # ╠═1cb847ed-c204-4274-81ea-3f5311029118
 # ╠═524ccba2-af86-4207-bdf7-fbf56ae01017
+# ╠═b163e4d2-0b12-4fef-b0cd-5da80434d547
 # ╠═ea19b150-f555-40cd-9715-6b92af6b6424
 # ╠═3d4719b4-bd6d-4bbf-934a-77c26df806f7
 # ╠═ae629a79-92d9-4bd6-b4cb-a245a8ca934f
-# ╠═0d8b9cc9-4ebf-4830-b18e-3500538799c5
+# ╠═49779c1f-fe10-4855-9da4-3e0d79d438e8
 # ╠═4e622491-9874-4ef1-a4cf-33a385fc38b9
 # ╠═bda67f44-273a-4e67-8d45-864d8f2bcb51
