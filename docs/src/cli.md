@@ -13,16 +13,32 @@ Default value of parameters are specified in the `param/param.toml` file.
 In order to override the param, you can use the differents options. 
 
 ## Options
-
-- `--nb-epoch <Int>`: the number of epoch to compute.
-- `--model, -m <String>`: the model name. Can be anakin.
-- `--nb-data-points <Int>`: the number of proteins in the dataset to use
-- `--name, -n <String>`: name of the training run
-- `--cutoff-radius, -c <Float32>`: the cutoff_radius used in training
-- `--ref-distance <Float32>`: the reference distane (in A) used to rescale distance to surface in loss
-- `--learning-rate, -l <Float64>`: the learning rate use by the model in training.
-- `--loss <String>`: the loss function, one of "categorical" or "continuous".
-
-## Flags
-
-- `--gpu, -g `: should we do the training on the gpu, does nothing currently.
+`
+  --nb_epoch NB_EPOCH   the number of epochs to compute (type: Int64,
+                        default: 0)
+  --batch_size BATCH_SIZE
+                        the size of the batch, must be configured in
+                        function of VRAM size (type: Int64, default:
+                        0)
+  -m, --model MODEL     the model name (default: "")
+  --van_der_waals_channel
+                        whether to use van der Waals channel
+  --smoothing           whether to enforce smoothing
+  --nb_data_points NB_DATA_POINTS
+                        the number of proteins in the dataset to use
+                        (type: Int64, default: 0)
+  -n, --name NAME       name of the training run (default: "")
+  -c, --cutoff_radius CUTOFF_RADIUS
+                        the cutoff_radius used in training (type:
+                        Float32, default: 0.0)
+  --ref_distance REF_DISTANCE
+                        the reference distance (in A) used to rescale
+                        distance to surface in loss (type: Float32,
+                        default: 0.0)
+  --loss LOSS           the loss function (default: "categorical")
+  -l, --learning_rate LEARNING_RATE
+                        the learning rate used by the model in
+                        training (type: Float64, default: 1.0e-5)
+  -g, --on_gpu          should we do the training on the gpu
+  -h, --help            show this help message and exit
+`
