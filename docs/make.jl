@@ -22,6 +22,6 @@ makedocs(;
         "C Interface" => "so.md"
     ])
 
-# deploydocs(;
-#     repo = "https://github.com/concept-lab/MLNanoShaper.jl.git",
-# )
+deploydocs(;
+    repo = "https://github.com/concept-lab/MLNanoShaper.jl.git",
+)
