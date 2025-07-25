@@ -2,7 +2,7 @@
 
 julia_version = "1.11.5"
 manifest_format = "2.0"
-project_hash = "a0ddc62f10b00af18d05b6d775c224f61cf26cd7"
+project_hash = "6502980868c1af37ce44d07354f625fee8435135"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "be7ae030256b8ef14a441726c4c37766b90b93a3"
@@ -1725,6 +1725,12 @@ version = "1.2.0"
 uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 version = "1.11.0"
 
+[[deps.MolSimToolkitShared]]
+deps = ["Compat", "LinearAlgebra", "StaticArrays", "TestItems"]
+git-tree-sha1 = "5238b786ee9fb15889c3987e172baf1cfc1868c2"
+uuid = "aea21201-7910-416e-b888-414710bebccb"
+version = "1.1.3"
+
 [[deps.MosaicViews]]
 deps = ["MappedArrays", "OffsetArrays", "PaddedViews", "StackViews"]
 git-tree-sha1 = "7b86a5d4d70a9f5cdf2dacb3cbe6d251d1a61dbe"
@@ -1904,6 +1910,18 @@ version = "1.8.1"
 deps = ["Artifacts", "Libdl"]
 uuid = "efcefdf7-47ab-520b-bdef-62a2eaa19f15"
 version = "10.42.0+1"
+
+[[deps.PDBTools]]
+deps = ["Dates", "Downloads", "Format", "InlineStrings", "InteractiveUtils", "LinearAlgebra", "MolSimToolkitShared", "OrderedCollections", "PrecompileTools", "Printf", "StaticArrays", "TestItems"]
+git-tree-sha1 = "cdb9d4976340249b341564be698bcc7e556b6fb6"
+uuid = "e29189f1-7114-4dbd-93d0-c5673a921a58"
+version = "3.2.0"
+
+    [deps.PDBTools.extensions]
+    Plotting = "Plots"
+
+    [deps.PDBTools.weakdeps]
+    Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 
 [[deps.PDMats]]
 deps = ["LinearAlgebra", "SparseArrays", "SuiteSparse"]
@@ -2486,6 +2504,11 @@ version = "0.1.7"
 deps = ["InteractiveUtils", "Logging", "Random", "Serialization"]
 uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 version = "1.11.0"
+
+[[deps.TestItems]]
+git-tree-sha1 = "42fd9023fef18b9b78c8343a4e2f3813ffbcefcb"
+uuid = "1c621080-faea-4a02-84b6-bbd5e436b8fe"
+version = "1.0.0"
 
 [[deps.TextWrap]]
 git-tree-sha1 = "43044b737fa70bc12f6105061d3da38f881a3e3c"

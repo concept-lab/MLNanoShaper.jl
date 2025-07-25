@@ -8,13 +8,22 @@ using InteractiveUtils
 using Pkg;Pkg.activate(".")
 
 # ╔═╡ 59084b85-b8d6-4fc6-86cd-9221eb3c9646
-using TOML,MLUtils, Serialization, MarchingCubes, GeometryBasics,StructArrays, Folds, Statistics, NearestNeighbors, DataFrames, CSV
+using TOML,MLUtils, Serialization, MarchingCubes, GeometryBasics,StructArrays, Folds, Statistics, NearestNeighbors, DataFrames, CSV, FileIO, PDBTools 
 
 # ╔═╡ 86cba000-e329-4bd1-b290-23b88ad60b8a
 import MLNanoShaper as MLN, MLNanoShaperRunner as MLNR, CairoMakie as Mk 
 
 # ╔═╡ 4ef107ce-3c58-42fa-b4d2-67b4c016a8a6
 parms = TOML.parsefile(MLN.params_file)
+
+# ╔═╡ 4ca3c279-9180-4a05-bf94-66a8def52310
+function radius(x::AbstractString)::Float32
+	if x in keys(parms["atoms"]["radius"])
+		parms["atoms"]["radius"][x]
+	else
+		1f0
+	end
+end
 
 # ╔═╡ 853284a5-1be5-4f7d-83ab-2ebb50470049
 trp = MLN.read_from_TOML(MLN.TrainingParameters,parms)
@@ -52,6 +61,21 @@ model = MLNR.production_instantiate(model_weights;on_gpu=true)
 # ╔═╡ 92118d0c-75b9-4035-92a0-0c836cc27c89
 models = MLNR.production_instantiate.(map(p -> "$(homedir())/datasets/models/$p",models_paths) .|> deserialize,on_gpu=true)
 
+# ╔═╡ 8fcd0922-dc70-42aa-95d0-a4f3d4d0455b
+function make_pdb_dataset(path::AbstractString)
+	all_files = readdir(path)
+	pdb_files = filter(file -> endswith(file, ".pdb"), all_files)
+	mapobs(pdb_files) do file
+		cd(path) do
+			atoms = map(read_pdb(file)) do (;x,y,z,name)
+				Sphere(Point3f(x,y,z),radius(name[1:1]))
+			end |> StructVector 
+			skin = "$(splitext(file) |> first).off" |> load
+			(;atoms,skin)
+		end
+	end
+end
+
 # ╔═╡ 757279cf-651e-4bc9-b487-b69bdb3b77f3
 obs = getobs(test_data,1)
 
@@ -82,9 +106,9 @@ function precision(x::AbstractVector{Point3{T}},y::AbstractVector{Point3{T}};rad
 end
 
 # ╔═╡ 957f510f-54e2-4d6e-81b3-022de69702e0
-function get_dataframe_metrics(models,names)
+function get_dataframe_metrics(models,names,data)
 	lines = map(models) do model
-		metrics = map(test_data)do (;atoms,skin)
+		metrics = map(data)do (;atoms,skin)
 			pred = get_mesh(model,atoms,r_grid)
 			pred_coord = coordinates(pred)
 			skin_coord = coordinates(skin)
@@ -103,16 +127,41 @@ function get_dataframe_metrics(models,names)
 end
 
 # ╔═╡ 187cd2eb-7630-4a1b-a020-2e75a4f3ddce
-df = get_dataframe_metrics(models,names)
+#df = get_dataframe_metrics(models,names,test_data)
 
 # ╔═╡ d87429da-f6f4-4b4f-9ea7-af6ca226f532
-CSV.write("metrics.csv",df)
+#CSV.write("metrics.csv",df)
+
+# ╔═╡ 8ba466ba-1d9f-4a20-a5cb-a12e5a2200ac
+nucleic_path = "$(homedir())/workspace/Con2SES/datasets/nucleic_acid_test"
+
+# ╔═╡ fcb0b00f-f3d7-48cd-9de2-1ade87f0b0ac
+protein_complex_path = "$(homedir())/workspace/Con2SES/datasets/protein_complex_test"
+
+# ╔═╡ be736578-6b9a-424e-b019-fbc6086a9aa4
+nucleic_dataset = make_pdb_dataset(nucleic_path)
+
+# ╔═╡ cfe27201-186c-4a36-923b-57543e7b4d02
+protein_complex_dataset = make_pdb_dataset(protein_complex_path)
+
+# ╔═╡ c85986dc-51e7-41eb-b351-0c407dbccf86
+df_nucleic = get_dataframe_metrics(models,names,nucleic_dataset)
+
+# ╔═╡ b557e9bf-923c-404f-a268-c2bc443d36a0
+df_protein_complex = get_dataframe_metrics(models,names,protein_complex_dataset)
+
+# ╔═╡ 6e45b065-569a-4603-a87f-d224c79c3d1c
+CSV.write("metrics_nucleics.csv",df_nucleic)
+
+# ╔═╡ 8f97bff6-4486-4419-821e-cc7ef12b7d90
+CSV.write("metrics_protein_complex.csv",df_protein_complex)
 
 # ╔═╡ Cell order:
 # ╠═4dd0c84a-0b04-11f0-3528-37a16be3ea10
 # ╠═59084b85-b8d6-4fc6-86cd-9221eb3c9646
 # ╠═86cba000-e329-4bd1-b290-23b88ad60b8a
 # ╠═4ef107ce-3c58-42fa-b4d2-67b4c016a8a6
+# ╠═4ca3c279-9180-4a05-bf94-66a8def52310
 # ╠═853284a5-1be5-4f7d-83ab-2ebb50470049
 # ╠═e4930118-ffd8-4087-9435-5eca6e764759
 # ╠═7e5c4473-4fc7-4d66-8ec9-4a0e2ee86858
@@ -122,11 +171,20 @@ CSV.write("metrics.csv",df)
 # ╠═448467e1-337f-4847-b42f-0221af4b0d30
 # ╠═994a8229-d8f1-4048-912c-cb3d8d3c09dc
 # ╠═92118d0c-75b9-4035-92a0-0c836cc27c89
+# ╠═8fcd0922-dc70-42aa-95d0-a4f3d4d0455b
 # ╠═757279cf-651e-4bc9-b487-b69bdb3b77f3
 # ╠═72f2eaca-1a28-43c7-99c9-7f463a553c93
 # ╠═2beaa16b-22e9-4c14-b34c-ec0f9f124338
 # ╠═957f510f-54e2-4d6e-81b3-022de69702e0
-# ╠═187cd2eb-7630-4a1b-a020-2e75a4f3ddce
-# ╠═d87429da-f6f4-4b4f-9ea7-af6ca226f532
 # ╠═c37bac7e-1624-4b97-8175-a1109bc4a91b
 # ╠═ec06c92b-50aa-44a2-a1ba-5c4db56f5577
+# ╠═187cd2eb-7630-4a1b-a020-2e75a4f3ddce
+# ╠═d87429da-f6f4-4b4f-9ea7-af6ca226f532
+# ╠═8ba466ba-1d9f-4a20-a5cb-a12e5a2200ac
+# ╠═fcb0b00f-f3d7-48cd-9de2-1ade87f0b0ac
+# ╠═be736578-6b9a-424e-b019-fbc6086a9aa4
+# ╠═cfe27201-186c-4a36-923b-57543e7b4d02
+# ╠═c85986dc-51e7-41eb-b351-0c407dbccf86
+# ╠═b557e9bf-923c-404f-a268-c2bc443d36a0
+# ╠═6e45b065-569a-4603-a87f-d224c79c3d1c
+# ╠═8f97bff6-4486-4419-821e-cc7ef12b7d90

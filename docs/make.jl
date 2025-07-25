@@ -4,6 +4,7 @@ using Documenter
 DocMeta.setdocmeta!(MLNanoShaper, :DocTestSetup, :(using MLNanoShaper); recursive = true)
 
 makedocs(;
+    format = Documenter.LaTeX(),
     modules = [MLNanoShaper],
     authors = "tristan hacquard<tristan.hacquard@polytechnique.org> and contributors",
     sitename = "MLNanoShaper.jl",
@@ -17,9 +18,10 @@ makedocs(;
         "Custom Loss" => "loss.md",
         "Building Custom Models" => "model.md",
         "CLI Interface" => "cli.md",
+        "model evaluation" => "evaluation.md",
         "C Interface" => "so.md"
     ])
 
-deploydocs(;
-    repo = "https://github.com/concept-lab/MLNanoShaper.jl.git",
-)
+# deploydocs(;
+#     repo = "https://github.com/concept-lab/MLNanoShaper.jl.git",
+# )

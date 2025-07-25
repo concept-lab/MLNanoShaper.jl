@@ -26,7 +26,7 @@ model_name ="tiny_angular_dense_s_final_training_10_3.0_categorical_6000_6331735
 model_weights = deserialize("$(homedir())/datasets/models/$model_name")
 
 # ╔═╡ 81b5b6a4-c90f-4a9d-82ab-1b89d448e360
-model = MLNanoShaperRunner.production_instantiate(model_weights,on_gpu=true)
+model = MLNanoShaperRunner.production_instantiate(model_weights,on_gpu=true) 
 
 # ╔═╡ 1918aaec-d7af-4e19-be8e-26c0cb7bf70f
 prot_num=2
@@ -36,14 +36,21 @@ vec_atoms = getfield.(
         read("$(homedir())/datasets/pqr/$prot_num/structure.pqr", PQR{Float32}), :pos) |>
     StructVector
 
+# ╔═╡ 9357cf2b-4362-4cf7-9238-087d7f1fc7dd
+length(vec_atoms)
+
 # ╔═╡ c5d6741d-7b17-4eb9-b9cf-304c61b5fe83
 function get_time_point(fun,prot_num::Number)
 	vec_atoms = getfield.(
         read("$(homedir())/datasets/pqr/$prot_num/structure.pqr", PQR{Float32}), :pos) |>
     StructVector 
-	k = fun(vec_atoms)
+	k= fun(vec_atoms)
 	length(vec_atoms),(k.times |> median) * 1e-9
 end
+
+# ╔═╡ 69d8b38e-1526-4c27-9705-af696eaad5d3
+get_nb_lines(id) = getfield.(
+        read("$(homedir())/datasets/pqr/$id/structure.pqr", PQR{Float32}), :pos) |> StructVector |> length
 
 # ╔═╡ db4627bf-53fa-4dd3-83cd-7143c76a1cc9
 parms = TOML.parsefile(MLNanoShaper.params_file)
@@ -60,13 +67,26 @@ auxp = MLNanoShaper.read_from_TOML(MLNanoShaper.AuxiliaryParameters,parms)
 # ╔═╡ 1cb847ed-c204-4274-81ea-3f5311029118
 ids = test_data.data.data[test_data.indices] |> sort
 
-# ╔═╡ 524ccba2-af86-4207-bdf7-fbf56ae01017
-vals  = get_time_point.(vec_atoms -> @benchmark(MLNanoShaperRunner.evaluate_field_fast(model,vec_atoms;step=.5f0)),ids) 
-
+# ╔═╡ 65579214-b7a7-4339-82a2-8464146bab33
+g(a) = @benchmark MLNanoShaperRunner.evaluate_field_fast(model,$a;step=.5f0)
 
 # ╔═╡ b163e4d2-0b12-4fef-b0cd-5da80434d547
-get_time_point(vec_atoms -> @benchmark(MLNanoShaperRunner.evaluate_field_fast(model,vec_atoms;step=.5f0)),19) 
+get_time_point(g,19) 
 
+# ╔═╡ aa9d7742-e5fe-42bc-a6c7-516aee8ce0a5
+get_time_point(g,50) 
+
+# ╔═╡ d42788b4-92f2-493a-b01b-c570fe47c790
+get_nb_lines(19)
+
+# ╔═╡ f7f641c1-79a7-4d98-94bc-47fc49036407
+get_nb_lines(50)
+
+# ╔═╡ af63153d-db6b-4db8-aeef-f78e1d267436
+get_nb_lines.(ids) |>argmax
+
+# ╔═╡ d1c44c55-7a8f-46fd-aa96-818a155e2ad0
+ids[6]
 
 # ╔═╡ 3d4719b4-bd6d-4bbf-934a-77c26df806f7
 cdtempdir(f,args...;kargs...) =  mktempdir(args...;kargs...) do dir
@@ -97,8 +117,17 @@ function run_nanoshaper(atoms::AbstractVector{Sphere{Float32}})
 	end
 end
 
+# ╔═╡ d0b0c9e0-da1c-4458-989a-faf79c249b3e
+get_time_point(run_nanoshaper,19) 
+
+# ╔═╡ 5d7fc4d8-9843-40aa-a06b-126c26753e26
+get_time_point(run_nanoshaper,50)
+
 # ╔═╡ 49779c1f-fe10-4855-9da4-3e0d79d438e8
 rev_vals =  get_time_point.(run_nanoshaper,ids)
+
+# ╔═╡ 524ccba2-af86-4207-bdf7-fbf56ae01017
+vals  = get_time_point.(g,ids) 
 
 # ╔═╡ 4e622491-9874-4ef1-a4cf-33a385fc38b9
 begin
@@ -123,17 +152,27 @@ save("execution_time.pdf",f)
 # ╠═81b5b6a4-c90f-4a9d-82ab-1b89d448e360
 # ╠═1918aaec-d7af-4e19-be8e-26c0cb7bf70f
 # ╠═8f8af861-70a5-46d3-83fc-1b9fc970dc16
+# ╠═9357cf2b-4362-4cf7-9238-087d7f1fc7dd
 # ╠═c5d6741d-7b17-4eb9-b9cf-304c61b5fe83
+# ╠═69d8b38e-1526-4c27-9705-af696eaad5d3
 # ╠═db4627bf-53fa-4dd3-83cd-7143c76a1cc9
 # ╠═463d282e-b770-441e-8d0b-81d1ea9f2f24
 # ╠═4efe8a36-df45-47d4-88aa-c80c171c74b8
 # ╠═54bcde7c-23f1-4d5f-a867-89e8699ac6cf
 # ╠═1cb847ed-c204-4274-81ea-3f5311029118
-# ╠═524ccba2-af86-4207-bdf7-fbf56ae01017
+# ╠═65579214-b7a7-4339-82a2-8464146bab33
 # ╠═b163e4d2-0b12-4fef-b0cd-5da80434d547
+# ╠═d0b0c9e0-da1c-4458-989a-faf79c249b3e
+# ╠═aa9d7742-e5fe-42bc-a6c7-516aee8ce0a5
+# ╠═5d7fc4d8-9843-40aa-a06b-126c26753e26
+# ╠═d42788b4-92f2-493a-b01b-c570fe47c790
+# ╠═f7f641c1-79a7-4d98-94bc-47fc49036407
+# ╠═af63153d-db6b-4db8-aeef-f78e1d267436
+# ╠═d1c44c55-7a8f-46fd-aa96-818a155e2ad0
 # ╠═ea19b150-f555-40cd-9715-6b92af6b6424
 # ╠═3d4719b4-bd6d-4bbf-934a-77c26df806f7
 # ╠═ae629a79-92d9-4bd6-b4cb-a245a8ca934f
 # ╠═49779c1f-fe10-4855-9da4-3e0d79d438e8
+# ╠═524ccba2-af86-4207-bdf7-fbf56ae01017
 # ╠═4e622491-9874-4ef1-a4cf-33a385fc38b9
 # ╠═bda67f44-273a-4e67-8d45-864d8f2bcb51
