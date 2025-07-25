@@ -4,7 +4,7 @@ using Documenter
 DocMeta.setdocmeta!(MLNanoShaper, :DocTestSetup, :(using MLNanoShaper); recursive = true)
 
 makedocs(;
-    format = Documenter.LaTeX(),
+    # format = Documenter.LaTeX(),
     modules = [MLNanoShaper],
     authors = "tristan hacquard<tristan.hacquard@polytechnique.org> and contributors",
     sitename = "MLNanoShaper.jl",
