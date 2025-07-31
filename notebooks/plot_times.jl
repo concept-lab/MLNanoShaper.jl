@@ -45,7 +45,7 @@ function get_time_point(fun,prot_num::Number)
         read("$(homedir())/datasets/pqr/$prot_num/structure.pqr", PQR{Float32}), :pos) |>
     StructVector 
 	k= fun(vec_atoms)
-	length(vec_atoms),(k.times |> median) * 1e-9
+	length(vec_atoms),k 
 end
 
 # ╔═╡ 69d8b38e-1526-4c27-9705-af696eaad5d3
@@ -68,7 +68,10 @@ auxp = MLNanoShaper.read_from_TOML(MLNanoShaper.AuxiliaryParameters,parms)
 ids = test_data.data.data[test_data.indices] |> sort
 
 # ╔═╡ 65579214-b7a7-4339-82a2-8464146bab33
-g(a) = @benchmark MLNanoShaperRunner.evaluate_field_fast(model,$a;step=.5f0)
+function g(a)
+	k = @benchmark MLNanoShaperRunner.evaluate_field_fast(model,$a;step=.5f0)
+	(k.times |> median) * 1e-9
+end
 
 # ╔═╡ b163e4d2-0b12-4fef-b0cd-5da80434d547
 get_time_point(g,19) 
@@ -109,11 +112,10 @@ function run_nanoshaper(atoms::AbstractVector{Sphere{Float32}})
 		end
 			
 		conf_path = joinpath(@__DIR__, "conf.prm")
-        symlink(conf_path, "conf.prm")
-        command = addenv(
-			`$(homedir())/workspace/nanoshaper/pkg_nanoshaper_0.7.8/NanoShaper conf.prm`,
-			"LD_LIBRARY_PATH" => "$(homedir())/workspace/nanoshaper/pkg_nanoshaper_0.7.8")
-		@benchmark run(pipeline($command,devnull);wait = true)
+        cp(conf_path, "conf.prm")
+		command = `podman run --mount type=bind,source=$(pwd()),destination=/App localhost/nanoshaper1.5:latest conf.prm`
+		output = read(command,String)
+		parse(Float32,match(r"<<INFO>> Surface computation time\.\.\.\ ?(.*) \[s\]",output).captures |> only)
 	end
 end
 
