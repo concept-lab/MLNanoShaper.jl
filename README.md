@@ -77,4 +77,4 @@ in the `MLNanoShaperRunner/examples/`` directory
     LD_LIBRARY_PATH=$(pwd)/../build/lib/lib  ./test
 ```
 ## Weights
-weights are on `the https://zenodo.org/records/13222088`
+weights are on the `https://zenodo.org/records/16601766`
